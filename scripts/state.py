@@ -540,6 +540,94 @@ def update_nero_dispatch(
     return _row_to_dict(row)
 
 
+VALID_PRIORITIES = ("critical", "high", "medium", "low")
+
+
+# ── Auto-Advancement ─────────────────────────────────────────────────────────
+
+
+def check_auto_advance(conn: sqlite3.Connection, phase_id: int) -> dict:
+    """Check if post-action auto-advancement should trigger.
+
+    Call after plan completion. Returns {action, message} describing what was done.
+
+    Logic:
+    - All plans complete/skipped → auto-transition phase to 'verifying'
+    - All phases in milestone complete → flag milestone for completion
+    """
+    phase = get_phase(conn, phase_id)
+    if not phase:
+        return {"action": "none", "message": f"Phase {phase_id} not found"}
+
+    # Only auto-advance from executing state
+    if phase["status"] != "executing":
+        return {"action": "none", "message": f"Phase not in executing state ({phase['status']})"}
+
+    plans = list_plans(conn, phase_id)
+    if not plans:
+        return {"action": "none", "message": "No plans in phase"}
+
+    # Check if all plans are terminal (complete or skipped)
+    non_terminal = [p for p in plans if p["status"] not in ("complete", "skipped")]
+    if non_terminal:
+        remaining = len(non_terminal)
+        return {
+            "action": "none",
+            "message": f"{remaining} plan(s) still pending/executing",
+        }
+
+    # All plans done → advance phase to verifying
+    transition_phase(conn, phase_id, "verifying")
+    result = {
+        "action": "phase_to_verifying",
+        "message": f"All plans complete — phase '{phase['name']}' auto-advanced to verifying",
+        "phase_id": phase_id,
+    }
+
+    # Check if all phases in milestone are complete (after this one finishes review)
+    milestone_id = phase["milestone_id"]
+    all_phases = list_phases(conn, milestone_id)
+    incomplete = [p for p in all_phases if p["status"] != "complete" and p["id"] != phase_id]
+    # Current phase just moved to verifying, so it's not complete yet
+    # Only flag milestone if this was the last non-complete phase AND it just finished
+    if not incomplete:
+        result["milestone_ready"] = True
+        result["message"] += " — milestone may be ready for completion after review"
+
+    return result
+
+
+def add_priority(
+    conn: sqlite3.Connection,
+    entity_type: str,
+    entity_id: int,
+    priority: str,
+) -> dict:
+    """Set priority on a phase or plan.
+
+    Args:
+        entity_type: 'phase' or 'plan'
+        entity_id: ID of the entity
+        priority: 'critical', 'high', 'medium', or 'low'
+
+    Returns the updated entity dict.
+    """
+    if priority not in VALID_PRIORITIES:
+        raise ValueError(f"Invalid priority '{priority}'. Valid: {VALID_PRIORITIES}")
+    if entity_type not in ("phase", "plan"):
+        raise ValueError(f"Invalid entity_type '{entity_type}'. Must be 'phase' or 'plan'.")
+
+    conn.execute(
+        f"UPDATE {entity_type} SET priority = ? WHERE id = ?",  # noqa: S608
+        (priority, entity_id),
+    )
+    conn.commit()
+
+    if entity_type == "phase":
+        return get_phase(conn, entity_id)
+    return get_plan(conn, entity_id)
+
+
 # ── Next Action Computation ───────────────────────────────────────────────────
 
 

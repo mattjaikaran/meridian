@@ -79,3 +79,108 @@ When `--swarm` is used, all pending plans dispatch simultaneously. Nero creates 
 - If Nero is unreachable, dispatch fails gracefully with cached status
 - Failed Nero tasks can be retried or reassigned to subagent execution
 - Dispatch status is always available from local SQLite even if Nero is down
+
+## Bidirectional Sync (`scripts/sync.py`)
+
+The original dispatch model was push-only: Meridian sends plans, checks status manually. The sync module closes the loop with automatic pull + push.
+
+### Pull: `pull_dispatch_status(conn)`
+
+Polls all active `nero_dispatch` records (status in `dispatched`, `accepted`, `running`) and updates local state when Nero reports changes.
+
+**Auto-transitions on pull:**
+- Nero reports `completed` → local plan transitions to `complete` (with `commit_sha`)
+- Nero reports `failed`/`rejected` → local plan transitions to `failed` (with error message)
+- Nero unreachable → no change, logged as `unreachable`
+- Nero reports same status → no update
+
+```python
+from scripts.sync import pull_dispatch_status
+updates = pull_dispatch_status(conn)
+# Returns:
+# [
+#   {"dispatch_id": 1, "old_status": "running", "new_status": "completed",
+#    "pr_url": "https://...", "plan_transitioned": "complete"},
+#   {"dispatch_id": 2, "status": "unreachable", "message": "Could not reach Nero"}
+# ]
+```
+
+### Push: `push_state_to_nero(conn)`
+
+Exports all pending/failed plans from the active milestone as Nero-compatible tickets. This lets Nero's PM agent schedule and prioritize work.
+
+**Ticket format pushed to Nero:**
+```json
+{
+    "method": "sync_tickets",
+    "params": {
+        "project": "MyApp",
+        "tickets": [
+            {
+                "type": "implement",
+                "plan_id": 5,
+                "name": "Add API routes",
+                "description": "...",
+                "priority": "high",
+                "wave": 2,
+                "tdd_required": true,
+                "files_to_create": ["src/routes.py"],
+                "files_to_modify": ["src/app.py"],
+                "test_command": "uv run pytest tests/",
+                "context": "Phase context doc..."
+            }
+        ]
+    }
+}
+```
+
+Priority flows from plan → phase → defaults to `"medium"`.
+
+```python
+from scripts.sync import push_state_to_nero
+result = push_state_to_nero(conn)
+# {"status": "ok", "tickets_pushed": 3, "nero_response": {...}}
+```
+
+### Full Sync: `sync_all(conn)`
+
+Runs pull then push in sequence. Recommended for use before dashboard/status checks.
+
+```python
+from scripts.sync import sync_all
+result = sync_all(conn)
+# {"pull_results": [...], "push_result": {...}}
+```
+
+### Dispatch Summary: `get_dispatch_summary(conn)`
+
+Returns all dispatches for the active milestone with plan/phase names attached. Used by `/meridian:dashboard`.
+
+```python
+from scripts.sync import get_dispatch_summary
+dispatches = get_dispatch_summary(conn)
+# [{"id": 1, "status": "completed", "plan_name": "Setup CI", "phase_name": "Foundation", ...}]
+```
+
+## Sync Lifecycle
+
+```
+                Meridian                         Nero
+                ─────────                       ──────
+1. /dispatch    ──── dispatch_plan() ────────→  Accept task
+                     creates nero_dispatch       nero_task_id returned
+                     plan → executing
+
+2. (later)      ──── pull_dispatch_status() ──→  get_task_status
+                     checks nero_dispatch         returns completed/failed
+                     plan → complete/failed ◄──
+
+3. Auto-advance      check_auto_advance()
+                     phase → verifying (if all plans done)
+
+4. /dashboard        get_dispatch_summary()
+                     renders dispatch status
+
+5. push_state()  ──── push_state_to_nero() ───→  sync_tickets
+                      sends pending plans         Nero schedules work
+```

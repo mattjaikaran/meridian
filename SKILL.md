@@ -9,6 +9,8 @@ Meridian is a SQLite-backed state machine for managing complex development workf
 - `/meridian:execute` — Run plans via fresh subagents with TDD enforcement and 2-stage review
 - `/meridian:resume` — Generate deterministic resume prompt from SQLite state
 - `/meridian:status` — Show progress, phase state, blockers, next action
+- `/meridian:dashboard` — Rich project dashboard: health, velocity, stalls, Nero dispatches
+- `/meridian:roadmap` — Cross-milestone roadmap with progress and ETAs
 - `/meridian:dispatch` — Send plans to Nero for autonomous execution (PR factory)
 - `/meridian:review` — Two-stage code review (spec compliance → quality)
 - `/meridian:ship` — Commit + push + create PR via gh CLI
@@ -40,16 +42,18 @@ pending → executing → complete
 ```
 
 ## Scripts (Python, stdlib only)
-- `scripts/db.py` — Schema init + migrations
-- `scripts/state.py` — CRUD + state transitions + next-action logic
+- `scripts/db.py` — Schema init + migrations (v2: priority column)
+- `scripts/state.py` — CRUD + transitions + next-action + auto-advancement + priority
 - `scripts/resume.py` — Deterministic resume prompt generator
 - `scripts/export.py` — SQLite → JSON export for Nero
-- `scripts/dispatch.py` — Nero HTTP dispatch client
+- `scripts/dispatch.py` — Nero HTTP dispatch client (push only)
+- `scripts/sync.py` — Bidirectional Nero sync (pull status + push state)
+- `scripts/metrics.py` — PM metrics: velocity, cycle times, stalls, forecasts, progress
 - `scripts/axis_sync.py` — Axis PM ticket sync
 - `scripts/context_window.py` — Token estimation + checkpoint triggers
 
 ## References
-- `references/state-machine.md` — State transitions + rules
+- `references/state-machine.md` — State transitions + rules + auto-advancement + priority
 - `references/discipline-protocols.md` — TDD, debugging, verification, review
-- `references/nero-integration.md` — Dispatch protocol + state sharing
+- `references/nero-integration.md` — Dispatch + bidirectional sync protocol
 - `references/axis-integration.md` — PM sync protocol

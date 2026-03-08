@@ -5,7 +5,7 @@ import sqlite3
 import sys
 from pathlib import Path
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 SCHEMA_SQL = """
 -- Schema version tracking
@@ -144,6 +144,32 @@ CREATE TABLE IF NOT EXISTS quick_task (
 """
 
 
+MIGRATION_V2 = """
+-- Add priority column to phase and plan tables
+ALTER TABLE phase ADD COLUMN priority TEXT CHECK (priority IN ('critical','high','medium','low'));
+ALTER TABLE plan ADD COLUMN priority TEXT CHECK (priority IN ('critical','high','medium','low'));
+"""
+
+
+def _migrate_v1_to_v2(conn: sqlite3.Connection) -> None:
+    """Add priority column to phase and plan tables."""
+    # Check if column already exists (idempotent)
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(phase)").fetchall()}
+    if "priority" not in columns:
+        conn.execute(
+            "ALTER TABLE phase ADD COLUMN priority TEXT"
+            " CHECK (priority IN ('critical','high','medium','low'))"
+        )
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(plan)").fetchall()}
+    if "priority" not in columns:
+        conn.execute(
+            "ALTER TABLE plan ADD COLUMN priority TEXT"
+            " CHECK (priority IN ('critical','high','medium','low'))"
+        )
+    conn.execute("INSERT OR REPLACE INTO schema_version (version) VALUES (?)", (2,))
+    conn.commit()
+
+
 def get_db_path(project_dir: str | Path | None = None) -> Path:
     """Get the path to the Meridian database for a project directory."""
     if project_dir is None:
@@ -167,15 +193,19 @@ def connect(db_path: str | Path | None = None) -> sqlite3.Connection:
 
 
 def init_schema(conn: sqlite3.Connection) -> None:
-    """Initialize the database schema."""
+    """Initialize the database schema and run pending migrations."""
     conn.executescript(SCHEMA_SQL)
-    # Record schema version
+    # Record initial schema version if fresh DB
     existing = conn.execute(
         "SELECT version FROM schema_version ORDER BY version DESC LIMIT 1"
     ).fetchone()
     if not existing:
-        conn.execute("INSERT INTO schema_version (version) VALUES (?)", (SCHEMA_VERSION,))
+        conn.execute("INSERT INTO schema_version (version) VALUES (?)", (1,))
         conn.commit()
+    # Run migrations
+    current_version = get_schema_version(conn)
+    if current_version < 2:
+        _migrate_v1_to_v2(conn)
 
 
 def get_schema_version(conn: sqlite3.Connection) -> int:

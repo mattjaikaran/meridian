@@ -87,6 +87,66 @@ pending → skipped
 | error | Unrecoverable error during execution |
 | pause | User pauses work |
 
+## Priority
+
+Phases and plans support a `priority` column (added in schema v2).
+
+Valid values: `critical`, `high`, `medium`, `low` (nullable — defaults to none).
+
+```python
+from scripts.state import add_priority
+add_priority(conn, "phase", phase_id, "critical")
+add_priority(conn, "plan", plan_id, "high")
+```
+
+Priority is used by:
+- Dashboard: highlights priority items in output
+- Nero sync: included in pushed tickets for Nero's scheduler
+- Future: priority-aware ordering in next-action computation
+
+## Auto-Advancement
+
+`check_auto_advance(conn, phase_id)` evaluates post-action triggers. Call it after plan completion.
+
+### Rules
+
+1. **All plans complete/skipped** → auto-transition phase from `executing` to `verifying`
+2. **All phases in milestone complete** → flag milestone as ready for completion (set `milestone_ready: true` in return)
+
+### Behavior
+
+```
+Plan completes → check_auto_advance(conn, phase_id)
+  ├── Other plans still pending/executing → no action
+  ├── All plans complete/skipped → phase → "verifying"
+  └── Last phase in milestone → milestone flagged for completion
+```
+
+### Example
+
+```python
+from scripts.state import check_auto_advance, transition_plan
+
+# Complete a plan
+transition_plan(conn, plan_id, "complete", commit_sha="abc123")
+
+# Check if phase should auto-advance
+result = check_auto_advance(conn, phase_id)
+# {
+#   "action": "phase_to_verifying",
+#   "message": "All plans complete — phase 'Features' auto-advanced to verifying",
+#   "phase_id": 2,
+#   "milestone_ready": true  # only if all phases are done
+# }
+```
+
+### Integration Points
+
+Auto-advancement is called:
+- After `transition_plan(..., "complete")` in `/meridian:execute`
+- After `pull_dispatch_status()` auto-transitions Nero-completed plans
+- After manual plan completion in `/meridian:status`
+
 ## Next Action Computation
 
 Priority order:
