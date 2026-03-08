@@ -63,7 +63,9 @@ def export_state(project_dir: str | Path | None = None, project_id: str = "defau
         conn.close()
 
 
-def export_status_summary(project_dir: str | Path | None = None, project_id: str = "default") -> str:
+def export_status_summary(
+    project_dir: str | Path | None = None, project_id: str = "default"
+) -> str:
     """Export a human-readable status summary."""
     if project_dir is None:
         project_dir = Path.cwd()
@@ -110,7 +112,7 @@ def export_status_summary(project_dir: str | Path | None = None, project_id: str
             lines.append("")
 
         action = status["next_action"]
-        lines.append(f"### Next Action")
+        lines.append("### Next Action")
         lines.append(f"→ {action['message']}")
 
         return "\n".join(lines)

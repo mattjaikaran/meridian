@@ -8,7 +8,6 @@ from pathlib import Path
 from scripts.db import connect, get_db_path
 from scripts.state import get_project, list_phases, update_phase
 
-
 # Axis status ↔ Meridian phase status mapping
 MERIDIAN_TO_AXIS = {
     "planned": "backlog",
@@ -40,7 +39,9 @@ def _run_pm_command(command: str) -> str:
         raise FileNotFoundError(f"PM script not found at {pm_script}")
     result = subprocess.run(
         ["bash", str(pm_script)] + command.split(),
-        capture_output=True, text=True, timeout=30,
+        capture_output=True,
+        text=True,
+        timeout=30,
     )
     return result.stdout.strip()
 
@@ -76,17 +77,21 @@ def sync_phase_to_axis(
 
             try:
                 _run_pm_command(f"ticket move {ticket_id} {axis_status}")
-                synced.append({
-                    "phase": phase["name"],
-                    "ticket": ticket_id,
-                    "status": axis_status,
-                })
+                synced.append(
+                    {
+                        "phase": phase["name"],
+                        "ticket": ticket_id,
+                        "status": axis_status,
+                    }
+                )
             except Exception as e:
-                synced.append({
-                    "phase": phase["name"],
-                    "ticket": ticket_id,
-                    "error": str(e),
-                })
+                synced.append(
+                    {
+                        "phase": phase["name"],
+                        "ticket": ticket_id,
+                        "error": str(e),
+                    }
+                )
 
         return {"status": "synced", "results": synced}
 
@@ -124,8 +129,8 @@ def create_axis_tickets_for_phases(
             axis_project = project["axis_project_id"]
             try:
                 output = _run_pm_command(
-                    f"ticket add {axis_project} \"{phase['name']}\" "
-                    f"--description \"{phase.get('description', '')}\""
+                    f'ticket add {axis_project} "{phase["name"]}" '
+                    f'--description "{phase.get("description", "")}"'
                 )
                 # Parse ticket ID from output (format: "Created ticket PROJ-123")
                 ticket_id = None
@@ -138,7 +143,12 @@ def create_axis_tickets_for_phases(
                     update_phase(conn, phase["id"], axis_ticket_id=ticket_id)
                     created.append({"phase": phase["name"], "ticket_id": ticket_id})
                 else:
-                    created.append({"phase": phase["name"], "error": f"Could not parse ticket ID from: {output}"})
+                    created.append(
+                        {
+                            "phase": phase["name"],
+                            "error": f"Could not parse ticket ID from: {output}",
+                        }
+                    )
             except Exception as e:
                 created.append({"phase": phase["name"], "error": str(e)})
 
@@ -150,7 +160,8 @@ def create_axis_tickets_for_phases(
 
 def _get_active_milestone_id(conn, project_id: str) -> str | None:
     row = conn.execute(
-        "SELECT id FROM milestone WHERE project_id = ? AND status = 'active' ORDER BY created_at LIMIT 1",
+        "SELECT id FROM milestone WHERE project_id = ? AND status = 'active'"
+        " ORDER BY created_at LIMIT 1",
         (project_id,),
     ).fetchone()
     return row["id"] if row else None

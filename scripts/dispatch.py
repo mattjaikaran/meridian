@@ -2,8 +2,8 @@
 """Nero HTTP dispatch client — sends plans to Mac Mini for autonomous execution."""
 
 import json
-import urllib.request
 import urllib.error
+import urllib.request
 from pathlib import Path
 
 from scripts.db import connect, get_db_path
@@ -51,7 +51,9 @@ def dispatch_plan(
                     "name": project["name"],
                     "repo_path": project["repo_path"],
                     "repo_url": project.get("repo_url"),
-                    "tech_stack": json.loads(project["tech_stack"]) if project.get("tech_stack") else [],
+                    "tech_stack": (
+                        json.loads(project["tech_stack"]) if project.get("tech_stack") else []
+                    ),
                 },
                 "phase": {
                     "name": phase["name"],
@@ -60,8 +62,12 @@ def dispatch_plan(
                 "plan": {
                     "name": plan["name"],
                     "description": plan["description"],
-                    "files_to_create": json.loads(plan["files_to_create"]) if plan.get("files_to_create") else [],
-                    "files_to_modify": json.loads(plan["files_to_modify"]) if plan.get("files_to_modify") else [],
+                    "files_to_create": (
+                        json.loads(plan["files_to_create"]) if plan.get("files_to_create") else []
+                    ),
+                    "files_to_modify": (
+                        json.loads(plan["files_to_modify"]) if plan.get("files_to_modify") else []
+                    ),
                     "test_command": plan.get("test_command"),
                     "tdd_required": bool(plan.get("tdd_required")),
                 },
@@ -167,9 +173,7 @@ def check_dispatch_status(
         if not project or not project.get("nero_endpoint"):
             return {"status": "error", "message": "Nero not configured"}
 
-        row = conn.execute(
-            "SELECT * FROM nero_dispatch WHERE id = ?", (dispatch_id,)
-        ).fetchone()
+        row = conn.execute("SELECT * FROM nero_dispatch WHERE id = ?", (dispatch_id,)).fetchone()
         if not row:
             return {"status": "error", "message": f"Dispatch {dispatch_id} not found"}
 

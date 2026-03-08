@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Deterministic resume prompt generator — queries SQLite, produces identical prompt for identical state."""
+"""Deterministic resume prompt generator.
+
+Queries SQLite, produces identical prompt for identical state.
+"""
 
 import json
 import subprocess
@@ -22,8 +25,10 @@ def _get_git_log(repo_path: str, count: int = 10) -> str:
     """Get recent git log."""
     try:
         result = subprocess.run(
-            ["git", "log", f"--oneline", f"-{count}"],
-            capture_output=True, text=True, cwd=repo_path,
+            ["git", "log", "--oneline", f"-{count}"],
+            capture_output=True,
+            text=True,
+            cwd=repo_path,
         )
         return result.stdout.strip() or "(no commits)"
     except Exception:
@@ -34,7 +39,9 @@ def _get_git_branch(repo_path: str) -> str:
     try:
         result = subprocess.run(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            capture_output=True, text=True, cwd=repo_path,
+            capture_output=True,
+            text=True,
+            cwd=repo_path,
         )
         return result.stdout.strip() or "unknown"
     except Exception:
@@ -45,7 +52,9 @@ def _get_git_sha(repo_path: str) -> str:
     try:
         result = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True, text=True, cwd=repo_path,
+            capture_output=True,
+            text=True,
+            cwd=repo_path,
         )
         return result.stdout.strip() or "unknown"
     except Exception:
@@ -85,21 +94,19 @@ def generate_resume_prompt(
 
         if not active_milestone:
             return textwrap.dedent(f"""\
-                # Meridian Resume — {project['name']}
+                # Meridian Resume — {project["name"]}
 
                 ## Position
                 No active milestone. Create one with `/meridian:plan`.
 
                 ## Project
-                - Path: {project['repo_path']}
-                - Tech: {project.get('tech_stack', 'not set')}
+                - Path: {project["repo_path"]}
+                - Tech: {project.get("tech_stack", "not set")}
             """)
 
         # Get phases
         phases = list_phases(conn, active_milestone["id"])
-        current_phase = next(
-            (p for p in phases if p["status"] not in ("complete",)), None
-        )
+        current_phase = next((p for p in phases if p["status"] not in ("complete",)), None)
 
         # Get plans for current phase
         plans = []
@@ -136,9 +143,10 @@ def generate_resume_prompt(
         sections.append("## Position")
         sections.append(f"- Milestone: {active_milestone['name']} ({active_milestone['status']})")
         if current_phase:
-            sections.append(
-                f"- Phase {current_phase['sequence']}: {current_phase['name']} ({current_phase['status']})"
-            )
+            phase_seq = current_phase["sequence"]
+            phase_name = current_phase["name"]
+            phase_status = current_phase["status"]
+            sections.append(f"- Phase {phase_seq}: {phase_name} ({phase_status})")
             if plans:
                 executing = [p for p in plans if p["status"] == "executing"]
                 if executing:
@@ -151,10 +159,12 @@ def generate_resume_prompt(
         sections.append("## Phase Overview")
         for p in phases:
             marker = "→" if current_phase and p["id"] == current_phase["id"] else " "
-            plan_count = len(list_plans(conn, p["id"]))
-            complete_count = len([pl for pl in list_plans(conn, p["id"]) if pl["status"] == "complete"])
+            phase_plans = list_plans(conn, p["id"])
+            plan_count = len(phase_plans)
+            complete_count = len([pl for pl in phase_plans if pl["status"] == "complete"])
             sections.append(
-                f"{marker} Phase {p['sequence']}: {p['name']} [{p['status']}] ({complete_count}/{plan_count} plans)"
+                f"{marker} Phase {p['sequence']}: {p['name']}"
+                f" [{p['status']}] ({complete_count}/{plan_count} plans)"
             )
         sections.append("")
 
@@ -221,7 +231,7 @@ def generate_resume_prompt(
         # Git state
         sections.append("## Git State")
         sections.append(f"Branch: {git_branch}, SHA: {git_sha}")
-        sections.append(f"Recent commits:")
+        sections.append("Recent commits:")
         for line in git_log.split("\n")[:5]:
             sections.append(f"  {line}")
         sections.append("")

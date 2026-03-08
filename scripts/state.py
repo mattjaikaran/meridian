@@ -4,10 +4,8 @@
 import json
 import sqlite3
 import subprocess
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-
-from scripts.db import connect, get_db_path
 
 # Valid state transitions
 PHASE_TRANSITIONS = {
@@ -39,7 +37,7 @@ MILESTONE_TRANSITIONS = {
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _row_to_dict(row: sqlite3.Row | None) -> dict | None:
@@ -66,7 +64,8 @@ def create_project(
     axis_project_id: str | None = None,
 ) -> dict:
     conn.execute(
-        """INSERT INTO project (id, name, repo_path, repo_url, tech_stack, nero_endpoint, axis_project_id)
+        """INSERT INTO project
+        (id, name, repo_path, repo_url, tech_stack, nero_endpoint, axis_project_id)
         VALUES (?, ?, ?, ?, ?, ?, ?)""",
         (
             project_id,
@@ -170,7 +169,8 @@ def create_phase(
         ).fetchone()
         sequence = row["next_seq"]
     conn.execute(
-        """INSERT INTO phase (milestone_id, sequence, name, description, acceptance_criteria, axis_ticket_id)
+        """INSERT INTO phase
+        (milestone_id, sequence, name, description, acceptance_criteria, axis_ticket_id)
         VALUES (?, ?, ?, ?, ?, ?)""",
         (
             milestone_id,
@@ -328,8 +328,14 @@ def transition_plan(
 
 def update_plan(conn: sqlite3.Connection, plan_id: int, **kwargs) -> dict | None:
     allowed = {
-        "name", "description", "wave", "tdd_required",
-        "files_to_create", "files_to_modify", "test_command", "executor_type",
+        "name",
+        "description",
+        "wave",
+        "tdd_required",
+        "files_to_create",
+        "files_to_modify",
+        "test_command",
+        "executor_type",
     }
     updates = {k: v for k, v in kwargs.items() if k in allowed}
     if not updates:
@@ -365,8 +371,10 @@ def create_checkpoint(
 ) -> dict:
     git_branch, git_sha, git_dirty = _get_git_state(repo_path)
     conn.execute(
-        """INSERT INTO checkpoint (project_id, trigger, milestone_id, phase_id, plan_id,
-        plan_status, decisions, blockers, notes, git_branch, git_sha, git_dirty, estimated_tokens_used)
+        """INSERT INTO checkpoint
+        (project_id, trigger, milestone_id, phase_id, plan_id,
+        plan_status, decisions, blockers, notes,
+        git_branch, git_sha, git_dirty, estimated_tokens_used)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             project_id,
@@ -419,7 +427,8 @@ def create_decision(
     phase_id: int | None = None,
 ) -> dict:
     conn.execute(
-        "INSERT INTO decision (project_id, phase_id, category, summary, rationale) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO decision (project_id, phase_id, category, summary, rationale)"
+        " VALUES (?, ?, ?, ?, ?)",
         (project_id, phase_id, category, summary, rationale),
     )
     conn.commit()
@@ -499,7 +508,9 @@ def create_nero_dispatch(
     nero_task_id: str | None = None,
 ) -> dict:
     conn.execute(
-        "INSERT INTO nero_dispatch (plan_id, phase_id, dispatch_type, nero_task_id) VALUES (?, ?, ?, ?)",
+        "INSERT INTO nero_dispatch"
+        " (plan_id, phase_id, dispatch_type, nero_task_id)"
+        " VALUES (?, ?, ?, ?)",
         (plan_id, phase_id, dispatch_type, nero_task_id),
     )
     conn.commit()
@@ -537,20 +548,25 @@ def compute_next_action(conn: sqlite3.Connection, project_id: str = "default") -
 
     # Find active milestone
     milestone = conn.execute(
-        "SELECT * FROM milestone WHERE project_id = ? AND status = 'active' ORDER BY created_at LIMIT 1",
+        "SELECT * FROM milestone WHERE project_id = ? AND status = 'active'"
+        " ORDER BY created_at LIMIT 1",
         (project_id,),
     ).fetchone()
 
     if not milestone:
         # Check for planned milestones
         planned = conn.execute(
-            "SELECT * FROM milestone WHERE project_id = ? AND status = 'planned' ORDER BY created_at LIMIT 1",
+            "SELECT * FROM milestone WHERE project_id = ? AND status = 'planned'"
+            " ORDER BY created_at LIMIT 1",
             (project_id,),
         ).fetchone()
         if planned:
             return {
                 "action": "activate_milestone",
-                "message": f"Milestone '{planned['name']}' is planned but not active. Activate it to begin.",
+                "message": (
+                    f"Milestone '{planned['name']}' is planned but not active."
+                    " Activate it to begin."
+                ),
                 "milestone_id": planned["id"],
             }
         return {
@@ -584,7 +600,8 @@ def compute_next_action(conn: sqlite3.Connection, project_id: str = "default") -
                 }
         # Check for blocked phases
         blocked = conn.execute(
-            "SELECT * FROM phase WHERE milestone_id = ? AND status = 'blocked' ORDER BY sequence LIMIT 1",
+            "SELECT * FROM phase WHERE milestone_id = ? AND status = 'blocked'"
+            " ORDER BY sequence LIMIT 1",
             (milestone["id"],),
         ).fetchone()
         if blocked:
@@ -629,7 +646,8 @@ def compute_next_action(conn: sqlite3.Connection, project_id: str = "default") -
     if phase["status"] == "executing":
         # Find next pending plan
         plan = conn.execute(
-            "SELECT * FROM plan WHERE phase_id = ? AND status = 'pending' ORDER BY wave, sequence LIMIT 1",
+            "SELECT * FROM plan WHERE phase_id = ? AND status = 'pending'"
+            " ORDER BY wave, sequence LIMIT 1",
             (phase["id"],),
         ).fetchone()
 
@@ -643,7 +661,9 @@ def compute_next_action(conn: sqlite3.Connection, project_id: str = "default") -
             if earlier_running["cnt"] > 0:
                 return {
                     "action": "wait_for_wave",
-                    "message": f"Wave {plan['wave'] - 1} plans still executing. Wait for completion.",
+                    "message": (
+                        f"Wave {plan['wave'] - 1} plans still executing. Wait for completion."
+                    ),
                     "phase_id": phase["id"],
                 }
             return {
@@ -663,7 +683,9 @@ def compute_next_action(conn: sqlite3.Connection, project_id: str = "default") -
         if failed:
             return {
                 "action": "fix_failed_plan",
-                "message": f"Plan '{failed['name']}' failed: {failed['error_message'] or 'unknown error'}",
+                "message": (
+                    f"Plan '{failed['name']}' failed: {failed['error_message'] or 'unknown error'}"
+                ),
                 "phase_id": phase["id"],
                 "plan_id": failed["id"],
             }
@@ -671,7 +693,9 @@ def compute_next_action(conn: sqlite3.Connection, project_id: str = "default") -
         # All plans complete or skipped — move to verifying
         return {
             "action": "verify_phase",
-            "message": f"All plans in phase '{phase['name']}' are done. Verify acceptance criteria.",
+            "message": (
+                f"All plans in phase '{phase['name']}' are done. Verify acceptance criteria."
+            ),
             "phase_id": phase["id"],
         }
 
@@ -744,18 +768,26 @@ def _get_git_state(repo_path: str | None = None) -> tuple[str | None, str | None
     """Get current git branch, SHA, and dirty state."""
     cwd = repo_path or str(Path.cwd())
     try:
-        branch = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            capture_output=True, text=True, cwd=cwd
-        ).stdout.strip() or None
-        sha = subprocess.run(
-            ["git", "rev-parse", "HEAD"],
-            capture_output=True, text=True, cwd=cwd
-        ).stdout.strip() or None
-        dirty = bool(subprocess.run(
-            ["git", "status", "--porcelain"],
-            capture_output=True, text=True, cwd=cwd
-        ).stdout.strip())
+        branch = (
+            subprocess.run(
+                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                capture_output=True,
+                text=True,
+                cwd=cwd,
+            ).stdout.strip()
+            or None
+        )
+        sha = (
+            subprocess.run(
+                ["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=cwd
+            ).stdout.strip()
+            or None
+        )
+        dirty = bool(
+            subprocess.run(
+                ["git", "status", "--porcelain"], capture_output=True, text=True, cwd=cwd
+            ).stdout.strip()
+        )
         return branch, sha, dirty
     except Exception:
         return None, None, False

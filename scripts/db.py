@@ -170,7 +170,9 @@ def init_schema(conn: sqlite3.Connection) -> None:
     """Initialize the database schema."""
     conn.executescript(SCHEMA_SQL)
     # Record schema version
-    existing = conn.execute("SELECT version FROM schema_version ORDER BY version DESC LIMIT 1").fetchone()
+    existing = conn.execute(
+        "SELECT version FROM schema_version ORDER BY version DESC LIMIT 1"
+    ).fetchone()
     if not existing:
         conn.execute("INSERT INTO schema_version (version) VALUES (?)", (SCHEMA_VERSION,))
         conn.commit()
@@ -179,7 +181,9 @@ def init_schema(conn: sqlite3.Connection) -> None:
 def get_schema_version(conn: sqlite3.Connection) -> int:
     """Get the current schema version."""
     try:
-        row = conn.execute("SELECT version FROM schema_version ORDER BY version DESC LIMIT 1").fetchone()
+        row = conn.execute(
+            "SELECT version FROM schema_version ORDER BY version DESC LIMIT 1"
+        ).fetchone()
         return row["version"] if row else 0
     except sqlite3.OperationalError:
         return 0

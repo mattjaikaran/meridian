@@ -2,16 +2,16 @@
 """Tests for Meridian state management."""
 
 import sqlite3
-import tempfile
+
+# Add parent to path so scripts is importable
+import sys
 from pathlib import Path
 
 import pytest
 
-# Add parent to path so scripts is importable
-import sys
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from scripts.db import connect, init_schema
+from scripts.db import init_schema
 from scripts.state import (
     compute_next_action,
     create_checkpoint,
@@ -22,9 +22,6 @@ from scripts.state import (
     create_project,
     create_quick_task,
     get_latest_checkpoint,
-    get_milestone,
-    get_phase,
-    get_plan,
     get_project,
     get_status,
     list_decisions,
@@ -36,7 +33,6 @@ from scripts.state import (
     transition_plan,
     transition_quick_task,
     update_phase,
-    update_plan,
     update_project,
 )
 
@@ -82,7 +78,9 @@ class TestProject:
 
     def test_update(self, db):
         create_project(db, name="App", repo_path="/dev/app")
-        updated = update_project(db, "default", name="Updated App", repo_url="https://github.com/test")
+        updated = update_project(
+            db, "default", name="Updated App", repo_url="https://github.com/test"
+        )
         assert updated["name"] == "Updated App"
         assert updated["repo_url"] == "https://github.com/test"
 
@@ -242,7 +240,7 @@ class TestPlan:
 
 class TestCheckpoint:
     def test_create_and_get_latest(self, seeded_db):
-        cp1 = create_checkpoint(seeded_db, trigger="manual", notes="First save")
+        create_checkpoint(seeded_db, trigger="manual", notes="First save")
         cp2 = create_checkpoint(seeded_db, trigger="plan_complete", notes="After plan 1")
         latest = get_latest_checkpoint(seeded_db)
         assert latest["id"] == cp2["id"]

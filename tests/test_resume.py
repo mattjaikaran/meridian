@@ -61,8 +61,13 @@ class TestResumePrompt:
         create_project(conn, name="TestApp", repo_path=str(project_dir))
         create_milestone(conn, "v1.0", "Version 1.0", description="First release")
         transition_milestone(conn, "v1.0", "active")
-        create_phase(conn, "v1.0", "Foundation", description="Build the base",
-                      acceptance_criteria=["Tests pass", "Schema created"])
+        create_phase(
+            conn,
+            "v1.0",
+            "Foundation",
+            description="Build the base",
+            acceptance_criteria=["Tests pass", "Schema created"],
+        )
         conn.close()
 
         prompt = generate_resume_prompt(project_dir)
@@ -82,8 +87,8 @@ class TestResumePrompt:
         transition_phase(conn, phase["id"], "executing")
 
         p1 = create_plan(conn, phase["id"], "Setup DB", "Create schema", wave=1)
-        p2 = create_plan(conn, phase["id"], "Add models", "Create models", wave=1)
-        p3 = create_plan(conn, phase["id"], "Add API", "Create endpoints", wave=2)
+        create_plan(conn, phase["id"], "Add models", "Create models", wave=1)
+        create_plan(conn, phase["id"], "Add API", "Create endpoints", wave=2)
 
         transition_plan(conn, p1["id"], "executing")
         transition_plan(conn, p1["id"], "complete", commit_sha="abc123def")
