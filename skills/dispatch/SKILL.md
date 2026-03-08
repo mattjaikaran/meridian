@@ -57,7 +57,7 @@ print(json.dumps(result, indent=2, default=str))
 ```
 
 ## Nero Integration Notes
-- Nero endpoint: typically `http://192.168.1.230:7655`
+- Nero endpoint: configured per-project (e.g. `http://<nero-host>:7655`)
 - Dispatches tracked in `nero_dispatch` table
 - Nero returns a `task_id` for tracking
 - Completed dispatches include `pr_url`
