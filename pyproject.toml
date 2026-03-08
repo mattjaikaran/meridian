@@ -1,0 +1,13 @@
+[project]
+name = "meridian"
+version = "0.1.0"
+description = "Unified workflow engine for Claude Code — SQLite-backed state machine with deterministic resume"
+requires-python = ">=3.11"
+# stdlib only: sqlite3, json, pathlib, datetime, textwrap, subprocess, urllib
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]

@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+*.egg-info/
+
+# Meridian local state (per-project, not tracked in meridian repo itself)
+.meridian/
+
+# OS
+.DS_Store
