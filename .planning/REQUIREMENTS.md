@@ -1,7 +1,7 @@
 # Requirements: Meridian Hardening
 
 **Defined:** 2026-03-10
-**Core Value:** Deterministic workflow state that survives context resets — every resume produces the exact same prompt from the same database state.
+**Core Value:** Deterministic workflow state that survives context resets -- every resume produces the exact same prompt from the same database state.
 
 ## v1 Requirements
 
@@ -43,7 +43,7 @@
 - [ ] **TEST-05**: Test coverage for `scripts/axis_sync.py` (command construction, ticket parsing, status mapping)
 - [ ] **TEST-06**: Test coverage for `scripts/context_window.py` (token estimation, checkpoint thresholds)
 - [ ] **TEST-07**: Test coverage for `check_auto_advance()` (milestone readiness, edge cases, empty plans)
-- [ ] **TEST-08**: Test coverage for schema migration path (v1→v2 upgrade, idempotency)
+- [ ] **TEST-08**: Test coverage for schema migration path (v1->v2 upgrade, idempotency)
 
 ### Code Quality
 
@@ -77,7 +77,7 @@
 
 | Feature | Reason |
 |---------|--------|
-| Web UI / API server | Claude Code is the interface — no server needed |
+| Web UI / API server | Claude Code is the interface -- no server needed |
 | PostgreSQL migration | SQLite sufficient for single-user scale |
 | Multi-user auth | Single-developer local tool |
 | Plugin system | Over-engineering for current use case |
@@ -88,43 +88,43 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROUT-01 | TBD | Pending |
-| ROUT-02 | TBD | Pending |
-| ROUT-03 | TBD | Pending |
-| ROUT-04 | TBD | Pending |
-| DBRL-01 | TBD | Pending |
-| DBRL-02 | TBD | Pending |
-| DBRL-03 | TBD | Pending |
-| DBRL-04 | TBD | Pending |
-| DBRL-05 | TBD | Pending |
-| ERRL-01 | TBD | Pending |
-| ERRL-02 | TBD | Pending |
-| ERRL-03 | TBD | Pending |
-| ERRL-04 | TBD | Pending |
-| ERRL-05 | TBD | Pending |
-| SECR-01 | TBD | Pending |
-| SECR-02 | TBD | Pending |
-| SECR-03 | TBD | Pending |
-| TEST-01 | TBD | Pending |
-| TEST-02 | TBD | Pending |
-| TEST-03 | TBD | Pending |
-| TEST-04 | TBD | Pending |
-| TEST-05 | TBD | Pending |
-| TEST-06 | TBD | Pending |
-| TEST-07 | TBD | Pending |
-| TEST-08 | TBD | Pending |
-| QUAL-01 | TBD | Pending |
-| QUAL-02 | TBD | Pending |
-| QUAL-03 | TBD | Pending |
-| QUAL-04 | TBD | Pending |
-| QUAL-05 | TBD | Pending |
-| QUAL-06 | TBD | Pending |
+| DBRL-01 | Phase 1 | Pending |
+| DBRL-02 | Phase 1 | Pending |
+| DBRL-03 | Phase 1 | Pending |
+| DBRL-04 | Phase 1 | Pending |
+| DBRL-05 | Phase 1 | Pending |
+| TEST-01 | Phase 1 | Pending |
+| TEST-02 | Phase 1 | Pending |
+| ERRL-01 | Phase 2 | Pending |
+| ERRL-02 | Phase 2 | Pending |
+| ERRL-03 | Phase 2 | Pending |
+| ERRL-04 | Phase 2 | Pending |
+| ERRL-05 | Phase 2 | Pending |
+| SECR-01 | Phase 2 | Pending |
+| SECR-02 | Phase 2 | Pending |
+| SECR-03 | Phase 2 | Pending |
+| ROUT-01 | Phase 3 | Pending |
+| ROUT-02 | Phase 3 | Pending |
+| ROUT-03 | Phase 3 | Pending |
+| ROUT-04 | Phase 3 | Pending |
+| TEST-03 | Phase 4 | Pending |
+| TEST-04 | Phase 4 | Pending |
+| TEST-05 | Phase 4 | Pending |
+| TEST-06 | Phase 4 | Pending |
+| TEST-07 | Phase 4 | Pending |
+| TEST-08 | Phase 4 | Pending |
+| QUAL-01 | Phase 4 | Pending |
+| QUAL-02 | Phase 4 | Pending |
+| QUAL-03 | Phase 4 | Pending |
+| QUAL-04 | Phase 4 | Pending |
+| QUAL-05 | Phase 4 | Pending |
+| QUAL-06 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 31 total
-- Mapped to phases: 0
-- Unmapped: 31 ⚠️
+- Mapped to phases: 31
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-10*
-*Last updated: 2026-03-10 after initial definition*
+*Last updated: 2026-03-10 after roadmap creation*
