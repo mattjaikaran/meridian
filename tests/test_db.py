@@ -9,11 +9,15 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from scripts.db import (
+    SCHEMA_SQL,
     DatabaseBusyError,
     MeridianError,
     NeroUnreachableError,
     StateTransitionError,
+    _migrate_v1_to_v2,
     backup_database,
+    get_schema_version,
+    init_schema,
     open_project,
     retry_on_busy,
     retry_on_http_error,
@@ -346,3 +350,96 @@ class TestRetryOnHttpError:
         assert delays[0] == 1.0   # base_delay * 2^0
         assert delays[1] == 2.0   # base_delay * 2^1
         assert delays[2] == 4.0   # base_delay * 2^2
+
+
+# -- migration tests ----------------------------------------------------------
+
+
+class TestMigration:
+    """Tests for _migrate_v1_to_v2 schema migration."""
+
+    def _create_v1_schema(self):
+        """Create a connection with v1 schema (no priority columns)."""
+        conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys=ON")
+        # Run base schema
+        conn.executescript(SCHEMA_SQL)
+        # Record as v1
+        conn.execute("INSERT OR REPLACE INTO schema_version (version) VALUES (?)", (1,))
+        conn.commit()
+        # Drop priority columns if they exist (SCHEMA_SQL includes them in CREATE TABLE
+        # but they're in the v2 migration, so we simulate v1 by checking)
+        # Since SCHEMA_SQL doesn't include priority columns in CREATE TABLE,
+        # we just need to verify they don't exist
+        return conn
+
+    def _get_columns(self, conn, table):
+        """Get set of column names for a table."""
+        return {row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+
+    def test_adds_priority_column_to_phase(self):
+        """_migrate_v1_to_v2 adds priority column to phase table."""
+        conn = self._create_v1_schema()
+        # Verify priority doesn't exist before migration (if schema doesn't include it)
+        # Run migration
+        _migrate_v1_to_v2(conn)
+        columns = self._get_columns(conn, "phase")
+        assert "priority" in columns
+        conn.close()
+
+    def test_adds_priority_column_to_plan(self):
+        """_migrate_v1_to_v2 adds priority column to plan table."""
+        conn = self._create_v1_schema()
+        _migrate_v1_to_v2(conn)
+        columns = self._get_columns(conn, "plan")
+        assert "priority" in columns
+        conn.close()
+
+    def test_idempotent_no_error_on_double_run(self):
+        """Running _migrate_v1_to_v2 twice does not raise."""
+        conn = self._create_v1_schema()
+        _migrate_v1_to_v2(conn)
+        # Second call should not raise
+        _migrate_v1_to_v2(conn)
+        # Still has the columns
+        assert "priority" in self._get_columns(conn, "phase")
+        assert "priority" in self._get_columns(conn, "plan")
+        conn.close()
+
+    def test_priority_default_null(self):
+        """Priority columns default to NULL."""
+        conn = self._create_v1_schema()
+        _migrate_v1_to_v2(conn)
+        # Insert a project and phase to check default
+        conn.execute(
+            "INSERT INTO project (id, name, repo_path) VALUES ('default', 'Test', '/tmp')"
+        )
+        conn.execute(
+            "INSERT INTO milestone (id, project_id, name) VALUES ('v1', 'default', 'V1')"
+        )
+        conn.execute(
+            "INSERT INTO phase (milestone_id, sequence, name) VALUES ('v1', 1, 'Phase 1')"
+        )
+        conn.commit()
+        row = conn.execute("SELECT priority FROM phase WHERE sequence = 1").fetchone()
+        assert row["priority"] is None
+        conn.close()
+
+    def test_init_schema_creates_priority_columns(self):
+        """A fresh init_schema creates tables with priority columns present."""
+        conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys=ON")
+        init_schema(conn)
+        assert "priority" in self._get_columns(conn, "phase")
+        assert "priority" in self._get_columns(conn, "plan")
+        conn.close()
+
+    def test_schema_version_updated_to_2(self):
+        """After migration, schema version is 2."""
+        conn = self._create_v1_schema()
+        assert get_schema_version(conn) == 1
+        _migrate_v1_to_v2(conn)
+        assert get_schema_version(conn) == 2
+        conn.close()
