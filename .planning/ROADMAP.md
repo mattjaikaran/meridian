@@ -12,7 +12,7 @@ Harden Meridian from a working prototype into a reliable tool. The work flows bo
 
 - [ ] **Phase 1: Database Foundation** - Context manager, retry logic, backup API, and pytest config so all subsequent phases build on solid DB patterns
 - [x] **Phase 2: Error Infrastructure** - Structured error hierarchy, logging, HTTP retry, and SQL injection elimination (completed 2026-03-11)
-- [ ] **Phase 3: Command Routing** - All 13 subcommands discoverable as `/meridian:*` slash commands in Claude Code
+- [x] **Phase 3: Command Routing** - All 13 subcommands discoverable as `/meridian:*` slash commands in Claude Code (completed 2026-03-11)
 - [ ] **Phase 4: Test Coverage & Hardening** - Test coverage for untested modules, N+1 query fixes, and known bug fixes
 
 ## Phase Details
@@ -57,7 +57,7 @@ Plans:
   2. Each command `.md` file in `~/.claude/commands/meridian/` is a thin wrapper referencing existing SKILL.md procedures
   3. Running the generator script regenerates all command files from skill definitions without manual editing
   4. Root SKILL.md provides passive project context without conflicting with command invocation
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 03-01-PLAN.md -- Generator script with TDD (discover skills, generate wrappers, update root SKILL.md)
@@ -83,5 +83,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Database Foundation | 1/2 | In Progress|  |
 | 2. Error Infrastructure | 3/3 | Complete   | 2026-03-11 |
-| 3. Command Routing | 1/2 | In Progress | - |
+| 3. Command Routing | 2/2 | Complete   | 2026-03-11 |
 | 4. Test Coverage & Hardening | 0/TBD | Not started | - |
