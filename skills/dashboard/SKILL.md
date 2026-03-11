@@ -6,7 +6,7 @@ Single-view status + metrics: health, progress, velocity, stalls, Nero dispatche
 
 ### Step 1: Load Metrics and State
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.state import get_status, compute_next_action

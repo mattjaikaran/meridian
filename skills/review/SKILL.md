@@ -11,7 +11,7 @@ Run spec compliance + code quality review on completed work.
 
 ### Step 1: Gather Review Context
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.state import get_phase, list_plans
@@ -50,7 +50,7 @@ Launch Agent (subagent_type: general-purpose) with `prompts/code-quality-reviewe
 ### Step 5: Transition Phase
 If both stages pass:
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import transition_phase
 conn = connect(get_db_path('.'))
@@ -63,7 +63,7 @@ If either stage fails, log findings and keep phase in current state.
 
 ### Step 6: Log Review Decision
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_decision
 conn = connect(get_db_path('.'))

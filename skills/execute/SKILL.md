@@ -13,7 +13,7 @@ Run plans via fresh-context subagents with TDD enforcement and 2-stage review.
 
 ### Step 1: Determine What to Execute
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.state import compute_next_action, get_phase, list_plans
@@ -28,7 +28,7 @@ If action is `execute` or `execute_plan`, proceed. Otherwise, show the required 
 
 ### Step 2: Transition Phase to Executing
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import transition_phase
 conn = connect(get_db_path('.'))
@@ -43,7 +43,7 @@ For each wave (starting from 1):
 
 #### 3a. Get plans for current wave
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.state import get_plans_by_wave
@@ -58,7 +58,7 @@ conn.close()
 
 1. **Mark plan as executing**:
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import transition_plan
 conn = connect(get_db_path('.'))
@@ -75,7 +75,7 @@ conn.close()
 
 3. **On success**: Mark plan complete with commit SHA:
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import transition_plan
 conn = connect(get_db_path('.'))
@@ -86,7 +86,7 @@ conn.close()
 
 4. **On failure**: Mark plan failed:
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import transition_plan
 conn = connect(get_db_path('.'))
@@ -101,7 +101,7 @@ conn.close()
 
 Transition phase to verifying:
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import transition_phase
 conn = connect(get_db_path('.'))
@@ -129,7 +129,7 @@ Check each acceptance criterion against the implemented code. Run tests.
 ### Step 7: Complete Phase
 If review passes:
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import transition_phase
 conn = connect(get_db_path('.'))
@@ -144,7 +144,7 @@ If review fails, transition back to `executing` with notes on what needs fixing.
 ### Step 8: Checkpoint
 Create automatic checkpoint after phase completion:
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_checkpoint
 conn = connect(get_db_path('.'))
@@ -155,7 +155,7 @@ conn.close()
 
 ### Step 9: Export and Show Next Action
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.export import export_state
 from scripts.db import connect, get_db_path
 from scripts.state import compute_next_action

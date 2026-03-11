@@ -14,7 +14,7 @@ Check for `.meridian/state.db`. If missing, run `/meridian:init` first.
 
 ### Step 2: Check Current State
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.state import get_status, compute_next_action
@@ -29,7 +29,7 @@ conn.close()
 ### Step 3: Create Milestone (if needed)
 If no active milestone exists, create one from the user's goal:
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_milestone, transition_milestone
 conn = connect(get_db_path('.'))
@@ -48,7 +48,7 @@ Think through the work as an architect:
 
 Create phases in sequence order:
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_phase
 conn = connect(get_db_path('.'))
@@ -68,7 +68,7 @@ Launch an Agent (subagent_type: Explore) with the prompt from `prompts/context-g
 
 The subagent returns a context document. Store it:
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import update_phase, transition_phase
 conn = connect(get_db_path('.'))
@@ -87,7 +87,7 @@ Based on the gathered context, break the phase into executable plans:
 - Mark TDD required/not
 
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_plan, transition_phase
 conn = connect(get_db_path('.'))
@@ -101,7 +101,7 @@ conn.close()
 
 ### Step 7: Export State
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.export import export_state
 export_state('.')
 "
@@ -113,7 +113,7 @@ Display all phases and plans in a table, showing wave assignments and dependenci
 ### Step 9: Record Decisions
 Log any architectural or approach decisions made during planning:
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_decision
 conn = connect(get_db_path('.'))

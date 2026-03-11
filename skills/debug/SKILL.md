@@ -34,7 +34,7 @@
 4. Record hypothesis and result as a decision:
 
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_decision
 conn = connect(get_db_path('.'))
@@ -59,7 +59,7 @@ After 3 failed fix attempts:
 - May need to re-plan the current phase
 
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_decision
 conn = connect(get_db_path('.'))

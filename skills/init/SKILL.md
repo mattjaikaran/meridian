@@ -18,7 +18,7 @@ Look for indicators of project root (`.git/`, `package.json`, `pyproject.toml`, 
 ### Step 2: Initialize Database
 ```bash
 cd <project_root>
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import init
 path = init('.')
 print(f'Database initialized at {path}')
@@ -34,7 +34,7 @@ Use an Explore agent to analyze the project:
 
 ### Step 4: Create Project Record
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_project
 conn = connect(get_db_path('.'))
@@ -46,7 +46,7 @@ conn.close()
 ### Step 5: Create First Milestone (if user provides goal)
 Ask the user what the first milestone should be. If they provide one:
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_milestone, transition_milestone
 conn = connect(get_db_path('.'))

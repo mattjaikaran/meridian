@@ -66,7 +66,7 @@ EOF
 ### Step 6: Record in State
 Update plan commit SHAs and create checkpoint:
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_checkpoint
 conn = connect(get_db_path('.'))
@@ -77,7 +77,7 @@ conn.close()
 
 ### Step 7: Export State
 ```bash
-uv run --project ~/dev/meridian python -c "
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.export import export_state
 export_state('.')
 "
