@@ -1,8 +1,13 @@
 #!/usr/bin/env python3
-"""Meridian database schema initialization and migrations."""
+"""Meridian database schema initialization, migrations, and reliability layer."""
 
+import contextlib
+import functools
+import random
 import sqlite3
 import sys
+import time
+from datetime import UTC, datetime
 from pathlib import Path
 
 SCHEMA_VERSION = 2
@@ -151,9 +156,157 @@ ALTER TABLE plan ADD COLUMN priority TEXT CHECK (priority IN ('critical','high',
 """
 
 
+# -- Exceptions ----------------------------------------------------------------
+
+
+class DatabaseBusyError(Exception):
+    """Raised when database remains locked after all retry attempts."""
+
+    def __init__(self, retries: int, total_wait: float) -> None:
+        self.retries = retries
+        self.total_wait = total_wait
+        super().__init__(
+            f"Database busy after {retries} retries ({total_wait:.1f}s total wait)"
+        )
+
+
+# -- Retry decorator -----------------------------------------------------------
+
+
+def retry_on_busy(max_retries: int = 3, base_delay: float = 0.5):
+    """Decorator that retries on 'database is locked' OperationalError.
+
+    Uses exponential backoff with +/-25% jitter. Raises DatabaseBusyError
+    after exhausting all retries. Does NOT retry other OperationalErrors.
+    """
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            total_wait = 0.0
+            for attempt in range(max_retries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except sqlite3.OperationalError as e:
+                    if "database is locked" not in str(e):
+                        raise
+                    if attempt == max_retries:
+                        raise DatabaseBusyError(max_retries, total_wait) from e
+                    delay = base_delay * (2**attempt)
+                    jitter = random.uniform(-0.25, 0.25) * delay
+                    sleep_time = delay + jitter
+                    time.sleep(sleep_time)
+                    total_wait += sleep_time
+
+        return wrapper
+
+    return decorator
+
+
+# -- Internal connect ----------------------------------------------------------
+
+
+def _connect(db_path: str | Path | None = None) -> sqlite3.Connection:
+    """Connect to the Meridian database with row factory and pragmas enabled.
+
+    Prefer open_project() for new code -- it handles commit/rollback/close.
+    """
+    if db_path is None:
+        db_path = get_db_path()
+    db_path = Path(db_path)
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(db_path))
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA foreign_keys=ON")
+    conn.execute("PRAGMA busy_timeout=5000")
+    return conn
+
+
+# Backward-compatible alias -- prefer open_project() for new code
+connect = _connect
+
+
+# -- Context manager -----------------------------------------------------------
+
+
+@contextlib.contextmanager
+def open_project(path: str | Path | None = None):
+    """Yield a configured sqlite3.Connection that auto-commits on clean exit.
+
+    Rolls back on exception. Closes connection in finally block.
+    For path=":memory:", creates an in-memory connection with schema initialized.
+    """
+    if str(path) == ":memory:":
+        conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys=ON")
+        conn.execute("PRAGMA busy_timeout=5000")
+        init_schema(conn)
+        try:
+            yield conn
+        finally:
+            conn.close()
+        return
+
+    db_path = get_db_path(path) if path is not None else get_db_path()
+    conn = _connect(db_path)
+    try:
+        init_schema(conn, db_path=db_path)
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+# -- Backup --------------------------------------------------------------------
+
+
+def backup_database(
+    source_path: str | Path,
+    backup_dir: Path | None = None,
+    max_backups: int = 100,
+) -> Path:
+    """Create a hot snapshot of the database using connection.backup().
+
+    Returns the path to the backup file.
+    """
+    source_path = Path(source_path)
+    if backup_dir is None:
+        backup_dir = source_path.parent / "backups"
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S_%fZ")
+    backup_path = backup_dir / f"state-{timestamp}.db"
+
+    src_conn = sqlite3.connect(str(source_path))
+    dst_conn = sqlite3.connect(str(backup_path))
+    try:
+        src_conn.backup(dst_conn)
+    finally:
+        dst_conn.close()
+        src_conn.close()
+
+    _prune_backups(backup_dir, max_backups)
+    return backup_path
+
+
+def _prune_backups(backup_dir: Path, max_backups: int) -> None:
+    """Remove oldest backup files when count exceeds max_backups."""
+    backups = sorted(backup_dir.glob("state-*.db"))
+    while len(backups) > max_backups:
+        oldest = backups.pop(0)
+        oldest.unlink()
+
+
+# -- Schema / migrations -------------------------------------------------------
+
+
 def _migrate_v1_to_v2(conn: sqlite3.Connection) -> None:
     """Add priority column to phase and plan tables."""
-    # Check if column already exists (idempotent)
     columns = {row[1] for row in conn.execute("PRAGMA table_info(phase)").fetchall()}
     if "priority" not in columns:
         conn.execute(
@@ -179,21 +332,11 @@ def get_db_path(project_dir: str | Path | None = None) -> Path:
     return project_dir / ".meridian" / "state.db"
 
 
-def connect(db_path: str | Path | None = None) -> sqlite3.Connection:
-    """Connect to the Meridian database with row factory enabled."""
-    if db_path is None:
-        db_path = get_db_path()
-    db_path = Path(db_path)
-    db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(db_path))
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA foreign_keys=ON")
-    return conn
+def init_schema(conn: sqlite3.Connection, db_path: str | Path | None = None) -> None:
+    """Initialize the database schema and run pending migrations.
 
-
-def init_schema(conn: sqlite3.Connection) -> None:
-    """Initialize the database schema and run pending migrations."""
+    If db_path is provided and not :memory:, creates a backup before migration.
+    """
     conn.executescript(SCHEMA_SQL)
     # Record initial schema version if fresh DB
     existing = conn.execute(
@@ -205,6 +348,10 @@ def init_schema(conn: sqlite3.Connection) -> None:
     # Run migrations
     current_version = get_schema_version(conn)
     if current_version < 2:
+        if db_path is not None and str(db_path) != ":memory:":
+            db_path = Path(db_path)
+            if db_path.exists():
+                backup_database(db_path)
         _migrate_v1_to_v2(conn)
 
 
@@ -222,11 +369,8 @@ def get_schema_version(conn: sqlite3.Connection) -> int:
 def init(project_dir: str | Path | None = None) -> Path:
     """Initialize Meridian in a project directory. Returns the db path."""
     db_path = get_db_path(project_dir)
-    conn = connect(db_path)
-    try:
-        init_schema(conn)
-    finally:
-        conn.close()
+    with open_project(project_dir):
+        pass
     return db_path
 
 
@@ -242,10 +386,8 @@ if __name__ == "__main__":
         db_path = init(project_dir)
         print(f"Meridian database initialized at {db_path}")
     elif cmd == "version":
-        db_path = get_db_path(project_dir)
-        conn = connect(db_path)
-        print(f"Schema version: {get_schema_version(conn)}")
-        conn.close()
+        with open_project(project_dir) as conn:
+            print(f"Schema version: {get_schema_version(conn)}")
     else:
         print(f"Unknown command: {cmd}")
         sys.exit(1)
