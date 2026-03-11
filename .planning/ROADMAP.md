@@ -72,7 +72,13 @@ Plans:
   2. `check_auto_advance()` correctly returns `milestone_ready=False` when a phase has incomplete plans
   3. `generate_resume_prompt()`, `compute_progress()`, and `export_state()` each use a single query (or bulk fetch) instead of N+1 loops
   4. `update_nero_dispatch()` distinguishes between `status=None` (not provided) and `status=""` (empty string)
-**Plans**: TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 04-01-PLAN.md -- New test files for dispatch.py, export.py, context_window.py
+- [ ] 04-02-PLAN.md -- Expand existing tests for axis_sync, auto-advance, migrations
+- [ ] 04-03-PLAN.md -- N+1 query fixes in resume.py, metrics.py, export.py
+- [ ] 04-04-PLAN.md -- Bug fixes: auto-advance false positive, nero dispatch truthiness, inline import
 
 ## Progress
 
@@ -84,4 +90,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | 1. Database Foundation | 1/2 | In Progress|  |
 | 2. Error Infrastructure | 3/3 | Complete   | 2026-03-11 |
 | 3. Command Routing | 2/2 | Complete   | 2026-03-11 |
-| 4. Test Coverage & Hardening | 0/TBD | Not started | - |
+| 4. Test Coverage & Hardening | 0/4 | Not started | - |
