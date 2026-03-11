@@ -32,7 +32,7 @@
 
 - [x] **SECR-01**: Dynamic SQL column interpolation replaced with safe_update helper validating against schema
 - [x] **SECR-02**: `add_priority()` table name interpolation replaced with explicit mapping dict
-- [ ] **SECR-03**: `_run_pm_command` in axis_sync uses proper list arguments instead of `command.split()`
+- [x] **SECR-03**: `_run_pm_command` in axis_sync uses proper list arguments instead of `command.split()`
 
 ### Testing
 
@@ -102,7 +102,7 @@
 | ERRL-05 | Phase 2 | Complete |
 | SECR-01 | Phase 2 | Complete |
 | SECR-02 | Phase 2 | Complete |
-| SECR-03 | Phase 2 | Pending |
+| SECR-03 | Phase 2 | Complete |
 | ROUT-01 | Phase 3 | Pending |
 | ROUT-02 | Phase 3 | Pending |
 | ROUT-03 | Phase 3 | Pending |
