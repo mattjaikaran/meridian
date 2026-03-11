@@ -13,7 +13,7 @@ Harden Meridian from a working prototype into a reliable tool. The work flows bo
 - [ ] **Phase 1: Database Foundation** - Context manager, retry logic, backup API, and pytest config so all subsequent phases build on solid DB patterns
 - [x] **Phase 2: Error Infrastructure** - Structured error hierarchy, logging, HTTP retry, and SQL injection elimination (completed 2026-03-11)
 - [x] **Phase 3: Command Routing** - All 13 subcommands discoverable as `/meridian:*` slash commands in Claude Code (completed 2026-03-11)
-- [ ] **Phase 4: Test Coverage & Hardening** - Test coverage for untested modules, N+1 query fixes, and known bug fixes
+- [x] **Phase 4: Test Coverage & Hardening** - Test coverage for untested modules, N+1 query fixes, and known bug fixes (completed 2026-03-11)
 
 ## Phase Details
 
@@ -72,7 +72,7 @@ Plans:
   2. `check_auto_advance()` correctly returns `milestone_ready=False` when a phase has incomplete plans
   3. `generate_resume_prompt()`, `compute_progress()`, and `export_state()` each use a single query (or bulk fetch) instead of N+1 loops
   4. `update_nero_dispatch()` distinguishes between `status=None` (not provided) and `status=""` (empty string)
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 Plans:
 - [ ] 04-01-PLAN.md -- New test files for dispatch.py, export.py, context_window.py
@@ -90,4 +90,4 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | 1. Database Foundation | 1/2 | In Progress|  |
 | 2. Error Infrastructure | 3/3 | Complete   | 2026-03-11 |
 | 3. Command Routing | 2/2 | Complete   | 2026-03-11 |
-| 4. Test Coverage & Hardening | 3/4 | In Progress|  |
+| 4. Test Coverage & Hardening | 4/4 | Complete   | 2026-03-11 |

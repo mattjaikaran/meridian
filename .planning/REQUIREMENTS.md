@@ -50,9 +50,9 @@
 - [x] **QUAL-01**: N+1 queries in `generate_resume_prompt()` replaced with single JOIN query
 - [x] **QUAL-02**: N+1 queries in `compute_progress()` replaced with single aggregated query
 - [x] **QUAL-03**: N+1 queries in `export_state()` replaced with bulk fetch + Python assembly
-- [ ] **QUAL-04**: `check_auto_advance()` milestone_ready flag only true when phase is actually complete
-- [ ] **QUAL-05**: `update_nero_dispatch()` uses `if status is not None:` instead of truthiness check
-- [ ] **QUAL-06**: Inline `timedelta` import in `forecast_completion()` moved to module level
+- [x] **QUAL-04**: `check_auto_advance()` milestone_ready flag only true when phase is actually complete
+- [x] **QUAL-05**: `update_nero_dispatch()` uses `if status is not None:` instead of truthiness check
+- [x] **QUAL-06**: Inline `timedelta` import in `forecast_completion()` moved to module level
 
 ## v2 Requirements
 
@@ -116,9 +116,9 @@
 | QUAL-01 | Phase 4 | Complete |
 | QUAL-02 | Phase 4 | Complete |
 | QUAL-03 | Phase 4 | Complete |
-| QUAL-04 | Phase 4 | Pending |
-| QUAL-05 | Phase 4 | Pending |
-| QUAL-06 | Phase 4 | Pending |
+| QUAL-04 | Phase 4 | Complete |
+| QUAL-05 | Phase 4 | Complete |
+| QUAL-06 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 31 total
