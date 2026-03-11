@@ -35,6 +35,42 @@ MILESTONE_TRANSITIONS = {
     "archived": [],
 }
 
+ALLOWED_COLUMNS = {
+    "project": {"name", "repo_path", "repo_url", "tech_stack", "nero_endpoint",
+                "axis_project_id", "updated_at"},
+    "milestone": {"status", "completed_at"},
+    "phase": {"name", "description", "context_doc", "acceptance_criteria",
+              "axis_ticket_id", "status", "started_at", "completed_at", "priority"},
+    "plan": {"name", "description", "wave", "tdd_required", "files_to_create",
+             "files_to_modify", "test_command", "executor_type", "status",
+             "started_at", "completed_at", "commit_sha", "error_message", "priority"},
+    "quick_task": {"status", "completed_at", "commit_sha"},
+    "nero_dispatch": {"status", "pr_url", "completed_at"},
+}
+
+_PRIORITY_SQL = {
+    "phase": "UPDATE phase SET priority = ? WHERE id = ?",
+    "plan": "UPDATE plan SET priority = ? WHERE id = ?",
+}
+
+
+def safe_update(conn, table: str, row_id, updates: dict, id_column: str = "id") -> None:
+    """Update a row with column allowlist validation.
+
+    Raises ValueError for unknown tables or invalid columns.
+    """
+    allowed = ALLOWED_COLUMNS.get(table)
+    if allowed is None:
+        raise ValueError(f"Unknown table: {table}")
+    invalid = set(updates.keys()) - allowed
+    if invalid:
+        raise ValueError(f"Invalid columns for {table}: {invalid}")
+    if not updates:
+        return
+    set_clause = ", ".join(f"{k} = ?" for k in updates)
+    values = list(updates.values()) + [row_id]
+    conn.execute(f"UPDATE {table} SET {set_clause} WHERE {id_column} = ?", values)
+
 
 def _now() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -94,9 +130,7 @@ def update_project(conn: sqlite3.Connection, project_id: str, **kwargs) -> dict 
     if "tech_stack" in updates and isinstance(updates["tech_stack"], list):
         updates["tech_stack"] = json.dumps(updates["tech_stack"])
     updates["updated_at"] = _now()
-    set_clause = ", ".join(f"{k} = ?" for k in updates)
-    values = list(updates.values()) + [project_id]
-    conn.execute(f"UPDATE project SET {set_clause} WHERE id = ?", values)
+    safe_update(conn, "project", project_id, updates)
     conn.commit()
     return get_project(conn, project_id)
 
@@ -143,9 +177,7 @@ def transition_milestone(conn: sqlite3.Connection, milestone_id: str, new_status
     updates = {"status": new_status}
     if new_status == "complete":
         updates["completed_at"] = _now()
-    set_clause = ", ".join(f"{k} = ?" for k in updates)
-    values = list(updates.values()) + [milestone_id]
-    conn.execute(f"UPDATE milestone SET {set_clause} WHERE id = ?", values)
+    safe_update(conn, "milestone", milestone_id, updates)
     conn.commit()
     return get_milestone(conn, milestone_id)
 
@@ -211,9 +243,7 @@ def transition_phase(conn: sqlite3.Connection, phase_id: int, new_status: str) -
         updates["started_at"] = _now()
     if new_status == "complete":
         updates["completed_at"] = _now()
-    set_clause = ", ".join(f"{k} = ?" for k in updates)
-    values = list(updates.values()) + [phase_id]
-    conn.execute(f"UPDATE phase SET {set_clause} WHERE id = ?", values)
+    safe_update(conn, "phase", phase_id, updates)
     conn.commit()
     return get_phase(conn, phase_id)
 
@@ -225,9 +255,7 @@ def update_phase(conn: sqlite3.Connection, phase_id: int, **kwargs) -> dict | No
         return get_phase(conn, phase_id)
     if "acceptance_criteria" in updates and isinstance(updates["acceptance_criteria"], list):
         updates["acceptance_criteria"] = json.dumps(updates["acceptance_criteria"])
-    set_clause = ", ".join(f"{k} = ?" for k in updates)
-    values = list(updates.values()) + [phase_id]
-    conn.execute(f"UPDATE phase SET {set_clause} WHERE id = ?", values)
+    safe_update(conn, "phase", phase_id, updates)
     conn.commit()
     return get_phase(conn, phase_id)
 
@@ -319,9 +347,7 @@ def transition_plan(
         updates["commit_sha"] = commit_sha
     if error_message:
         updates["error_message"] = error_message
-    set_clause = ", ".join(f"{k} = ?" for k in updates)
-    values = list(updates.values()) + [plan_id]
-    conn.execute(f"UPDATE plan SET {set_clause} WHERE id = ?", values)
+    safe_update(conn, "plan", plan_id, updates)
     conn.commit()
     return get_plan(conn, plan_id)
 
@@ -345,9 +371,7 @@ def update_plan(conn: sqlite3.Connection, plan_id: int, **kwargs) -> dict | None
             updates[field] = json.dumps(updates[field])
     if "tdd_required" in updates and isinstance(updates["tdd_required"], bool):
         updates["tdd_required"] = 1 if updates["tdd_required"] else 0
-    set_clause = ", ".join(f"{k} = ?" for k in updates)
-    values = list(updates.values()) + [plan_id]
-    conn.execute(f"UPDATE plan SET {set_clause} WHERE id = ?", values)
+    safe_update(conn, "plan", plan_id, updates)
     conn.commit()
     return get_plan(conn, plan_id)
 
@@ -489,9 +513,7 @@ def transition_quick_task(
         updates["completed_at"] = _now()
     if commit_sha:
         updates["commit_sha"] = commit_sha
-    set_clause = ", ".join(f"{k} = ?" for k in updates)
-    values = list(updates.values()) + [task_id]
-    conn.execute(f"UPDATE quick_task SET {set_clause} WHERE id = ?", values)
+    safe_update(conn, "quick_task", task_id, updates)
     conn.commit()
     row = conn.execute("SELECT * FROM quick_task WHERE id = ?", (task_id,)).fetchone()
     return _row_to_dict(row)
@@ -532,9 +554,7 @@ def update_nero_dispatch(
     if status in ("completed", "failed"):
         updates["completed_at"] = _now()
     if updates:
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
-        values = list(updates.values()) + [dispatch_id]
-        conn.execute(f"UPDATE nero_dispatch SET {set_clause} WHERE id = ?", values)
+        safe_update(conn, "nero_dispatch", dispatch_id, updates)
         conn.commit()
     row = conn.execute("SELECT * FROM nero_dispatch WHERE id = ?", (dispatch_id,)).fetchone()
     return _row_to_dict(row)
@@ -614,13 +634,11 @@ def add_priority(
     """
     if priority not in VALID_PRIORITIES:
         raise ValueError(f"Invalid priority '{priority}'. Valid: {VALID_PRIORITIES}")
-    if entity_type not in ("phase", "plan"):
+    sql = _PRIORITY_SQL.get(entity_type)
+    if sql is None:
         raise ValueError(f"Invalid entity_type '{entity_type}'. Must be 'phase' or 'plan'.")
 
-    conn.execute(
-        f"UPDATE {entity_type} SET priority = ? WHERE id = ?",  # noqa: S608
-        (priority, entity_id),
-    )
+    conn.execute(sql, (priority, entity_id))
     conn.commit()
 
     if entity_type == "phase":
