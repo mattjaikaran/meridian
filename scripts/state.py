@@ -7,6 +7,8 @@ import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
+from scripts.db import StateTransitionError
+
 # Valid state transitions
 PHASE_TRANSITIONS = {
     "planned": ["context_gathered", "blocked"],
@@ -170,7 +172,7 @@ def transition_milestone(conn: sqlite3.Connection, milestone_id: str, new_status
     if not current:
         raise ValueError(f"Milestone {milestone_id} not found")
     if new_status not in MILESTONE_TRANSITIONS.get(current["status"], []):
-        raise ValueError(
+        raise StateTransitionError(
             f"Invalid transition: {current['status']} → {new_status}. "
             f"Valid: {MILESTONE_TRANSITIONS[current['status']]}"
         )
@@ -234,7 +236,7 @@ def transition_phase(conn: sqlite3.Connection, phase_id: int, new_status: str) -
     if not current:
         raise ValueError(f"Phase {phase_id} not found")
     if new_status not in PHASE_TRANSITIONS.get(current["status"], []):
-        raise ValueError(
+        raise StateTransitionError(
             f"Invalid phase transition: {current['status']} → {new_status}. "
             f"Valid: {PHASE_TRANSITIONS[current['status']]}"
         )
@@ -334,7 +336,7 @@ def transition_plan(
     if not current:
         raise ValueError(f"Plan {plan_id} not found")
     if new_status not in PLAN_TRANSITIONS.get(current["status"], []):
-        raise ValueError(
+        raise StateTransitionError(
             f"Invalid plan transition: {current['status']} → {new_status}. "
             f"Valid: {PLAN_TRANSITIONS[current['status']]}"
         )
@@ -507,7 +509,7 @@ def transition_quick_task(
     if not current:
         raise ValueError(f"Quick task {task_id} not found")
     if new_status not in valid.get(current["status"], []):
-        raise ValueError(f"Invalid quick task transition: {current['status']} → {new_status}")
+        raise StateTransitionError(f"Invalid quick task transition: {current['status']} → {new_status}")
     updates = {"status": new_status}
     if new_status == "complete":
         updates["completed_at"] = _now()

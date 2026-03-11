@@ -3,6 +3,7 @@
 
 import pytest
 
+from scripts.db import StateTransitionError
 from scripts.state import (
     add_priority,
     compute_next_action,
@@ -80,7 +81,7 @@ class TestMilestone:
     def test_invalid_transition(self, db):
         create_project(db, name="App", repo_path="/dev/app")
         create_milestone(db, "v1.0", "V1")
-        with pytest.raises(ValueError, match="Invalid transition"):
+        with pytest.raises(StateTransitionError, match="Invalid transition"):
             transition_milestone(db, "v1.0", "complete")  # can't skip active
 
 
@@ -130,7 +131,7 @@ class TestPhase:
         create_project(db, name="App", repo_path="/dev/app")
         create_milestone(db, "v1.0", "V1")
         p = create_phase(db, "v1.0", "Phase 1")
-        with pytest.raises(ValueError, match="Invalid phase transition"):
+        with pytest.raises(StateTransitionError, match="Invalid phase transition"):
             transition_phase(db, p["id"], "executing")  # can't skip context_gathered
 
     def test_block_and_unblock(self, db):
@@ -202,7 +203,7 @@ class TestPlan:
     def test_invalid_transition(self, seeded_db):
         phase = list_phases(seeded_db, "v1.0")[0]
         p = create_plan(seeded_db, phase["id"], "Plan", "Do it")
-        with pytest.raises(ValueError, match="Invalid plan transition"):
+        with pytest.raises(StateTransitionError, match="Invalid plan transition"):
             transition_plan(seeded_db, p["id"], "complete")  # can't skip executing
 
 
