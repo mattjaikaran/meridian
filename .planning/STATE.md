@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Phase 3 context gathered
-last_updated: "2026-03-11T05:05:37.175Z"
-last_activity: 2026-03-10 -- Completed Plan 02-03 (dispatch/sync retry, axis command fix)
+status: in_progress
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-03-11T05:19:49Z"
+last_activity: 2026-03-11 -- Completed Plan 03-01 (command generator TDD)
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
-  percent: 100
+  total_plans: 7
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State
@@ -21,23 +21,23 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** Deterministic workflow state that survives context resets -- every resume produces the exact same prompt from the same database state.
-**Current focus:** Phase 2: Error Infrastructure
+**Current focus:** Phase 3: Command Routing
 
 ## Current Position
 
-Phase: 2 of 4 (Error Infrastructure)
-Plan: 3 of 3 complete in current phase
-Status: Phase 2 complete, ready for Phase 3
-Last activity: 2026-03-10 -- Completed Plan 02-03 (dispatch/sync retry, axis command fix)
+Phase: 3 of 4 (Command Routing)
+Plan: 1 of 2 complete in current phase
+Status: Plan 03-01 complete, ready for Plan 03-02
+Last activity: 2026-03-11 -- Completed Plan 03-01 (command generator TDD)
 
-Progress: [██████████] 100% (5/5 plans)
+Progress: [████████░░] 86% (6/7 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
+- Total plans completed: 6
 - Average duration: 3min
-- Total execution time: 0.25 hours
+- Total execution time: 0.28 hours
 
 **By Phase:**
 
@@ -45,9 +45,10 @@ Progress: [██████████] 100% (5/5 plans)
 |-------|-------|-------|----------|
 | 01-database-foundation | 2 | 8min | 4min |
 | 02-error-infrastructure | 3 | 8min | 3min |
+| 03-command-routing | 1 | 2min | 2min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (4min), 01-02 (4min), 02-01 (2min), 02-02 (3min), 02-03 (3min)
+- Last 5 plans: 01-02 (4min), 02-01 (2min), 02-02 (3min), 02-03 (3min), 03-01 (2min)
 - Trend: stable
 
 *Updated after each plan completion*
@@ -74,6 +75,10 @@ Recent decisions affecting current work:
 - [02-03]: _nero_rpc returns dict (never None) -- callers use try/except NeroUnreachableError
 - [02-03]: push_state_to_nero lets NeroUnreachableError propagate (push failure should be visible)
 - [02-03]: check_dispatch_status catches NeroUnreachableError silently (non-critical status poll)
+- [03-01]: Absolute paths in @ references (not tilde) matching GSD command pattern
+- [03-01]: argument-hint omitted from frontmatter when empty (cleaner output)
+- [03-01]: Root SKILL.md uses 'Available Skills' heading (not 'Commands') to avoid routing conflict
+- [03-01]: Generated marker as HTML comment before frontmatter for safe detection
 
 ### Pending Todos
 
@@ -86,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-11T05:05:37.172Z
-Stopped at: Phase 3 context gathered
-Resume file: .planning/phases/03-command-routing/03-CONTEXT.md
+Last session: 2026-03-11T05:19:49Z
+Stopped at: Completed 03-01-PLAN.md
+Resume file: .planning/phases/03-command-routing/03-01-SUMMARY.md

@@ -83,5 +83,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Database Foundation | 1/2 | In Progress|  |
 | 2. Error Infrastructure | 3/3 | Complete   | 2026-03-11 |
-| 3. Command Routing | 0/2 | Not started | - |
+| 3. Command Routing | 1/2 | In Progress | - |
 | 4. Test Coverage & Hardening | 0/TBD | Not started | - |

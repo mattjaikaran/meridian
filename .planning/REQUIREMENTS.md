@@ -7,10 +7,10 @@
 
 ### Command Routing
 
-- [ ] **ROUT-01**: All 13 subcommands are discoverable as `/meridian:*` slash commands in Claude Code
-- [ ] **ROUT-02**: Each command is a thin `.md` wrapper in `~/.claude/commands/meridian/` referencing existing SKILL.md procedures
-- [ ] **ROUT-03**: A Python generator script produces command `.md` files from skill definitions
-- [ ] **ROUT-04**: Root SKILL.md provides passive project context without conflicting with command routing
+- [x] **ROUT-01**: All 13 subcommands are discoverable as `/meridian:*` slash commands in Claude Code
+- [x] **ROUT-02**: Each command is a thin `.md` wrapper in `~/.claude/commands/meridian/` referencing existing SKILL.md procedures
+- [x] **ROUT-03**: A Python generator script produces command `.md` files from skill definitions
+- [x] **ROUT-04**: Root SKILL.md provides passive project context without conflicting with command routing
 
 ### Database Reliability
 
@@ -103,10 +103,10 @@
 | SECR-01 | Phase 2 | Complete |
 | SECR-02 | Phase 2 | Complete |
 | SECR-03 | Phase 2 | Complete |
-| ROUT-01 | Phase 3 | Pending |
-| ROUT-02 | Phase 3 | Pending |
-| ROUT-03 | Phase 3 | Pending |
-| ROUT-04 | Phase 3 | Pending |
+| ROUT-01 | Phase 3 | Complete |
+| ROUT-02 | Phase 3 | Complete |
+| ROUT-03 | Phase 3 | Complete |
+| ROUT-04 | Phase 3 | Complete |
 | TEST-03 | Phase 4 | Pending |
 | TEST-04 | Phase 4 | Pending |
 | TEST-05 | Phase 4 | Pending |
