@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Tests for Meridian bidirectional Nero sync."""
 
-from unittest.mock import patch
+import json
+import urllib.error
+from unittest.mock import MagicMock, patch
 
 import pytest
 
+from scripts.db import NeroUnreachableError
 from scripts.state import (
     create_milestone,
     create_nero_dispatch,
@@ -18,6 +21,7 @@ from scripts.state import (
     transition_plan,
 )
 from scripts.sync import (
+    _nero_rpc,
     get_dispatch_summary,
     pull_dispatch_status,
     push_state_to_nero,
@@ -42,6 +46,46 @@ def seeded_db(db):
     create_phase(db, "v1.0", "Foundation", description="Build base")
     create_phase(db, "v1.0", "Features", description="Add features")
     return db
+
+
+# ── _nero_rpc Retry Tests ────────────────────────────────────────────────────
+
+
+class TestNeroRpcRetry:
+    """Tests for _nero_rpc retry behavior with @retry_on_http_error."""
+
+    def test_nero_rpc_retries_on_url_error(self):
+        """_nero_rpc retries on URLError, eventually succeeds."""
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = json.dumps({"status": "ok"}).encode()
+        mock_resp.__enter__ = lambda s: s
+        mock_resp.__exit__ = MagicMock(return_value=False)
+
+        call_count = 0
+
+        def side_effect(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count < 3:
+                raise urllib.error.URLError("Connection refused")
+            return mock_resp
+
+        with patch("urllib.request.urlopen", side_effect=side_effect):
+            with patch("time.sleep"):  # Skip actual delays
+                result = _nero_rpc("http://localhost:7655", "test_method", {"key": "val"})
+
+        assert result == {"status": "ok"}
+        assert call_count == 3
+
+    def test_nero_rpc_raises_nero_unreachable(self):
+        """_nero_rpc raises NeroUnreachableError after exhausting retries (not None)."""
+        with patch(
+            "urllib.request.urlopen",
+            side_effect=urllib.error.URLError("Connection refused"),
+        ):
+            with patch("time.sleep"):
+                with pytest.raises(NeroUnreachableError):
+                    _nero_rpc("http://localhost:7655", "test_method", {})
 
 
 # ── Pull Dispatch Status Tests ───────────────────────────────────────────────
@@ -122,6 +166,7 @@ class TestPullDispatchStatus:
         assert "failed" in updated_plan["error_message"]
 
     def test_pull_unreachable_nero(self, seeded_db):
+        """pull_dispatch_status catches NeroUnreachableError per-dispatch and continues."""
         phase = list_phases(seeded_db, "v1.0")[0]
         pid = phase["id"]
         transition_phase(seeded_db, pid, "context_gathered")
@@ -139,7 +184,7 @@ class TestPullDispatchStatus:
             nero_task_id="nero-789",
         )
 
-        with patch("scripts.sync._nero_rpc", return_value=None):
+        with patch("scripts.sync._nero_rpc", side_effect=NeroUnreachableError("unreachable")):
             results = pull_dispatch_status(seeded_db)
 
         assert results[0]["status"] == "unreachable"
@@ -223,14 +268,14 @@ class TestPushState:
         result = push_state_to_nero(seeded_db)
         assert result["tickets_pushed"] == 0
 
-    def test_nero_unreachable(self, seeded_db):
+    def test_push_state_raises_on_failure(self, seeded_db):
+        """push_state_to_nero lets NeroUnreachableError propagate."""
         phase = list_phases(seeded_db, "v1.0")[0]
         create_plan(seeded_db, phase["id"], "Plan 1", "Do it")
 
-        with patch("scripts.sync._nero_rpc", return_value=None):
-            result = push_state_to_nero(seeded_db)
-
-        assert result["status"] == "error"
+        with patch("scripts.sync._nero_rpc", side_effect=NeroUnreachableError("unreachable")):
+            with pytest.raises(NeroUnreachableError):
+                push_state_to_nero(seeded_db)
 
 
 # ── Sync All Tests ───────────────────────────────────────────────────────────
