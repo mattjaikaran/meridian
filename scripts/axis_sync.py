@@ -32,13 +32,16 @@ AXIS_TO_MERIDIAN = {
 }
 
 
-def _run_pm_command(command: str) -> str:
-    """Run a pm.sh command and return output."""
+def _run_pm_command(args: list[str]) -> str:
+    """Run a pm.sh command and return output.
+
+    Args are passed as a list to avoid shell splitting issues with spaces.
+    """
     pm_script = Path.home() / "zeroclaw" / "skills" / "kanban" / "pm.sh"
     if not pm_script.exists():
         raise FileNotFoundError(f"PM script not found at {pm_script}")
     result = subprocess.run(
-        ["bash", str(pm_script)] + command.split(),
+        ["bash", str(pm_script)] + args,
         capture_output=True,
         text=True,
         timeout=30,
@@ -75,7 +78,7 @@ def sync_phase_to_axis(
             ticket_id = phase["axis_ticket_id"]
 
             try:
-                _run_pm_command(f"ticket move {ticket_id} {axis_status}")
+                _run_pm_command(["ticket", "move", ticket_id, axis_status])
                 synced.append(
                     {
                         "phase": phase["name"],
@@ -124,8 +127,8 @@ def create_axis_tickets_for_phases(
             axis_project = project["axis_project_id"]
             try:
                 output = _run_pm_command(
-                    f'ticket add {axis_project} "{phase["name"]}" '
-                    f'--description "{phase.get("description", "")}"'
+                    ["ticket", "add", axis_project, phase["name"],
+                     "--description", phase.get("description", "")]
                 )
                 # Parse ticket ID from output (format: "Created ticket PROJ-123")
                 ticket_id = None
