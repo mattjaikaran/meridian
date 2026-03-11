@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 02-01-PLAN.md (error hierarchy, logging, HTTP retry)
-last_updated: "2026-03-11T02:15:23.895Z"
-last_activity: 2026-03-10 -- Completed Plan 02-01 (error hierarchy, logging, HTTP retry)
+stopped_at: Completed 02-03-PLAN.md (dispatch/sync retry, axis command fix)
+last_updated: "2026-03-11T02:20:38.000Z"
+last_activity: 2026-03-10 -- Completed Plan 02-03 (dispatch/sync retry, axis command fix)
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 3
-  percent: 60
+  completed_plans: 5
+  percent: 100
 ---
 
 # Project State
@@ -26,29 +26,29 @@ See: .planning/PROJECT.md (updated 2026-03-10)
 ## Current Position
 
 Phase: 2 of 4 (Error Infrastructure)
-Plan: 1 of 3 complete in current phase
-Status: Executing Phase 2, Plan 02-01 complete
-Last activity: 2026-03-10 -- Completed Plan 02-01 (error hierarchy, logging, HTTP retry)
+Plan: 3 of 3 complete in current phase
+Status: Phase 2 complete, ready for Phase 3
+Last activity: 2026-03-10 -- Completed Plan 02-03 (dispatch/sync retry, axis command fix)
 
-Progress: [██████░░░░] 60% (3/5 plans)
+Progress: [██████████] 100% (5/5 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3
+- Total plans completed: 5
 - Average duration: 3min
-- Total execution time: 0.17 hours
+- Total execution time: 0.25 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-database-foundation | 2 | 8min | 4min |
-| 02-error-infrastructure | 1 | 2min | 2min |
+| 02-error-infrastructure | 3 | 8min | 3min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (4min), 01-02 (4min), 02-01 (2min)
-- Trend: improving
+- Last 5 plans: 01-01 (4min), 01-02 (4min), 02-01 (2min), 02-02 (3min), 02-03 (3min)
+- Trend: stable
 
 *Updated after each plan completion*
 
@@ -69,6 +69,11 @@ Recent decisions affecting current work:
 - [02-01]: No jitter on HTTP retry (not competing for shared resource like SQLite busy)
 - [02-01]: Lazy logging init via _logging_configured flag in open_project()
 - [02-01]: setup_logging uses force=True for test reconfigurability
+- [02-02]: Per-function allowed sets and ALLOWED_COLUMNS serve different purposes (kwargs filtering vs security validation)
+- [02-02]: Entity-not-found errors remain as ValueError (not StateTransitionError)
+- [02-03]: _nero_rpc returns dict (never None) -- callers use try/except NeroUnreachableError
+- [02-03]: push_state_to_nero lets NeroUnreachableError propagate (push failure should be visible)
+- [02-03]: check_dispatch_status catches NeroUnreachableError silently (non-critical status poll)
 
 ### Pending Todos
 

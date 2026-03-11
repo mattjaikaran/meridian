@@ -11,7 +11,7 @@ Harden Meridian from a working prototype into a reliable tool. The work flows bo
 - Decimal phases (e.g., 2.1): Urgent insertions (marked with INSERTED)
 
 - [ ] **Phase 1: Database Foundation** - Context manager, retry logic, backup API, and pytest config so all subsequent phases build on solid DB patterns
-- [ ] **Phase 2: Error Infrastructure** - Structured error hierarchy, logging, HTTP retry, and SQL injection elimination
+- [x] **Phase 2: Error Infrastructure** - Structured error hierarchy, logging, HTTP retry, and SQL injection elimination (completed 2026-03-11)
 - [ ] **Phase 3: Command Routing** - All 13 subcommands discoverable as `/meridian:*` slash commands in Claude Code
 - [ ] **Phase 4: Test Coverage & Hardening** - Test coverage for untested modules, N+1 query fixes, and known bug fixes
 
@@ -41,7 +41,7 @@ Plans:
   2. Nero dispatch failures raise `NeroUnreachableError` after 3 retries -- never silently return None
   3. All log output goes to stderr via stdlib `logging` -- no `print()` calls remain for operational output
   4. Dynamic SQL interpolation is gone -- `safe_update()` validates columns against schema, `add_priority()` uses an explicit table mapping
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 02-01-PLAN.md -- Error hierarchy, logging setup, and HTTP retry decorator in db.py
@@ -78,6 +78,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Database Foundation | 1/2 | In Progress|  |
-| 2. Error Infrastructure | 0/3 | Not started | - |
+| 2. Error Infrastructure | 3/3 | Complete   | 2026-03-11 |
 | 3. Command Routing | 0/TBD | Not started | - |
 | 4. Test Coverage & Hardening | 0/TBD | Not started | - |

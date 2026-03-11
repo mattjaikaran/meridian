@@ -23,15 +23,15 @@
 ### Error Handling & Logging
 
 - [x] **ERRL-01**: `MeridianError` base class with `StateTransitionError`, `DatabaseBusyError`, `NeroUnreachableError` subclasses
-- [ ] **ERRL-02**: All state transition failures raise `StateTransitionError` instead of generic `ValueError`
+- [x] **ERRL-02**: All state transition failures raise `StateTransitionError` instead of generic `ValueError`
 - [x] **ERRL-03**: Structured logging via stdlib `logging` module to stderr, replacing ad-hoc `print()` calls
 - [x] **ERRL-04**: Nero HTTP dispatch/sync calls retry with exponential backoff (3 attempts, 1s/2s/4s)
 - [x] **ERRL-05**: Failed Nero calls raise `NeroUnreachableError` after retry exhaustion instead of returning None
 
 ### Security
 
-- [ ] **SECR-01**: Dynamic SQL column interpolation replaced with safe_update helper validating against schema
-- [ ] **SECR-02**: `add_priority()` table name interpolation replaced with explicit mapping dict
+- [x] **SECR-01**: Dynamic SQL column interpolation replaced with safe_update helper validating against schema
+- [x] **SECR-02**: `add_priority()` table name interpolation replaced with explicit mapping dict
 - [ ] **SECR-03**: `_run_pm_command` in axis_sync uses proper list arguments instead of `command.split()`
 
 ### Testing
@@ -96,12 +96,12 @@
 | TEST-01 | Phase 1 | Complete |
 | TEST-02 | Phase 1 | Complete |
 | ERRL-01 | Phase 2 | Complete |
-| ERRL-02 | Phase 2 | Pending |
+| ERRL-02 | Phase 2 | Complete |
 | ERRL-03 | Phase 2 | Complete |
 | ERRL-04 | Phase 2 | Complete |
 | ERRL-05 | Phase 2 | Complete |
-| SECR-01 | Phase 2 | Pending |
-| SECR-02 | Phase 2 | Pending |
+| SECR-01 | Phase 2 | Complete |
+| SECR-02 | Phase 2 | Complete |
 | SECR-03 | Phase 2 | Pending |
 | ROUT-01 | Phase 3 | Pending |
 | ROUT-02 | Phase 3 | Pending |
