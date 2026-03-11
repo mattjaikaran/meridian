@@ -2,11 +2,11 @@
 """Bidirectional Nero sync — pull dispatch status and push state for scheduling."""
 
 import json
+import logging
 import sqlite3
-import urllib.error
 import urllib.request
 
-from scripts.db import open_project
+from scripts.db import NeroUnreachableError, open_project, retry_on_http_error
 from scripts.state import (
     get_plan,
     get_project,
@@ -16,9 +16,16 @@ from scripts.state import (
     update_nero_dispatch,
 )
 
+logger = logging.getLogger(__name__)
 
-def _nero_rpc(endpoint: str, method: str, params: dict, timeout: int = 10) -> dict | None:
-    """Make an RPC call to Nero. Returns response dict or None on failure."""
+
+@retry_on_http_error(max_retries=3, base_delay=1.0)
+def _nero_rpc(endpoint: str, method: str, params: dict, timeout: int = 10) -> dict:
+    """Make an RPC call to Nero. Returns response dict.
+
+    Retries on transient HTTP/network errors. Raises NeroUnreachableError
+    after exhausting retries.
+    """
     url = f"{endpoint.rstrip('/')}/rpc"
     payload = {"method": method, "params": params}
     req = urllib.request.Request(
@@ -27,11 +34,8 @@ def _nero_rpc(endpoint: str, method: str, params: dict, timeout: int = 10) -> di
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read().decode("utf-8"))
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError):
-        return None
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode("utf-8"))
 
 
 def pull_dispatch_status(
@@ -66,9 +70,9 @@ def pull_dispatch_status(
         if not dispatch.get("nero_task_id"):
             continue
 
-        result = _nero_rpc(endpoint, "get_task_status", {"task_id": dispatch["nero_task_id"]})
-
-        if not result:
+        try:
+            result = _nero_rpc(endpoint, "get_task_status", {"task_id": dispatch["nero_task_id"]})
+        except NeroUnreachableError:
             updates.append(
                 {
                     "dispatch_id": dispatch["id"],
@@ -179,9 +183,6 @@ def push_state_to_nero(
         {"project": project["name"], "tickets": tickets},
         timeout=30,
     )
-
-    if result is None:
-        return {"status": "error", "message": "Could not reach Nero"}
 
     return {
         "status": "ok",

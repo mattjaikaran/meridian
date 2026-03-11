@@ -2,11 +2,11 @@
 """Nero HTTP dispatch client — sends plans to Mac Mini for autonomous execution."""
 
 import json
-import urllib.error
+import logging
 import urllib.request
 from pathlib import Path
 
-from scripts.db import open_project
+from scripts.db import NeroUnreachableError, open_project, retry_on_http_error
 from scripts.state import (
     create_nero_dispatch,
     get_phase,
@@ -15,6 +15,21 @@ from scripts.state import (
     list_plans,
     update_nero_dispatch,
 )
+
+logger = logging.getLogger(__name__)
+
+
+@retry_on_http_error()
+def _send_to_nero(url: str, payload: dict, timeout: int = 30) -> dict:
+    """Send a JSON-RPC request to Nero. Retries on transient errors."""
+    req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode("utf-8"))
 
 
 def dispatch_plan(
@@ -78,21 +93,7 @@ def dispatch_plan(
         endpoint = project["nero_endpoint"].rstrip("/")
         url = f"{endpoint}/rpc"
 
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-
-        try:
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                result = json.loads(resp.read().decode("utf-8"))
-        except urllib.error.URLError as e:
-            return {
-                "status": "error",
-                "message": f"Failed to connect to Nero at {url}: {e}",
-            }
+        result = _send_to_nero(url, payload, timeout=30)
 
         # Record dispatch
         nero_task_id = result.get("task_id")
@@ -178,22 +179,15 @@ def check_dispatch_status(
                 "method": "get_task_status",
                 "params": {"task_id": dispatch["nero_task_id"]},
             }
-            req = urllib.request.Request(
-                url,
-                data=json.dumps(payload).encode("utf-8"),
-                headers={"Content-Type": "application/json"},
-                method="POST",
-            )
             try:
-                with urllib.request.urlopen(req, timeout=10) as resp:
-                    result = json.loads(resp.read().decode("utf-8"))
-                    new_status = result.get("status")
-                    pr_url = result.get("pr_url")
-                    if new_status and new_status != dispatch["status"]:
-                        dispatch = update_nero_dispatch(
-                            conn, dispatch_id, status=new_status, pr_url=pr_url
-                        )
-            except urllib.error.URLError:
+                result = _send_to_nero(url, payload, timeout=10)
+                new_status = result.get("status")
+                pr_url = result.get("pr_url")
+                if new_status and new_status != dispatch["status"]:
+                    dispatch = update_nero_dispatch(
+                        conn, dispatch_id, status=new_status, pr_url=pr_url
+                    )
+            except NeroUnreachableError:
                 pass  # Can't reach Nero, return cached status
 
         return dispatch
