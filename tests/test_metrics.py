@@ -1,15 +1,8 @@
 #!/usr/bin/env python3
 """Tests for Meridian PM metrics engine."""
 
-import sqlite3
-import sys
-from pathlib import Path
-
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from scripts.db import init_schema
 from scripts.metrics import (
     compute_cycle_times,
     compute_progress,
@@ -27,28 +20,6 @@ from scripts.state import (
     transition_phase,
     transition_plan,
 )
-
-
-@pytest.fixture
-def db():
-    """In-memory DB with schema."""
-    conn = sqlite3.connect(":memory:")
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys=ON")
-    init_schema(conn)
-    yield conn
-    conn.close()
-
-
-@pytest.fixture
-def seeded_db(db):
-    """DB with project, active milestone, 2 phases, plans."""
-    create_project(db, name="Test App", repo_path="/tmp/test")
-    create_milestone(db, "v1.0", "Version 1.0")
-    transition_milestone(db, "v1.0", "active")
-    create_phase(db, "v1.0", "Foundation", description="Build base")
-    create_phase(db, "v1.0", "Features", description="Add features")
-    return db
 
 
 # ── Velocity Tests ───────────────────────────────────────────────────────────

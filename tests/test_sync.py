@@ -1,16 +1,10 @@
 #!/usr/bin/env python3
 """Tests for Meridian bidirectional Nero sync."""
 
-import sqlite3
-import sys
-from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from scripts.db import init_schema
 from scripts.state import (
     create_milestone,
     create_nero_dispatch,
@@ -32,19 +26,11 @@ from scripts.sync import (
 
 
 @pytest.fixture
-def db():
-    """In-memory DB with schema."""
-    conn = sqlite3.connect(":memory:")
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys=ON")
-    init_schema(conn)
-    yield conn
-    conn.close()
-
-
-@pytest.fixture
 def seeded_db(db):
-    """DB with project (nero_endpoint set), active milestone, phases, plans."""
+    """DB with project (nero_endpoint set), active milestone, phases, plans.
+
+    Overrides the shared conftest seeded_db because sync tests need nero_endpoint.
+    """
     create_project(
         db,
         name="Test App",

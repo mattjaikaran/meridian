@@ -2,12 +2,8 @@
 """Tests for Meridian resume prompt generator."""
 
 import sqlite3
-import sys
-from pathlib import Path
 
 import pytest
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from scripts.db import init_schema
 from scripts.resume import generate_resume_prompt
@@ -25,7 +21,11 @@ from scripts.state import (
 
 @pytest.fixture
 def db(tmp_path):
-    """Create a temporary database and return (conn, project_dir)."""
+    """Create a temporary database and return (conn, project_dir).
+
+    Note: This fixture overrides the shared conftest db fixture because
+    test_resume needs file-backed DB with project_dir for generate_resume_prompt.
+    """
     db_path = tmp_path / ".meridian" / "state.db"
     db_path.parent.mkdir(parents=True)
     conn = sqlite3.connect(str(db_path))

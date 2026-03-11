@@ -1,17 +1,8 @@
 #!/usr/bin/env python3
 """Tests for Meridian state management."""
 
-import sqlite3
-
-# Add parent to path so scripts is importable
-import sys
-from pathlib import Path
-
 import pytest
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from scripts.db import init_schema
 from scripts.state import (
     compute_next_action,
     create_checkpoint,
@@ -35,28 +26,6 @@ from scripts.state import (
     update_phase,
     update_project,
 )
-
-
-@pytest.fixture
-def db():
-    """Create a temporary in-memory database with schema."""
-    conn = sqlite3.connect(":memory:")
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA foreign_keys=ON")
-    init_schema(conn)
-    yield conn
-    conn.close()
-
-
-@pytest.fixture
-def seeded_db(db):
-    """DB with a project, milestone, and phases."""
-    create_project(db, name="Test Project", repo_path="/tmp/test", project_id="default")
-    create_milestone(db, milestone_id="v1.0", name="Version 1.0", project_id="default")
-    transition_milestone(db, "v1.0", "active")
-    create_phase(db, milestone_id="v1.0", name="Foundation", description="Build the base")
-    create_phase(db, milestone_id="v1.0", name="Features", description="Add features")
-    return db
 
 
 # ── Project Tests ─────────────────────────────────────────────────────────────

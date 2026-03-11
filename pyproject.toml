@@ -5,6 +5,12 @@ description = "Unified workflow engine for Claude Code — SQLite-backed state m
 requires-python = ">=3.11"
 # stdlib only: sqlite3, json, pathlib, datetime, textwrap, subprocess, urllib
 
+[dependency-groups]
+dev = ["pytest"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
