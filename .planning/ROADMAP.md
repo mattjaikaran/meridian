@@ -26,7 +26,7 @@ Harden Meridian from a working prototype into a reliable tool. The work flows bo
   2. Concurrent subagent writes survive without `SQLITE_BUSY` crashes (busy_timeout + retry active)
   3. Running `python -m scripts.backup` (or equivalent) creates a hot snapshot of state.db
   4. `pytest` runs from repo root without any `sys.path.insert` hacks in test files
-**Plans:** 2 plans
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 01-01-PLAN.md -- Core db.py reliability layer (open_project, retry, backup) + test infrastructure
@@ -72,7 +72,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Database Foundation | 0/2 | Planning complete | - |
+| 1. Database Foundation | 1/2 | In Progress|  |
 | 2. Error Infrastructure | 0/TBD | Not started | - |
 | 3. Command Routing | 0/TBD | Not started | - |
 | 4. Test Coverage & Hardening | 0/TBD | Not started | - |

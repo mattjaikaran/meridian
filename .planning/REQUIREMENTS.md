@@ -14,10 +14,10 @@
 
 ### Database Reliability
 
-- [ ] **DBRL-01**: `open_project()` context manager replaces all manual connect/try/finally/close patterns
-- [ ] **DBRL-02**: `PRAGMA busy_timeout=5000` is set on every connection for concurrent write tolerance
-- [ ] **DBRL-03**: Retry decorator with exponential backoff handles `sqlite3.OperationalError` ("database is locked")
-- [ ] **DBRL-04**: `connection.backup()` creates hot snapshot of state.db before schema migrations
+- [x] **DBRL-01**: `open_project()` context manager replaces all manual connect/try/finally/close patterns
+- [x] **DBRL-02**: `PRAGMA busy_timeout=5000` is set on every connection for concurrent write tolerance
+- [x] **DBRL-03**: Retry decorator with exponential backoff handles `sqlite3.OperationalError` ("database is locked")
+- [x] **DBRL-04**: `connection.backup()` creates hot snapshot of state.db before schema migrations
 - [ ] **DBRL-05**: All existing scripts updated to use `open_project()` instead of manual connection management
 
 ### Error Handling & Logging
@@ -36,8 +36,8 @@
 
 ### Testing
 
-- [ ] **TEST-01**: `pyproject.toml` has `[tool.pytest.ini_options]` with `pythonpath = ["."]`
-- [ ] **TEST-02**: All `sys.path.insert` hacks removed from test files
+- [x] **TEST-01**: `pyproject.toml` has `[tool.pytest.ini_options]` with `pythonpath = ["."]`
+- [x] **TEST-02**: All `sys.path.insert` hacks removed from test files
 - [ ] **TEST-03**: Test coverage for `scripts/dispatch.py` (payload construction, error handling, connection creation)
 - [ ] **TEST-04**: Test coverage for `scripts/export.py` (JSON format, file I/O, nested entity export)
 - [ ] **TEST-05**: Test coverage for `scripts/axis_sync.py` (command construction, ticket parsing, status mapping)
@@ -88,13 +88,13 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DBRL-01 | Phase 1 | Pending |
-| DBRL-02 | Phase 1 | Pending |
-| DBRL-03 | Phase 1 | Pending |
-| DBRL-04 | Phase 1 | Pending |
+| DBRL-01 | Phase 1 | Complete |
+| DBRL-02 | Phase 1 | Complete |
+| DBRL-03 | Phase 1 | Complete |
+| DBRL-04 | Phase 1 | Complete |
 | DBRL-05 | Phase 1 | Pending |
-| TEST-01 | Phase 1 | Pending |
-| TEST-02 | Phase 1 | Pending |
+| TEST-01 | Phase 1 | Complete |
+| TEST-02 | Phase 1 | Complete |
 | ERRL-01 | Phase 2 | Pending |
 | ERRL-02 | Phase 2 | Pending |
 | ERRL-03 | Phase 2 | Pending |
