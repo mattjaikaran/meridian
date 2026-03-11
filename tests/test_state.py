@@ -6,10 +6,12 @@ import pytest
 from scripts.db import StateTransitionError
 from scripts.state import (
     add_priority,
+    check_auto_advance,
     compute_next_action,
     create_checkpoint,
     create_decision,
     create_milestone,
+    create_nero_dispatch,
     create_phase,
     create_plan,
     create_project,
@@ -26,6 +28,7 @@ from scripts.state import (
     transition_phase,
     transition_plan,
     transition_quick_task,
+    update_nero_dispatch,
     update_phase,
     update_project,
 )
@@ -416,3 +419,180 @@ class TestAddPriority:
         phase = list_phases(seeded_db, "v1.0")[0]
         with pytest.raises(ValueError, match="Invalid priority"):
             add_priority(seeded_db, "phase", phase["id"], "urgent")
+
+
+# ── Auto-Advance Tests ──────────────────────────────────────────────────────
+
+
+class TestAutoAdvance:
+    """Tests for check_auto_advance edge cases."""
+
+    def test_returns_none_when_phase_not_found(self, seeded_db):
+        """Returns action='none' for a non-existent phase_id."""
+        result = check_auto_advance(seeded_db, phase_id=9999)
+        assert result["action"] == "none"
+        assert "not found" in result["message"]
+
+    def test_returns_none_when_phase_not_executing(self, seeded_db):
+        """Returns action='none' when phase status is 'planned' (not executing)."""
+        phase = list_phases(seeded_db, "v1.0")[0]
+        result = check_auto_advance(seeded_db, phase_id=phase["id"])
+        assert result["action"] == "none"
+        assert "not in executing state" in result["message"]
+
+    def test_returns_none_when_no_plans_exist(self, seeded_db):
+        """Returns action='none' when phase has no plans."""
+        phase = list_phases(seeded_db, "v1.0")[0]
+        transition_phase(seeded_db, phase["id"], "context_gathered")
+        transition_phase(seeded_db, phase["id"], "planned_out")
+        transition_phase(seeded_db, phase["id"], "executing")
+        result = check_auto_advance(seeded_db, phase_id=phase["id"])
+        assert result["action"] == "none"
+        assert "No plans" in result["message"]
+
+    def test_returns_none_when_plans_still_pending(self, seeded_db):
+        """Returns action='none' with count when plans still pending."""
+        phase = list_phases(seeded_db, "v1.0")[0]
+        transition_phase(seeded_db, phase["id"], "context_gathered")
+        transition_phase(seeded_db, phase["id"], "planned_out")
+        transition_phase(seeded_db, phase["id"], "executing")
+        create_plan(seeded_db, phase["id"], "Plan A", "Do A")
+        create_plan(seeded_db, phase["id"], "Plan B", "Do B")
+        # Leave both pending
+        result = check_auto_advance(seeded_db, phase_id=phase["id"])
+        assert result["action"] == "none"
+        assert "2 plan(s) still pending" in result["message"]
+
+    def test_phase_to_verifying_when_all_plans_complete(self, seeded_db):
+        """Transitions phase to verifying when all plans are complete."""
+        phase = list_phases(seeded_db, "v1.0")[0]
+        transition_phase(seeded_db, phase["id"], "context_gathered")
+        transition_phase(seeded_db, phase["id"], "planned_out")
+        transition_phase(seeded_db, phase["id"], "executing")
+        p1 = create_plan(seeded_db, phase["id"], "Plan A", "Do A")
+        p2 = create_plan(seeded_db, phase["id"], "Plan B", "Do B")
+        transition_plan(seeded_db, p1["id"], "executing")
+        transition_plan(seeded_db, p1["id"], "complete")
+        transition_plan(seeded_db, p2["id"], "executing")
+        transition_plan(seeded_db, p2["id"], "complete")
+
+        result = check_auto_advance(seeded_db, phase_id=phase["id"])
+        assert result["action"] == "phase_to_verifying"
+        # Verify phase actually transitioned
+        from scripts.state import get_phase
+        updated_phase = get_phase(seeded_db, phase["id"])
+        assert updated_phase["status"] == "verifying"
+
+    def test_phase_to_verifying_with_mix_of_complete_and_skipped(self, seeded_db):
+        """Transitions to verifying when plans are mix of complete and skipped."""
+        phase = list_phases(seeded_db, "v1.0")[0]
+        transition_phase(seeded_db, phase["id"], "context_gathered")
+        transition_phase(seeded_db, phase["id"], "planned_out")
+        transition_phase(seeded_db, phase["id"], "executing")
+        p1 = create_plan(seeded_db, phase["id"], "Plan A", "Do A")
+        p2 = create_plan(seeded_db, phase["id"], "Plan B", "Do B")
+        transition_plan(seeded_db, p1["id"], "executing")
+        transition_plan(seeded_db, p1["id"], "complete")
+        transition_plan(seeded_db, p2["id"], "skipped")
+
+        result = check_auto_advance(seeded_db, phase_id=phase["id"])
+        assert result["action"] == "phase_to_verifying"
+
+    def test_milestone_ready_when_all_phases_complete(self, seeded_db):
+        """Sets milestone_ready=True when current phase is the only non-complete one.
+
+        Note: This captures the CURRENT (potentially buggy) behavior where
+        milestone_ready is True even though the current phase just moved to
+        'verifying' (not 'complete'). Plan 04 will address this.
+        """
+        phases = list_phases(seeded_db, "v1.0")
+        # Complete phase 2 fully
+        p2 = phases[1]
+        transition_phase(seeded_db, p2["id"], "context_gathered")
+        transition_phase(seeded_db, p2["id"], "planned_out")
+        transition_phase(seeded_db, p2["id"], "executing")
+        transition_phase(seeded_db, p2["id"], "verifying")
+        transition_phase(seeded_db, p2["id"], "reviewing")
+        transition_phase(seeded_db, p2["id"], "complete")
+
+        # Phase 1 in executing with all plans complete
+        p1 = phases[0]
+        transition_phase(seeded_db, p1["id"], "context_gathered")
+        transition_phase(seeded_db, p1["id"], "planned_out")
+        transition_phase(seeded_db, p1["id"], "executing")
+        plan = create_plan(seeded_db, p1["id"], "Plan 1", "Do it")
+        transition_plan(seeded_db, plan["id"], "executing")
+        transition_plan(seeded_db, plan["id"], "complete")
+
+        result = check_auto_advance(seeded_db, phase_id=p1["id"])
+        assert result["action"] == "phase_to_verifying"
+        # Current behavior: milestone_ready is True because the only other
+        # incomplete phase is the current one (which just moved to verifying)
+        assert result.get("milestone_ready") is True
+
+    def test_milestone_not_ready_when_other_phases_incomplete(self, seeded_db):
+        """milestone_ready is NOT set when other phases are still incomplete."""
+        phases = list_phases(seeded_db, "v1.0")
+        # Phase 2 still in planned state (not complete)
+
+        # Phase 1 in executing with all plans complete
+        p1 = phases[0]
+        transition_phase(seeded_db, p1["id"], "context_gathered")
+        transition_phase(seeded_db, p1["id"], "planned_out")
+        transition_phase(seeded_db, p1["id"], "executing")
+        plan = create_plan(seeded_db, p1["id"], "Plan 1", "Do it")
+        transition_plan(seeded_db, plan["id"], "executing")
+        transition_plan(seeded_db, plan["id"], "complete")
+
+        result = check_auto_advance(seeded_db, phase_id=p1["id"])
+        assert result["action"] == "phase_to_verifying"
+        assert result.get("milestone_ready") is None
+
+
+# ── Nero Dispatch Tests ─────────────────────────────────────────────────────
+
+
+class TestNeroDispatch:
+    """Tests for update_nero_dispatch buggy truthiness check."""
+
+    def test_update_with_empty_string_status_not_updated(self, seeded_db):
+        """Passing status='' does NOT update status due to truthiness check.
+
+        This documents the current buggy behavior (QUAL-04). The `if status:`
+        check in update_nero_dispatch treats '' as falsy, so the status field
+        is not included in the update dict.
+        """
+        phase = list_phases(seeded_db, "v1.0")[0]
+        plan = create_plan(seeded_db, phase["id"], "Plan 1", "Do it")
+        dispatch = create_nero_dispatch(
+            seeded_db, dispatch_type="plan", plan_id=plan["id"]
+        )
+        assert dispatch["status"] == "dispatched"
+
+        # Call with status="" -- should NOT update due to truthiness bug
+        updated = update_nero_dispatch(seeded_db, dispatch["id"], status="")
+        assert updated["status"] == "dispatched"  # unchanged
+
+    def test_update_with_valid_status(self, seeded_db):
+        """Passing a valid non-empty status updates correctly."""
+        phase = list_phases(seeded_db, "v1.0")[0]
+        plan = create_plan(seeded_db, phase["id"], "Plan 1", "Do it")
+        dispatch = create_nero_dispatch(
+            seeded_db, dispatch_type="plan", plan_id=plan["id"]
+        )
+
+        updated = update_nero_dispatch(seeded_db, dispatch["id"], status="running")
+        assert updated["status"] == "running"
+
+    def test_update_with_pr_url(self, seeded_db):
+        """Passing pr_url updates the dispatch record."""
+        phase = list_phases(seeded_db, "v1.0")[0]
+        plan = create_plan(seeded_db, phase["id"], "Plan 1", "Do it")
+        dispatch = create_nero_dispatch(
+            seeded_db, dispatch_type="plan", plan_id=plan["id"]
+        )
+
+        updated = update_nero_dispatch(
+            seeded_db, dispatch["id"], pr_url="https://github.com/test/pr/1"
+        )
+        assert updated["pr_url"] == "https://github.com/test/pr/1"
