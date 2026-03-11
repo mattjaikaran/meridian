@@ -575,15 +575,17 @@ class TestAutoAdvance:
 
 
 class TestNeroDispatch:
-    """Tests for update_nero_dispatch buggy truthiness check."""
+    """Tests for update_nero_dispatch with 'is not None' truthiness fix (QUAL-05)."""
 
-    def test_update_with_empty_string_status_not_updated(self, seeded_db):
-        """Passing status='' does NOT update status due to truthiness check.
+    def test_update_with_empty_string_status_reaches_db(self, seeded_db):
+        """Passing status='' now reaches the DB (previously silently ignored).
 
-        This documents the current buggy behavior (QUAL-04). The `if status:`
-        check in update_nero_dispatch treats '' as falsy, so the status field
-        is not included in the update dict.
+        Fixed (QUAL-05): 'if status is not None' passes empty string through
+        to safe_update. The DB CHECK constraint rejects it, which is correct --
+        callers get an explicit error instead of silent no-op.
         """
+        import sqlite3
+
         phase = list_phases(seeded_db, "v1.0")[0]
         plan = create_plan(seeded_db, phase["id"], "Plan 1", "Do it")
         dispatch = create_nero_dispatch(
@@ -591,8 +593,40 @@ class TestNeroDispatch:
         )
         assert dispatch["status"] == "dispatched"
 
-        # Call with status="" -- should NOT update due to truthiness bug
-        updated = update_nero_dispatch(seeded_db, dispatch["id"], status="")
+        # Empty string reaches DB and is rejected by CHECK constraint
+        with pytest.raises(sqlite3.IntegrityError, match="CHECK constraint"):
+            update_nero_dispatch(seeded_db, dispatch["id"], status="")
+
+    def test_update_with_empty_string_pr_url_updates_db(self, seeded_db):
+        """Passing pr_url='' correctly updates pr_url to empty string.
+
+        pr_url has no CHECK constraint, so empty string is valid.
+        """
+        phase = list_phases(seeded_db, "v1.0")[0]
+        plan = create_plan(seeded_db, phase["id"], "Plan 1", "Do it")
+        dispatch = create_nero_dispatch(
+            seeded_db, dispatch_type="plan", plan_id=plan["id"]
+        )
+
+        # First set a real pr_url
+        update_nero_dispatch(
+            seeded_db, dispatch["id"], pr_url="https://github.com/test/pr/1"
+        )
+        # Now clear it with empty string
+        updated = update_nero_dispatch(seeded_db, dispatch["id"], pr_url="")
+        assert updated["pr_url"] == ""
+
+    def test_update_with_none_status_does_not_update(self, seeded_db):
+        """Passing status=None does NOT update status (preserves existing value)."""
+        phase = list_phases(seeded_db, "v1.0")[0]
+        plan = create_plan(seeded_db, phase["id"], "Plan 1", "Do it")
+        dispatch = create_nero_dispatch(
+            seeded_db, dispatch_type="plan", plan_id=plan["id"]
+        )
+        assert dispatch["status"] == "dispatched"
+
+        # Call with status=None (default) -- should NOT update
+        updated = update_nero_dispatch(seeded_db, dispatch["id"])
         assert updated["status"] == "dispatched"  # unchanged
 
     def test_update_with_valid_status(self, seeded_db):

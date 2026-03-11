@@ -3,7 +3,7 @@
 
 import sqlite3
 from collections import defaultdict
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 
 def _now() -> datetime:
@@ -214,8 +214,6 @@ def forecast_completion(conn: sqlite3.Connection, project_id: str = "default") -
         }
 
     eta_days = remaining_count / velocity
-    from datetime import timedelta
-
     eta_date = (_now() + timedelta(days=eta_days)).strftime("%Y-%m-%d")
 
     return {

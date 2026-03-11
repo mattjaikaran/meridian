@@ -549,9 +549,9 @@ def update_nero_dispatch(
     pr_url: str | None = None,
 ) -> dict:
     updates = {}
-    if status:
+    if status is not None:
         updates["status"] = status
-    if pr_url:
+    if pr_url is not None:
         updates["pr_url"] = pr_url
     if status in ("completed", "failed"):
         updates["completed_at"] = _now()
