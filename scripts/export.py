@@ -2,6 +2,7 @@
 """Export Meridian SQLite state to JSON for git tracking and Nero consumption."""
 
 import json
+from collections import defaultdict
 from pathlib import Path
 
 from scripts.db import open_project
@@ -12,7 +13,6 @@ from scripts.state import (
     list_decisions,
     list_milestones,
     list_phases,
-    list_plans,
 )
 
 
@@ -30,13 +30,24 @@ def export_state(project_dir: str | Path | None = None, project_id: str = "defau
 
         milestones = list_milestones(conn, project_id)
 
+        # Bulk fetch all plans to avoid N+1 queries
+        all_plan_rows = conn.execute(
+            """SELECT p.*, ph.milestone_id FROM plan p
+            JOIN phase ph ON p.phase_id = ph.id
+            WHERE ph.milestone_id IN (SELECT id FROM milestone WHERE project_id = ?)""",
+            (project_id,),
+        ).fetchall()
+        plans_by_phase: dict[str, list[dict]] = defaultdict(list)
+        for plan in all_plan_rows:
+            plans_by_phase[plan["phase_id"]].append(dict(plan))
+
         # Build full state tree
         milestone_data = []
         for ms in milestones:
             phases = list_phases(conn, ms["id"])
             phase_data = []
             for phase in phases:
-                plans = list_plans(conn, phase["id"])
+                plans = plans_by_phase.get(phase["id"], [])
                 phase_data.append({**phase, "plans": plans})
             milestone_data.append({**ms, "phases": phase_data})
 
