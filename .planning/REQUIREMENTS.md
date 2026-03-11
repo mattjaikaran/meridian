@@ -40,10 +40,10 @@
 - [x] **TEST-02**: All `sys.path.insert` hacks removed from test files
 - [x] **TEST-03**: Test coverage for `scripts/dispatch.py` (payload construction, error handling, connection creation)
 - [x] **TEST-04**: Test coverage for `scripts/export.py` (JSON format, file I/O, nested entity export)
-- [ ] **TEST-05**: Test coverage for `scripts/axis_sync.py` (command construction, ticket parsing, status mapping)
+- [x] **TEST-05**: Test coverage for `scripts/axis_sync.py` (command construction, ticket parsing, status mapping)
 - [x] **TEST-06**: Test coverage for `scripts/context_window.py` (token estimation, checkpoint thresholds)
-- [ ] **TEST-07**: Test coverage for `check_auto_advance()` (milestone readiness, edge cases, empty plans)
-- [ ] **TEST-08**: Test coverage for schema migration path (v1->v2 upgrade, idempotency)
+- [x] **TEST-07**: Test coverage for `check_auto_advance()` (milestone readiness, edge cases, empty plans)
+- [x] **TEST-08**: Test coverage for schema migration path (v1->v2 upgrade, idempotency)
 
 ### Code Quality
 
@@ -109,10 +109,10 @@
 | ROUT-04 | Phase 3 | Complete |
 | TEST-03 | Phase 4 | Complete |
 | TEST-04 | Phase 4 | Complete |
-| TEST-05 | Phase 4 | Pending |
+| TEST-05 | Phase 4 | Complete |
 | TEST-06 | Phase 4 | Complete |
-| TEST-07 | Phase 4 | Pending |
-| TEST-08 | Phase 4 | Pending |
+| TEST-07 | Phase 4 | Complete |
+| TEST-08 | Phase 4 | Complete |
 | QUAL-01 | Phase 4 | Pending |
 | QUAL-02 | Phase 4 | Pending |
 | QUAL-03 | Phase 4 | Pending |
