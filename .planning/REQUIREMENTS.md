@@ -22,11 +22,11 @@
 
 ### Error Handling & Logging
 
-- [ ] **ERRL-01**: `MeridianError` base class with `StateTransitionError`, `DatabaseBusyError`, `NeroUnreachableError` subclasses
+- [x] **ERRL-01**: `MeridianError` base class with `StateTransitionError`, `DatabaseBusyError`, `NeroUnreachableError` subclasses
 - [ ] **ERRL-02**: All state transition failures raise `StateTransitionError` instead of generic `ValueError`
-- [ ] **ERRL-03**: Structured logging via stdlib `logging` module to stderr, replacing ad-hoc `print()` calls
-- [ ] **ERRL-04**: Nero HTTP dispatch/sync calls retry with exponential backoff (3 attempts, 1s/2s/4s)
-- [ ] **ERRL-05**: Failed Nero calls raise `NeroUnreachableError` after retry exhaustion instead of returning None
+- [x] **ERRL-03**: Structured logging via stdlib `logging` module to stderr, replacing ad-hoc `print()` calls
+- [x] **ERRL-04**: Nero HTTP dispatch/sync calls retry with exponential backoff (3 attempts, 1s/2s/4s)
+- [x] **ERRL-05**: Failed Nero calls raise `NeroUnreachableError` after retry exhaustion instead of returning None
 
 ### Security
 
@@ -95,11 +95,11 @@
 | DBRL-05 | Phase 1 | Complete |
 | TEST-01 | Phase 1 | Complete |
 | TEST-02 | Phase 1 | Complete |
-| ERRL-01 | Phase 2 | Pending |
+| ERRL-01 | Phase 2 | Complete |
 | ERRL-02 | Phase 2 | Pending |
-| ERRL-03 | Phase 2 | Pending |
-| ERRL-04 | Phase 2 | Pending |
-| ERRL-05 | Phase 2 | Pending |
+| ERRL-03 | Phase 2 | Complete |
+| ERRL-04 | Phase 2 | Complete |
+| ERRL-05 | Phase 2 | Complete |
 | SECR-01 | Phase 2 | Pending |
 | SECR-02 | Phase 2 | Pending |
 | SECR-03 | Phase 2 | Pending |

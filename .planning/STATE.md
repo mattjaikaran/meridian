@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: completed
-stopped_at: Phase 2 planned (3 plans, 2 waves, verified)
-last_updated: "2026-03-11T02:06:36.539Z"
-last_activity: 2026-03-10 -- Completed Plan 01-02 (script migration to open_project)
+status: executing
+stopped_at: Completed 02-01-PLAN.md (error hierarchy, logging, HTTP retry)
+last_updated: "2026-03-11T02:15:23.895Z"
+last_activity: 2026-03-10 -- Completed Plan 02-01 (error hierarchy, logging, HTTP retry)
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 5
-  completed_plans: 2
-  percent: 100
+  completed_plans: 3
+  percent: 60
 ---
 
 # Project State
@@ -21,33 +21,34 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-10)
 
 **Core value:** Deterministic workflow state that survives context resets -- every resume produces the exact same prompt from the same database state.
-**Current focus:** Phase 1: Database Foundation
+**Current focus:** Phase 2: Error Infrastructure
 
 ## Current Position
 
-Phase: 1 of 4 (Database Foundation) -- COMPLETE
-Plan: 2 of 2 complete in current phase
-Status: Phase 1 complete, ready for Phase 2
-Last activity: 2026-03-10 -- Completed Plan 01-02 (script migration to open_project)
+Phase: 2 of 4 (Error Infrastructure)
+Plan: 1 of 3 complete in current phase
+Status: Executing Phase 2, Plan 02-01 complete
+Last activity: 2026-03-10 -- Completed Plan 02-01 (error hierarchy, logging, HTTP retry)
 
-Progress: [██████████] 100% (Phase 1)
+Progress: [██████░░░░] 60% (3/5 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
-- Average duration: 4min
-- Total execution time: 0.13 hours
+- Total plans completed: 3
+- Average duration: 3min
+- Total execution time: 0.17 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-database-foundation | 2 | 8min | 4min |
+| 02-error-infrastructure | 1 | 2min | 2min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (4min), 01-02 (4min)
-- Trend: stable
+- Last 5 plans: 01-01 (4min), 01-02 (4min), 02-01 (2min)
+- Trend: improving
 
 *Updated after each plan completion*
 
@@ -65,6 +66,9 @@ Recent decisions affecting current work:
 - [01-01]: Established open_project() as canonical DB access pattern for all new code
 - [01-02]: context_window.py has no DB imports, only 5 of 6 scripts needed migration
 - [01-02]: Retained connect alias in db.py since skill docs still reference it
+- [02-01]: No jitter on HTTP retry (not competing for shared resource like SQLite busy)
+- [02-01]: Lazy logging init via _logging_configured flag in open_project()
+- [02-01]: setup_logging uses force=True for test reconfigurability
 
 ### Pending Todos
 
@@ -77,6 +81,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-11T02:06:36.537Z
-Stopped at: Phase 2 planned (3 plans, 2 waves, verified)
-Resume file: .planning/phases/02-error-infrastructure/02-01-PLAN.md
+Last session: 2026-03-11T02:15:00Z
+Stopped at: Completed 02-01-PLAN.md (error hierarchy, logging, HTTP retry)
+Resume file: .planning/phases/02-error-infrastructure/02-02-PLAN.md
