@@ -18,7 +18,7 @@
 - [x] **DBRL-02**: `PRAGMA busy_timeout=5000` is set on every connection for concurrent write tolerance
 - [x] **DBRL-03**: Retry decorator with exponential backoff handles `sqlite3.OperationalError` ("database is locked")
 - [x] **DBRL-04**: `connection.backup()` creates hot snapshot of state.db before schema migrations
-- [ ] **DBRL-05**: All existing scripts updated to use `open_project()` instead of manual connection management
+- [x] **DBRL-05**: All existing scripts updated to use `open_project()` instead of manual connection management
 
 ### Error Handling & Logging
 
@@ -92,7 +92,7 @@
 | DBRL-02 | Phase 1 | Complete |
 | DBRL-03 | Phase 1 | Complete |
 | DBRL-04 | Phase 1 | Complete |
-| DBRL-05 | Phase 1 | Pending |
+| DBRL-05 | Phase 1 | Complete |
 | TEST-01 | Phase 1 | Complete |
 | TEST-02 | Phase 1 | Complete |
 | ERRL-01 | Phase 2 | Pending |
