@@ -41,7 +41,12 @@ Plans:
   2. Nero dispatch failures raise `NeroUnreachableError` after 3 retries -- never silently return None
   3. All log output goes to stderr via stdlib `logging` -- no `print()` calls remain for operational output
   4. Dynamic SQL interpolation is gone -- `safe_update()` validates columns against schema, `add_priority()` uses an explicit table mapping
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md -- Error hierarchy, logging setup, and HTTP retry decorator in db.py
+- [ ] 02-02-PLAN.md -- safe_update() with column allowlists and StateTransitionError in state.py
+- [ ] 02-03-PLAN.md -- Nero retry integration in dispatch.py/sync.py and axis_sync command fix
 
 ### Phase 3: Command Routing
 **Goal**: Users invoke all 13 Meridian workflows as `/meridian:*` slash commands in Claude Code
@@ -73,6 +78,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Database Foundation | 1/2 | In Progress|  |
-| 2. Error Infrastructure | 0/TBD | Not started | - |
+| 2. Error Infrastructure | 0/3 | Not started | - |
 | 3. Command Routing | 0/TBD | Not started | - |
 | 4. Test Coverage & Hardening | 0/TBD | Not started | - |
