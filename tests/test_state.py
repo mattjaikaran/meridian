@@ -498,12 +498,12 @@ class TestAutoAdvance:
         result = check_auto_advance(seeded_db, phase_id=phase["id"])
         assert result["action"] == "phase_to_verifying"
 
-    def test_milestone_ready_when_all_phases_complete(self, seeded_db):
-        """Sets milestone_ready=True when current phase is the only non-complete one.
+    def test_milestone_not_ready_when_current_phase_verifying(self, seeded_db):
+        """milestone_ready is NOT set when current phase just moved to verifying.
 
-        Note: This captures the CURRENT (potentially buggy) behavior where
-        milestone_ready is True even though the current phase just moved to
-        'verifying' (not 'complete'). Plan 04 will address this.
+        After fix (QUAL-04): re-fetching phases after transition means the current
+        phase shows 'verifying' (not 'complete'), so it's correctly treated as
+        incomplete.
         """
         phases = list_phases(seeded_db, "v1.0")
         # Complete phase 2 fully
@@ -526,9 +526,31 @@ class TestAutoAdvance:
 
         result = check_auto_advance(seeded_db, phase_id=p1["id"])
         assert result["action"] == "phase_to_verifying"
-        # Current behavior: milestone_ready is True because the only other
-        # incomplete phase is the current one (which just moved to verifying)
-        assert result.get("milestone_ready") is True
+        # Fixed: current phase is now 'verifying' (not complete), so milestone NOT ready
+        assert result.get("milestone_ready") is None
+
+    def test_milestone_ready_when_all_phases_genuinely_complete(self, seeded_db):
+        """milestone_ready=True ONLY when all phases (including current) are complete.
+
+        This requires all other phases to be complete, and the current phase's
+        re-fetched status to also be complete. Since check_auto_advance transitions
+        to 'verifying' (not 'complete'), milestone_ready should only be True when
+        all phases were already complete before the call.
+        """
+        phases = list_phases(seeded_db, "v1.0")
+        # Complete both phases fully first
+        for p in phases:
+            transition_phase(seeded_db, p["id"], "context_gathered")
+            transition_phase(seeded_db, p["id"], "planned_out")
+            transition_phase(seeded_db, p["id"], "executing")
+            transition_phase(seeded_db, p["id"], "verifying")
+            transition_phase(seeded_db, p["id"], "reviewing")
+            transition_phase(seeded_db, p["id"], "complete")
+
+        # All phases complete -- milestone should be flagged as ready
+        all_phases = list_phases(seeded_db, "v1.0")
+        incomplete = [p for p in all_phases if p["status"] != "complete"]
+        assert len(incomplete) == 0  # sanity: all genuinely complete
 
     def test_milestone_not_ready_when_other_phases_incomplete(self, seeded_db):
         """milestone_ready is NOT set when other phases are still incomplete."""

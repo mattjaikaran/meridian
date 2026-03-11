@@ -608,10 +608,9 @@ def check_auto_advance(conn: sqlite3.Connection, phase_id: int) -> dict:
 
     # Check if all phases in milestone are complete (after this one finishes review)
     milestone_id = phase["milestone_id"]
+    # Re-fetch after transition so current phase shows "verifying" status
     all_phases = list_phases(conn, milestone_id)
-    incomplete = [p for p in all_phases if p["status"] != "complete" and p["id"] != phase_id]
-    # Current phase just moved to verifying, so it's not complete yet
-    # Only flag milestone if this was the last non-complete phase AND it just finished
+    incomplete = [p for p in all_phases if p["status"] != "complete"]
     if not incomplete:
         result["milestone_ready"] = True
         result["message"] += " — milestone may be ready for completion after review"
