@@ -2,6 +2,7 @@
 """PM metrics engine — compute velocity, cycle times, stalls, and forecasts."""
 
 import sqlite3
+from collections import defaultdict
 from datetime import UTC, datetime
 
 
@@ -244,14 +245,23 @@ def compute_progress(conn: sqlite3.Connection, project_id: str = "default") -> d
         (milestone["id"],),
     ).fetchall()
 
+    # Bulk fetch all plans for this milestone to avoid N+1
+    all_plans = conn.execute(
+        """SELECT p.phase_id, p.status FROM plan p
+        JOIN phase ph ON p.phase_id = ph.id
+        WHERE ph.milestone_id = ?""",
+        (milestone["id"],),
+    ).fetchall()
+    plans_by_phase: dict[str, list[dict]] = defaultdict(list)
+    for plan in all_plans:
+        plans_by_phase[plan["phase_id"]].append(dict(plan))
+
     phase_progress = []
     total_plans = 0
     done_plans = 0
 
     for phase in phases:
-        plans = conn.execute(
-            "SELECT status FROM plan WHERE phase_id = ?", (phase["id"],)
-        ).fetchall()
+        plans = plans_by_phase.get(phase["id"], [])
 
         plan_total = len(plans)
         plan_done = sum(1 for p in plans if p["status"] in ("complete", "skipped"))
