@@ -7,6 +7,7 @@ Queries SQLite, produces identical prompt for identical state.
 import json
 import subprocess
 import textwrap
+from collections import defaultdict
 from pathlib import Path
 
 from scripts.db import get_db_path, open_project
@@ -153,11 +154,21 @@ def generate_resume_prompt(
                     sections.append(f"- Next plan: {pending_plans[0]['name']} (pending)")
         sections.append("")
 
-        # Phase progress overview
+        # Phase progress overview — bulk fetch all plans to avoid N+1
+        all_plans_for_overview = conn.execute(
+            """SELECT p.* FROM plan p
+            JOIN phase ph ON p.phase_id = ph.id
+            WHERE ph.milestone_id = ?""",
+            (active_milestone["id"],),
+        ).fetchall()
+        plans_by_phase: dict[str, list[dict]] = defaultdict(list)
+        for plan in all_plans_for_overview:
+            plans_by_phase[plan["phase_id"]].append(dict(plan))
+
         sections.append("## Phase Overview")
         for p in phases:
             marker = "→" if current_phase and p["id"] == current_phase["id"] else " "
-            phase_plans = list_plans(conn, p["id"])
+            phase_plans = plans_by_phase.get(p["id"], [])
             plan_count = len(phase_plans)
             complete_count = len([pl for pl in phase_plans if pl["status"] == "complete"])
             sections.append(
