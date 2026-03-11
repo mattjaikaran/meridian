@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A SQLite-backed state machine for managing complex development workflows in Claude Code. Provides slash commands for project initialization, planning, execution via fresh-context subagents, deterministic resume, code review, and autonomous dispatch to Nero. Built as a Claude Code skill with stdlib-only Python.
+A SQLite-backed state machine for managing complex development workflows in Claude Code. Provides 13 slash commands (`/meridian:*`) for project initialization, planning, execution via fresh-context subagents, deterministic resume, code review, and autonomous dispatch to Nero. Built as a Claude Code skill with stdlib-only Python. Hardened with structured error handling, retry logic, SQL safety, and comprehensive test coverage.
 
 ## Core Value
 
@@ -26,19 +26,20 @@ Deterministic workflow state that survives context resets — every resume produ
 - ✓ Schema migration system (v1→v2) — existing
 - ✓ Context window token estimation — existing
 - ✓ Dashboard and roadmap views — existing
+- ✓ `open_project()` context manager with retry, backup, busy tolerance — v1.0
+- ✓ `MeridianError` hierarchy (StateTransitionError, NeroUnreachableError, DatabaseBusyError) — v1.0
+- ✓ Structured logging via stdlib `logging` to stderr — v1.0
+- ✓ HTTP retry with exponential backoff for Nero communication — v1.0
+- ✓ SQL injection elimination via `safe_update()` allowlists — v1.0
+- ✓ 13 `/meridian:*` slash commands discoverable in Claude Code autocomplete — v1.0
+- ✓ Command generator script producing wrappers from SKILL.md definitions — v1.0
+- ✓ Test coverage for all modules (217 tests, 10 test files) — v1.0
+- ✓ N+1 query fixes in resume, metrics, and export — v1.0
+- ✓ Bug fixes: auto-advance false positive, nero dispatch truthiness, inline import — v1.0
 
 ### Active
 
-- [ ] Fix skill registration so all 13 commands work as Claude Code slash commands
-- [ ] Fix known bugs (auto-advance premature flag, empty status silent skip, unsafe string splitting)
-- [ ] Eliminate SQL injection surface (dynamic f-string column/table interpolation)
-- [ ] Add test coverage for dispatch, export, axis_sync, context_window, auto-advance, migrations
-- [ ] Add retry logic with backoff for Nero HTTP communication
-- [ ] Add structured logging framework
-- [ ] Extract duplicated connection boilerplate into context manager
-- [ ] Fix sys.path hacking in tests with proper pytest config
-- [ ] Add database backup/restore mechanism
-- [ ] Fix N+1 query patterns in resume, metrics, and export
+(None — define in next milestone with `/gsd:new-milestone`)
 
 ### Out of Scope
 
@@ -46,19 +47,21 @@ Deterministic workflow state that survives context resets — every resume produ
 - PostgreSQL migration — SQLite sufficient for single-user scale
 - Web UI / API server — Claude Code is the interface
 - tiktoken integration — rough estimation is good enough for checkpoint triggers
+- Plugin system — over-engineering for current use case
+- AI auto-planning — keep human in the loop for planning decisions
 
 ## Context
 
-- Meridian is symlinked into `~/.claude/skills/meridian` which registers `/meridian` as a skill, but subcommands like `/meridian:init` aren't discoverable — Claude Code uses folder names for skill routing
-- All Python is stdlib-only (explicit design choice), with pytest as the only dev dependency
-- Two-machine model: MacBook Pro (interactive) dispatches to Mac Mini (Nero) for autonomous execution
-- The codebase map at `.planning/codebase/` has 7 detailed analysis documents
+Shipped v1.0 Hardening milestone with 6,227 lines Python across scripts/ and tests/.
+Tech stack: Python 3.12+ (stdlib-only), SQLite (WAL mode), pytest, uv.
+217 tests passing across 10 test files. All 31 requirements satisfied.
+Two-machine model: MacBook Pro (interactive) dispatches to Mac Mini (Nero) for autonomous execution.
 
 ## Constraints
 
-- **Python stdlib only**: No external dependencies beyond pytest for tests — keeps the tool lightweight and portable
-- **Claude Code skill system**: Commands must work within Claude Code's skill discovery mechanism (folder-based SKILL.md routing)
-- **SQLite single-writer**: WAL mode helps but concurrent writes from subagents need retry logic
+- **Python stdlib only**: No external dependencies beyond pytest for tests
+- **Claude Code skill system**: Commands use folder-based SKILL.md routing with generated `.md` wrappers
+- **SQLite single-writer**: WAL mode + busy_timeout + retry_on_busy for concurrent writes
 - **Package manager**: uv only (no pip)
 
 ## Key Decisions
@@ -67,8 +70,13 @@ Deterministic workflow state that survives context resets — every resume produ
 |----------|-----------|---------|
 | Stdlib-only Python | Zero dependency management, works everywhere Python does | ✓ Good |
 | SQLite per-project | Simple, portable, no server needed for single-user tool | ✓ Good |
-| SKILL.md-based commands | Leverages Claude Code's native skill system | ⚠️ Revisit — subcommand routing broken |
-| Symlink into ~/.claude/skills/ | Quick registration approach | ⚠️ Revisit — doesn't support subcommands |
+| SKILL.md-based commands | Leverages Claude Code's native skill system | ✓ Good — fixed with generated .md wrappers in ~/.claude/commands/ |
+| Symlink into ~/.claude/skills/ | Quick registration approach | ✓ Good — works with wrapper pattern |
+| open_project() as canonical DB access | Single reliable pattern with auto-commit/rollback/close | ✓ Good |
+| MeridianError hierarchy | Structured errors replace silent None/generic ValueError | ✓ Good |
+| safe_update() with ALLOWED_COLUMNS | Eliminates SQL injection from dynamic column interpolation | ✓ Good |
+| defaultdict + plans_by_phase pattern | Consistent N+1 fix across resume, metrics, export | ✓ Good |
+| Generated command wrappers | Thin .md files with @ references, regenerable from skills | ✓ Good |
 
 ---
-*Last updated: 2026-03-10 after initialization*
+*Last updated: 2026-03-11 after v1.0 milestone*
