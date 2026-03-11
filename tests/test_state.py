@@ -4,6 +4,7 @@
 import pytest
 
 from scripts.state import (
+    add_priority,
     compute_next_action,
     create_checkpoint,
     create_decision,
@@ -19,6 +20,7 @@ from scripts.state import (
     list_milestones,
     list_phases,
     list_plans,
+    safe_update,
     transition_milestone,
     transition_phase,
     transition_plan,
@@ -344,3 +346,72 @@ class TestStatus:
         assert status["active_milestone"]["id"] == "v1.0"
         assert len(status["phases"]) == 2
         assert status["next_action"]["action"] == "gather_context"
+
+
+# ── safe_update Tests ────────────────────────────────────────────────────────
+
+
+class TestSafeUpdate:
+    def test_valid_update(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        safe_update(seeded_db, "phase", phase["id"], {"status": "context_gathered"})
+        seeded_db.commit()
+        row = seeded_db.execute(
+            "SELECT status FROM phase WHERE id = ?", (phase["id"],)
+        ).fetchone()
+        assert row["status"] == "context_gathered"
+
+    def test_rejects_invalid_column(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        with pytest.raises(ValueError, match="Invalid columns for phase"):
+            safe_update(seeded_db, "phase", phase["id"], {"hacker": "drop"})
+
+    def test_rejects_unknown_table(self, db):
+        with pytest.raises(ValueError, match="Unknown table"):
+            safe_update(db, "nonexistent", 1, {"col": "val"})
+
+    def test_empty_updates_noop(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        # Should return without executing SQL (no error, no change)
+        safe_update(seeded_db, "phase", phase["id"], {})
+
+    def test_multiple_columns(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        # Transition to executing first so started_at/completed_at are allowed
+        safe_update(
+            seeded_db,
+            "phase",
+            phase["id"],
+            {"status": "context_gathered", "description": "updated desc"},
+        )
+        seeded_db.commit()
+        row = seeded_db.execute(
+            "SELECT status, description FROM phase WHERE id = ?", (phase["id"],)
+        ).fetchone()
+        assert row["status"] == "context_gathered"
+        assert row["description"] == "updated desc"
+
+
+# ── add_priority Tests ───────────────────────────────────────────────────────
+
+
+class TestAddPriority:
+    def test_valid_phase_priority(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        result = add_priority(seeded_db, "phase", phase["id"], "high")
+        assert result["priority"] == "high"
+
+    def test_valid_plan_priority(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        plan = create_plan(seeded_db, phase["id"], "Test Plan", "desc")
+        result = add_priority(seeded_db, "plan", plan["id"], "critical")
+        assert result["priority"] == "critical"
+
+    def test_invalid_entity_type(self, seeded_db):
+        with pytest.raises(ValueError, match="Invalid entity_type"):
+            add_priority(seeded_db, "milestone", 1, "high")
+
+    def test_invalid_priority(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        with pytest.raises(ValueError, match="Invalid priority"):
+            add_priority(seeded_db, "phase", phase["id"], "urgent")
