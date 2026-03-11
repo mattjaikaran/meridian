@@ -57,7 +57,11 @@ Plans:
   2. Each command `.md` file in `~/.claude/commands/meridian/` is a thin wrapper referencing existing SKILL.md procedures
   3. Running the generator script regenerates all command files from skill definitions without manual editing
   4. Root SKILL.md provides passive project context without conflicting with command invocation
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 03-01-PLAN.md -- Generator script with TDD (discover skills, generate wrappers, update root SKILL.md)
+- [ ] 03-02-PLAN.md -- Run generator, install commands, verify in Claude Code
 
 ### Phase 4: Test Coverage & Hardening
 **Goal**: Every module has test coverage, known bugs are fixed, and hot-path queries are optimized
@@ -79,5 +83,5 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Database Foundation | 1/2 | In Progress|  |
 | 2. Error Infrastructure | 3/3 | Complete   | 2026-03-11 |
-| 3. Command Routing | 0/TBD | Not started | - |
+| 3. Command Routing | 0/2 | Not started | - |
 | 4. Test Coverage & Hardening | 0/TBD | Not started | - |
