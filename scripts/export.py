@@ -4,7 +4,7 @@
 import json
 from pathlib import Path
 
-from scripts.db import connect, get_db_path
+from scripts.db import open_project
 from scripts.state import (
     get_project,
     get_status,
@@ -23,10 +23,7 @@ def export_state(project_dir: str | Path | None = None, project_id: str = "defau
     else:
         project_dir = Path(project_dir)
 
-    db_path = get_db_path(project_dir)
-    conn = connect(db_path)
-
-    try:
+    with open_project(project_dir) as conn:
         project = get_project(conn, project_id)
         if not project:
             raise ValueError("Project not initialized")
@@ -59,9 +56,6 @@ def export_state(project_dir: str | Path | None = None, project_id: str = "defau
 
         return output_path
 
-    finally:
-        conn.close()
-
 
 def export_status_summary(
     project_dir: str | Path | None = None, project_id: str = "default"
@@ -72,10 +66,7 @@ def export_status_summary(
     else:
         project_dir = Path(project_dir)
 
-    db_path = get_db_path(project_dir)
-    conn = connect(db_path)
-
-    try:
+    with open_project(project_dir) as conn:
         status = get_status(conn, project_id)
         if "error" in status:
             return status["error"]
@@ -116,9 +107,6 @@ def export_status_summary(
         lines.append(f"→ {action['message']}")
 
         return "\n".join(lines)
-
-    finally:
-        conn.close()
 
 
 if __name__ == "__main__":

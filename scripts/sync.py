@@ -6,7 +6,7 @@ import sqlite3
 import urllib.error
 import urllib.request
 
-from scripts.db import connect, get_db_path
+from scripts.db import open_project
 from scripts.state import (
     get_plan,
     get_project,
@@ -242,9 +242,6 @@ if __name__ == "__main__":
     import sys
 
     project_dir = sys.argv[1] if len(sys.argv) > 1 else None
-    conn = connect(get_db_path(project_dir))
-    try:
+    with open_project(project_dir) as conn:
         result = sync_all(conn)
         print(json.dumps(result, indent=2, default=str))
-    finally:
-        conn.close()

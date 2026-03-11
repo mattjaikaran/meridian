@@ -6,7 +6,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-from scripts.db import connect, get_db_path
+from scripts.db import open_project
 from scripts.state import (
     create_nero_dispatch,
     get_phase,
@@ -28,8 +28,7 @@ def dispatch_plan(
     else:
         project_dir = Path(project_dir)
 
-    conn = connect(get_db_path(project_dir))
-    try:
+    with open_project(project_dir) as conn:
         project = get_project(conn, project_id)
         if not project:
             raise ValueError("Project not initialized")
@@ -112,9 +111,6 @@ def dispatch_plan(
             "plan_name": plan["name"],
         }
 
-    finally:
-        conn.close()
-
 
 def dispatch_phase(
     project_dir: str | Path | None = None,
@@ -132,8 +128,7 @@ def dispatch_phase(
     else:
         project_dir = Path(project_dir)
 
-    conn = connect(get_db_path(project_dir))
-    try:
+    with open_project(project_dir) as conn:
         plans = list_plans(conn, phase_id)
         pending = [p for p in plans if p["status"] == "pending"]
 
@@ -152,9 +147,6 @@ def dispatch_phase(
 
         return results
 
-    finally:
-        conn.close()
-
 
 def check_dispatch_status(
     project_dir: str | Path | None = None,
@@ -167,8 +159,7 @@ def check_dispatch_status(
     else:
         project_dir = Path(project_dir)
 
-    conn = connect(get_db_path(project_dir))
-    try:
+    with open_project(project_dir) as conn:
         project = get_project(conn, project_id)
         if not project or not project.get("nero_endpoint"):
             return {"status": "error", "message": "Nero not configured"}
@@ -206,6 +197,3 @@ def check_dispatch_status(
                 pass  # Can't reach Nero, return cached status
 
         return dispatch
-
-    finally:
-        conn.close()

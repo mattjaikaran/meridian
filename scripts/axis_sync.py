@@ -5,7 +5,7 @@ import json
 import subprocess
 from pathlib import Path
 
-from scripts.db import connect, get_db_path
+from scripts.db import open_project
 from scripts.state import get_project, list_phases, update_phase
 
 # Axis status ↔ Meridian phase status mapping
@@ -57,8 +57,7 @@ def sync_phase_to_axis(
     else:
         project_dir = Path(project_dir)
 
-    conn = connect(get_db_path(project_dir))
-    try:
+    with open_project(project_dir) as conn:
         project = get_project(conn, project_id)
         if not project or not project.get("axis_project_id"):
             return {"status": "skipped", "message": "No Axis project configured"}
@@ -95,9 +94,6 @@ def sync_phase_to_axis(
 
         return {"status": "synced", "results": synced}
 
-    finally:
-        conn.close()
-
 
 def create_axis_tickets_for_phases(
     project_dir: str | Path | None = None,
@@ -110,8 +106,7 @@ def create_axis_tickets_for_phases(
     else:
         project_dir = Path(project_dir)
 
-    conn = connect(get_db_path(project_dir))
-    try:
+    with open_project(project_dir) as conn:
         project = get_project(conn, project_id)
         if not project or not project.get("axis_project_id"):
             return [{"status": "skipped", "message": "No Axis project configured"}]
@@ -153,9 +148,6 @@ def create_axis_tickets_for_phases(
                 created.append({"phase": phase["name"], "error": str(e)})
 
         return created
-
-    finally:
-        conn.close()
 
 
 def _get_active_milestone_id(conn, project_id: str) -> str | None:

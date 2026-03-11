@@ -9,7 +9,7 @@ import subprocess
 import textwrap
 from pathlib import Path
 
-from scripts.db import connect, get_db_path
+from scripts.db import get_db_path, open_project
 from scripts.state import (
     compute_next_action,
     get_latest_checkpoint,
@@ -78,9 +78,7 @@ def generate_resume_prompt(
     if not db_path.exists():
         return "# Meridian Resume\n\nProject not initialized. Run `/meridian:init`."
 
-    conn = connect(db_path)
-
-    try:
+    with open_project(project_dir) as conn:
         try:
             project = get_project(conn, project_id)
         except Exception:
@@ -244,9 +242,6 @@ def generate_resume_prompt(
             sections.append(f"  Wave: {next_action.get('wave', '?')}")
 
         return "\n".join(sections)
-
-    finally:
-        conn.close()
 
 
 if __name__ == "__main__":
