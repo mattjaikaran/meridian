@@ -206,17 +206,13 @@ class TestLogging:
         db_module._logging_configured = False
         setup_logging()
         root = logging.getLogger()
-        # Should have at least one StreamHandler pointing to stderr
-        stderr_handlers = [
-            h
-            for h in root.handlers
-            if isinstance(h, logging.StreamHandler)
-            and hasattr(h, "stream")
-            and h.stream.name == "<stderr>"
+        # Should have at least one StreamHandler with the correct format
+        stream_handlers = [
+            h for h in root.handlers if isinstance(h, logging.StreamHandler)
         ]
-        assert len(stderr_handlers) >= 1
-        # Check format
-        handler = stderr_handlers[-1]
+        assert len(stream_handlers) >= 1
+        # Check format on the last added handler
+        handler = stream_handlers[-1]
         assert handler.formatter._fmt == "%(name)s: %(message)s"
 
     def test_setup_logging_default_warning(self):

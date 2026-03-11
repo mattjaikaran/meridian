@@ -3,12 +3,20 @@
 
 import contextlib
 import functools
+import logging
+import os
 import random
 import sqlite3
 import sys
 import time
+import urllib.error
+import urllib.request
 from datetime import UTC, datetime
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
+
+_logging_configured = False
 
 SCHEMA_VERSION = 2
 
@@ -159,7 +167,11 @@ ALTER TABLE plan ADD COLUMN priority TEXT CHECK (priority IN ('critical','high',
 # -- Exceptions ----------------------------------------------------------------
 
 
-class DatabaseBusyError(Exception):
+class MeridianError(Exception):
+    """Base class for all Meridian exceptions."""
+
+
+class DatabaseBusyError(MeridianError):
     """Raised when database remains locked after all retry attempts."""
 
     def __init__(self, retries: int, total_wait: float) -> None:
@@ -168,6 +180,34 @@ class DatabaseBusyError(Exception):
         super().__init__(
             f"Database busy after {retries} retries ({total_wait:.1f}s total wait)"
         )
+
+
+class StateTransitionError(MeridianError):
+    """Raised when a state transition is invalid."""
+
+
+class NeroUnreachableError(MeridianError):
+    """Raised when Nero API is unreachable after retry exhaustion."""
+
+
+# -- Logging -------------------------------------------------------------------
+
+
+def setup_logging() -> None:
+    """Configure root logger for Meridian with stderr output.
+
+    Reads level from MERIDIAN_LOG_LEVEL env var (default: WARNING).
+    """
+    global _logging_configured
+    level_name = os.environ.get("MERIDIAN_LOG_LEVEL", "WARNING").upper()
+    level = getattr(logging, level_name, logging.WARNING)
+    logging.basicConfig(
+        level=level,
+        format="%(name)s: %(message)s",
+        stream=sys.stderr,
+        force=True,
+    )
+    _logging_configured = True
 
 
 # -- Retry decorator -----------------------------------------------------------
@@ -197,6 +237,60 @@ def retry_on_busy(max_retries: int = 3, base_delay: float = 0.5):
                     sleep_time = delay + jitter
                     time.sleep(sleep_time)
                     total_wait += sleep_time
+
+        return wrapper
+
+    return decorator
+
+
+# -- HTTP retry decorator ------------------------------------------------------
+
+
+def retry_on_http_error(max_retries: int = 3, base_delay: float = 1.0):
+    """Decorator that retries on HTTP 5xx and network errors.
+
+    Fails immediately on 4xx errors. Raises NeroUnreachableError after
+    exhausting all retries. Uses exponential backoff without jitter.
+    """
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            last_exception: Exception | None = None
+            for attempt in range(max_retries + 1):
+                try:
+                    return func(*args, **kwargs)
+                except urllib.error.HTTPError as e:
+                    if e.code < 500:
+                        raise
+                    last_exception = e
+                    if attempt == max_retries:
+                        break
+                    delay = base_delay * (2**attempt)
+                    logger.warning(
+                        "HTTP %d on attempt %d/%d, retrying in %.1fs",
+                        e.code,
+                        attempt + 1,
+                        max_retries,
+                        delay,
+                    )
+                    time.sleep(delay)
+                except (urllib.error.URLError, TimeoutError, OSError) as e:
+                    last_exception = e
+                    if attempt == max_retries:
+                        break
+                    delay = base_delay * (2**attempt)
+                    logger.warning(
+                        "Network error on attempt %d/%d, retrying in %.1fs: %s",
+                        attempt + 1,
+                        max_retries,
+                        delay,
+                        e,
+                    )
+                    time.sleep(delay)
+            raise NeroUnreachableError(
+                f"Nero unreachable after {max_retries} retries: {last_exception}"
+            ) from last_exception
 
         return wrapper
 
@@ -237,6 +331,10 @@ def open_project(path: str | Path | None = None):
     Rolls back on exception. Closes connection in finally block.
     For path=":memory:", creates an in-memory connection with schema initialized.
     """
+    global _logging_configured
+    if not _logging_configured:
+        setup_logging()
+
     if str(path) == ":memory:":
         conn = sqlite3.connect(":memory:")
         conn.row_factory = sqlite3.Row
