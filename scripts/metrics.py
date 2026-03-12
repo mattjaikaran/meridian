@@ -29,11 +29,17 @@ def _parse_ts(ts: str | None) -> datetime | None:
 
 
 def compute_velocity(conn: sqlite3.Connection, project_id: str = "default") -> dict:
-    """Compute plans completed per day over a rolling 7-day window.
+    """Compute plans completed per day over a rolling window.
+
+    Reads velocity_window_days from settings (default 7).
 
     Returns:
         {velocity: float, completed_count: int, window_days: int}
     """
+    from scripts.state import get_setting
+
+    window_days = int(get_setting(conn, "velocity_window_days", "7", project_id))
+
     row = conn.execute(
         """
         SELECT COUNT(*) as cnt FROM plan p
@@ -41,18 +47,18 @@ def compute_velocity(conn: sqlite3.Connection, project_id: str = "default") -> d
         JOIN milestone m ON ph.milestone_id = m.id
         WHERE m.project_id = ?
           AND p.status = 'complete'
-          AND p.completed_at >= datetime('now', '-7 days')
+          AND p.completed_at >= datetime('now', ? || ' days')
         """,
-        (project_id,),
+        (project_id, f"-{window_days}"),
     ).fetchone()
 
     completed = row["cnt"] if row else 0
-    velocity = completed / 7.0
+    velocity = completed / float(window_days)
 
     return {
         "velocity": round(velocity, 2),
         "completed_count": completed,
-        "window_days": 7,
+        "window_days": window_days,
     }
 
 
@@ -107,13 +113,25 @@ def compute_cycle_times(conn: sqlite3.Connection, project_id: str = "default") -
 def detect_stalls(
     conn: sqlite3.Connection,
     project_id: str = "default",
-    plan_threshold_hours: float = 24.0,
-    phase_threshold_hours: float = 48.0,
+    plan_threshold_hours: float | None = None,
+    phase_threshold_hours: float | None = None,
 ) -> list[dict]:
     """Detect phases and plans stuck in the same state beyond threshold.
 
+    Reads stall_plan_hours / stall_phase_hours from settings when params not passed.
+
     Returns list of stall records: [{entity_type, entity_id, name, status, stuck_hours}]
     """
+    from scripts.state import get_setting
+
+    if plan_threshold_hours is None:
+        plan_threshold_hours = float(
+            get_setting(conn, "stall_plan_hours", "24.0", project_id)
+        )
+    if phase_threshold_hours is None:
+        phase_threshold_hours = float(
+            get_setting(conn, "stall_phase_hours", "48.0", project_id)
+        )
     stalls = []
 
     # Stalled plans: executing or paused for too long

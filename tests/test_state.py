@@ -5,8 +5,10 @@ import pytest
 
 from scripts.db import StateTransitionError
 from scripts.state import (
+    _log_event,
     add_priority,
     check_auto_advance,
+    check_dependencies_met,
     compute_next_action,
     create_checkpoint,
     create_decision,
@@ -16,14 +18,21 @@ from scripts.state import (
     create_plan,
     create_project,
     create_quick_task,
+    create_review,
     get_latest_checkpoint,
     get_project,
+    get_setting,
     get_status,
     list_decisions,
+    list_events,
     list_milestones,
     list_phases,
     list_plans,
+    list_reviews,
+    list_settings,
+    revert_plan,
     safe_update,
+    set_setting,
     transition_milestone,
     transition_phase,
     transition_plan,
@@ -652,3 +661,202 @@ class TestNeroDispatch:
             seeded_db, dispatch["id"], pr_url="https://github.com/test/pr/1"
         )
         assert updated["pr_url"] == "https://github.com/test/pr/1"
+
+
+class TestEventLog:
+    def test_transition_logs_event(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        transition_phase(seeded_db, phase["id"], "context_gathered")
+        events = list_events(seeded_db, entity_type="phase", entity_id=phase["id"])
+        assert len(events) >= 1
+        assert events[0]["new_status"] == "context_gathered"
+        assert events[0]["old_status"] == "planned"
+
+    def test_list_events_filters(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        transition_phase(seeded_db, phase["id"], "context_gathered")
+        transition_phase(seeded_db, phase["id"], "planned_out")
+        # Filter by type
+        phase_events = list_events(seeded_db, entity_type="phase")
+        assert len(phase_events) >= 2
+        # Filter by entity_id
+        specific = list_events(seeded_db, entity_type="phase", entity_id=phase["id"])
+        assert all(e["entity_id"] == str(phase["id"]) for e in specific)
+
+    def test_metadata_stored_as_json(self, seeded_db):
+        _log_event(seeded_db, "plan", "99", None, "pending", {"key": "value"})
+        seeded_db.commit()
+        events = list_events(seeded_db, entity_type="plan", entity_id="99")
+        assert len(events) == 1
+        import json
+        meta = json.loads(events[0]["metadata"])
+        assert meta["key"] == "value"
+
+    def test_milestone_transition_logs_event(self, db):
+        create_project(db, name="App", repo_path="/dev/app")
+        create_milestone(db, "v1.0", "V1")
+        transition_milestone(db, "v1.0", "active")
+        events = list_events(db, entity_type="milestone")
+        assert len(events) >= 1
+        assert events[0]["new_status"] == "active"
+
+    def test_plan_transition_logs_event(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        p = create_plan(seeded_db, phase["id"], "Plan", "Do it")
+        transition_plan(seeded_db, p["id"], "executing")
+        events = list_events(seeded_db, entity_type="plan", entity_id=p["id"])
+        assert len(events) >= 1
+        assert events[0]["new_status"] == "executing"
+
+    def test_quick_task_transition_logs_event(self, seeded_db):
+        qt = create_quick_task(seeded_db, "Fix typo")
+        transition_quick_task(seeded_db, qt["id"], "executing")
+        events = list_events(seeded_db, entity_type="quick_task")
+        assert len(events) >= 1
+
+
+class TestSettings:
+    def test_roundtrip(self, seeded_db):
+        set_setting(seeded_db, "stall_plan_hours", "48")
+        val = get_setting(seeded_db, "stall_plan_hours")
+        assert val == "48"
+
+    def test_default(self, seeded_db):
+        val = get_setting(seeded_db, "nonexistent", "fallback")
+        assert val == "fallback"
+
+    def test_overwrite(self, seeded_db):
+        set_setting(seeded_db, "key1", "old")
+        set_setting(seeded_db, "key1", "new")
+        assert get_setting(seeded_db, "key1") == "new"
+
+    def test_list(self, seeded_db):
+        set_setting(seeded_db, "a", "1")
+        set_setting(seeded_db, "b", "2")
+        settings = list_settings(seeded_db)
+        keys = [s["key"] for s in settings]
+        assert "a" in keys
+        assert "b" in keys
+
+
+class TestReview:
+    def test_create(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        review = create_review(seeded_db, phase["id"], stage=1, result="pass", feedback="LGTM")
+        assert review["result"] == "pass"
+        assert review["stage"] == 1
+        assert review["feedback"] == "LGTM"
+
+    def test_list_by_phase(self, seeded_db):
+        phases = list_phases(seeded_db, "v1.0")
+        create_review(seeded_db, phases[0]["id"], stage=1, result="pass")
+        create_review(seeded_db, phases[1]["id"], stage=1, result="fail")
+        reviews = list_reviews(seeded_db, phase_id=phases[0]["id"])
+        assert len(reviews) == 1
+        assert reviews[0]["result"] == "pass"
+
+    def test_list_by_plan(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        plan = create_plan(seeded_db, phase["id"], "Plan", "Do it")
+        create_review(seeded_db, phase["id"], stage=1, result="pass", plan_id=plan["id"])
+        create_review(seeded_db, phase["id"], stage=2, result="pass_with_notes")
+        reviews = list_reviews(seeded_db, plan_id=plan["id"])
+        assert len(reviews) == 1
+
+    def test_check_constraints(self, seeded_db):
+        import sqlite3
+        phase = list_phases(seeded_db, "v1.0")[0]
+        # Invalid stage
+        with pytest.raises(sqlite3.IntegrityError):
+            create_review(seeded_db, phase["id"], stage=3, result="pass")
+        # Invalid result
+        with pytest.raises(sqlite3.IntegrityError):
+            create_review(seeded_db, phase["id"], stage=1, result="invalid")
+
+    def test_logs_event(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        create_review(seeded_db, phase["id"], stage=1, result="pass")
+        events = list_events(seeded_db, entity_type="review")
+        assert len(events) >= 1
+
+
+class TestRevertPlan:
+    def test_clears_fields_sets_pending(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        p = create_plan(seeded_db, phase["id"], "Plan", "Do it")
+        transition_plan(seeded_db, p["id"], "executing")
+        transition_plan(seeded_db, p["id"], "complete", commit_sha="abc123")
+        reverted = revert_plan(seeded_db, p["id"], reason="needs rework")
+        assert reverted["status"] == "pending"
+        assert reverted["commit_sha"] is None
+        assert reverted["error_message"] is None
+        assert reverted["completed_at"] is None
+
+    def test_rejects_non_complete(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        p = create_plan(seeded_db, phase["id"], "Plan", "Do it")
+        with pytest.raises(StateTransitionError, match="Can only revert complete"):
+            revert_plan(seeded_db, p["id"])
+
+    def test_logs_event(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        p = create_plan(seeded_db, phase["id"], "Plan", "Do it")
+        transition_plan(seeded_db, p["id"], "executing")
+        transition_plan(seeded_db, p["id"], "complete")
+        revert_plan(seeded_db, p["id"], reason="oops")
+        events = list_events(seeded_db, entity_type="plan", entity_id=p["id"])
+        # Should have revert event (complete -> pending)
+        revert_events = [e for e in events if e["old_status"] == "complete" and e["new_status"] == "pending"]
+        assert len(revert_events) == 1
+
+
+class TestPlanDependencies:
+    def test_create_with_deps(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        p1 = create_plan(seeded_db, phase["id"], "Plan 1", "Base")
+        p2 = create_plan(seeded_db, phase["id"], "Plan 2", "Depends", depends_on=[p1["id"]])
+        import json
+        assert json.loads(p2["depends_on"]) == [p1["id"]]
+
+    def test_deps_met(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        p1 = create_plan(seeded_db, phase["id"], "Plan 1", "Base")
+        p2 = create_plan(seeded_db, phase["id"], "Plan 2", "Depends", depends_on=[p1["id"]])
+        transition_plan(seeded_db, p1["id"], "executing")
+        transition_plan(seeded_db, p1["id"], "complete")
+        assert check_dependencies_met(seeded_db, p2["id"]) is True
+
+    def test_deps_unmet(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        p1 = create_plan(seeded_db, phase["id"], "Plan 1", "Base")
+        p2 = create_plan(seeded_db, phase["id"], "Plan 2", "Depends", depends_on=[p1["id"]])
+        assert check_dependencies_met(seeded_db, p2["id"]) is False
+
+    def test_compute_next_action_skips_blocked(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        transition_phase(seeded_db, phase["id"], "context_gathered")
+        transition_phase(seeded_db, phase["id"], "planned_out")
+        transition_phase(seeded_db, phase["id"], "executing")
+        p1 = create_plan(seeded_db, phase["id"], "Plan 1", "Base")
+        p2 = create_plan(seeded_db, phase["id"], "Plan 2", "Depends", depends_on=[p1["id"]])
+        # p1 has no deps, should be picked
+        action = compute_next_action(seeded_db)
+        assert action["action"] == "execute_plan"
+        assert action["plan_id"] == p1["id"]
+
+    def test_backward_compat_no_deps(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        p = create_plan(seeded_db, phase["id"], "Plan", "No deps")
+        assert check_dependencies_met(seeded_db, p["id"]) is True
+
+    def test_wait_for_dependencies(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        transition_phase(seeded_db, phase["id"], "context_gathered")
+        transition_phase(seeded_db, phase["id"], "planned_out")
+        transition_phase(seeded_db, phase["id"], "executing")
+        p1 = create_plan(seeded_db, phase["id"], "Plan 1", "Base")
+        p2 = create_plan(seeded_db, phase["id"], "Plan 2", "Depends on P1", depends_on=[p1["id"]])
+        # Make p1 executing (not pending), so p2 is the only pending plan
+        transition_plan(seeded_db, p1["id"], "executing")
+        action = compute_next_action(seeded_db)
+        assert action["action"] == "wait_for_dependencies"

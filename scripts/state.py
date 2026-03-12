@@ -26,7 +26,7 @@ PLAN_TRANSITIONS = {
     "executing": ["complete", "failed", "paused"],
     "paused": ["executing", "skipped"],
     "failed": ["pending", "executing", "skipped"],
-    "complete": [],
+    "complete": ["pending"],
     "skipped": [],
 }
 
@@ -45,9 +45,11 @@ ALLOWED_COLUMNS = {
               "axis_ticket_id", "status", "started_at", "completed_at", "priority"},
     "plan": {"name", "description", "wave", "tdd_required", "files_to_create",
              "files_to_modify", "test_command", "executor_type", "status",
-             "started_at", "completed_at", "commit_sha", "error_message", "priority"},
+             "started_at", "completed_at", "commit_sha", "error_message", "priority",
+             "depends_on"},
     "quick_task": {"status", "completed_at", "commit_sha"},
     "nero_dispatch": {"status", "pr_url", "completed_at"},
+    "review": {"plan_id", "phase_id", "stage", "result", "feedback"},
 }
 
 _PRIORITY_SQL = {
@@ -176,10 +178,12 @@ def transition_milestone(conn: sqlite3.Connection, milestone_id: str, new_status
             f"Invalid transition: {current['status']} → {new_status}. "
             f"Valid: {MILESTONE_TRANSITIONS[current['status']]}"
         )
+    old_status = current["status"]
     updates = {"status": new_status}
     if new_status == "complete":
         updates["completed_at"] = _now()
     safe_update(conn, "milestone", milestone_id, updates)
+    _log_event(conn, "milestone", milestone_id, old_status, new_status)
     conn.commit()
     return get_milestone(conn, milestone_id)
 
@@ -240,12 +244,14 @@ def transition_phase(conn: sqlite3.Connection, phase_id: int, new_status: str) -
             f"Invalid phase transition: {current['status']} → {new_status}. "
             f"Valid: {PHASE_TRANSITIONS[current['status']]}"
         )
+    old_status = current["status"]
     updates = {"status": new_status}
     if new_status == "executing" and not current["started_at"]:
         updates["started_at"] = _now()
     if new_status == "complete":
         updates["completed_at"] = _now()
     safe_update(conn, "phase", phase_id, updates)
+    _log_event(conn, "phase", phase_id, old_status, new_status)
     conn.commit()
     return get_phase(conn, phase_id)
 
@@ -277,6 +283,7 @@ def create_plan(
     test_command: str | None = None,
     executor_type: str = "subagent",
     sequence: int | None = None,
+    depends_on: list[int] | None = None,
 ) -> dict:
     if sequence is None:
         row = conn.execute(
@@ -286,8 +293,8 @@ def create_plan(
         sequence = row["next_seq"]
     conn.execute(
         """INSERT INTO plan (phase_id, sequence, name, description, wave, tdd_required,
-        files_to_create, files_to_modify, test_command, executor_type)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        files_to_create, files_to_modify, test_command, executor_type, depends_on)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             phase_id,
             sequence,
@@ -299,6 +306,7 @@ def create_plan(
             json.dumps(files_to_modify) if files_to_modify else None,
             test_command,
             executor_type,
+            json.dumps(depends_on) if depends_on else None,
         ),
     )
     conn.commit()
@@ -340,6 +348,7 @@ def transition_plan(
             f"Invalid plan transition: {current['status']} → {new_status}. "
             f"Valid: {PLAN_TRANSITIONS[current['status']]}"
         )
+    old_status = current["status"]
     updates = {"status": new_status}
     if new_status == "executing" and not current["started_at"]:
         updates["started_at"] = _now()
@@ -350,6 +359,7 @@ def transition_plan(
     if error_message:
         updates["error_message"] = error_message
     safe_update(conn, "plan", plan_id, updates)
+    _log_event(conn, "plan", plan_id, old_status, new_status)
     conn.commit()
     return get_plan(conn, plan_id)
 
@@ -510,12 +520,14 @@ def transition_quick_task(
         raise ValueError(f"Quick task {task_id} not found")
     if new_status not in valid.get(current["status"], []):
         raise StateTransitionError(f"Invalid quick task transition: {current['status']} → {new_status}")
+    old_status = current["status"]
     updates = {"status": new_status}
     if new_status == "complete":
         updates["completed_at"] = _now()
     if commit_sha:
         updates["commit_sha"] = commit_sha
     safe_update(conn, "quick_task", task_id, updates)
+    _log_event(conn, "quick_task", task_id, old_status, new_status)
     conn.commit()
     row = conn.execute("SELECT * FROM quick_task WHERE id = ?", (task_id,)).fetchone()
     return _row_to_dict(row)
@@ -548,6 +560,8 @@ def update_nero_dispatch(
     status: str | None = None,
     pr_url: str | None = None,
 ) -> dict:
+    old_row = conn.execute("SELECT * FROM nero_dispatch WHERE id = ?", (dispatch_id,)).fetchone()
+    old_status = dict(old_row)["status"] if old_row else None
     updates = {}
     if status is not None:
         updates["status"] = status
@@ -557,6 +571,8 @@ def update_nero_dispatch(
         updates["completed_at"] = _now()
     if updates:
         safe_update(conn, "nero_dispatch", dispatch_id, updates)
+        if status is not None and status != old_status:
+            _log_event(conn, "nero_dispatch", dispatch_id, old_status, status)
         conn.commit()
     row = conn.execute("SELECT * FROM nero_dispatch WHERE id = ?", (dispatch_id,)).fetchone()
     return _row_to_dict(row)
@@ -751,12 +767,21 @@ def compute_next_action(conn: sqlite3.Connection, project_id: str = "default") -
         }
 
     if phase["status"] == "executing":
-        # Find next pending plan
-        plan = conn.execute(
+        # Find next pending plan with met dependencies
+        pending_plans = conn.execute(
             "SELECT * FROM plan WHERE phase_id = ? AND status = 'pending'"
-            " ORDER BY wave, sequence LIMIT 1",
+            " ORDER BY wave, sequence",
             (phase["id"],),
-        ).fetchone()
+        ).fetchall()
+
+        plan = None
+        has_blocked_plans = False
+        for candidate in pending_plans:
+            if check_dependencies_met(conn, candidate["id"]):
+                plan = candidate
+                break
+            else:
+                has_blocked_plans = True
 
         if plan:
             # Check if earlier wave plans are still running
@@ -780,6 +805,13 @@ def compute_next_action(conn: sqlite3.Connection, project_id: str = "default") -
                 "plan_id": plan["id"],
                 "plan_name": plan["name"],
                 "wave": plan["wave"],
+            }
+
+        if has_blocked_plans and not plan:
+            return {
+                "action": "wait_for_dependencies",
+                "message": "All pending plans have unmet dependencies. Complete dependency plans first.",
+                "phase_id": phase["id"],
             }
 
         # Check for failed plans
@@ -866,6 +898,198 @@ def get_status(conn: sqlite3.Connection, project_id: str = "default") -> dict:
         "latest_checkpoint": latest_checkpoint,
         "recent_decisions": recent_decisions,
     }
+
+
+# ── Event Log ─────────────────────────────────────────────────────────────────
+
+
+def _log_event(
+    conn: sqlite3.Connection,
+    entity_type: str,
+    entity_id: str | int,
+    old_status: str | None,
+    new_status: str,
+    metadata: dict | None = None,
+) -> None:
+    """Internal helper: insert a state_event record."""
+    conn.execute(
+        """INSERT INTO state_event (entity_type, entity_id, old_status, new_status, metadata)
+        VALUES (?, ?, ?, ?, ?)""",
+        (
+            entity_type,
+            str(entity_id),
+            old_status,
+            new_status,
+            json.dumps(metadata) if metadata else None,
+        ),
+    )
+
+
+def list_events(
+    conn: sqlite3.Connection,
+    entity_type: str | None = None,
+    entity_id: str | int | None = None,
+    limit: int = 50,
+) -> list[dict]:
+    """Query state_event with optional filters."""
+    clauses = []
+    params: list = []
+    if entity_type is not None:
+        clauses.append("entity_type = ?")
+        params.append(entity_type)
+    if entity_id is not None:
+        clauses.append("entity_id = ?")
+        params.append(str(entity_id))
+    where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+    params.append(limit)
+    rows = conn.execute(
+        f"SELECT * FROM state_event{where} ORDER BY id DESC LIMIT ?", params
+    ).fetchall()
+    return _rows_to_list(rows)
+
+
+# ── Settings ──────────────────────────────────────────────────────────────────
+
+
+def get_setting(
+    conn: sqlite3.Connection,
+    key: str,
+    default: str | None = None,
+    project_id: str = "default",
+) -> str | None:
+    """Get a setting value, returning default if not found."""
+    row = conn.execute(
+        "SELECT value FROM settings WHERE project_id = ? AND key = ?",
+        (project_id, key),
+    ).fetchone()
+    return row["value"] if row else default
+
+
+def set_setting(
+    conn: sqlite3.Connection,
+    key: str,
+    value: str,
+    project_id: str = "default",
+) -> None:
+    """Insert or replace a setting."""
+    conn.execute(
+        """INSERT INTO settings (project_id, key, value, updated_at)
+        VALUES (?, ?, ?, datetime('now'))
+        ON CONFLICT(project_id, key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')""",
+        (project_id, key, value),
+    )
+    conn.commit()
+
+
+def list_settings(
+    conn: sqlite3.Connection,
+    project_id: str = "default",
+) -> list[dict]:
+    """List all settings for a project."""
+    rows = conn.execute(
+        "SELECT * FROM settings WHERE project_id = ? ORDER BY key",
+        (project_id,),
+    ).fetchall()
+    return _rows_to_list(rows)
+
+
+# ── Review Persistence ────────────────────────────────────────────────────────
+
+
+def create_review(
+    conn: sqlite3.Connection,
+    phase_id: int,
+    stage: int,
+    result: str,
+    feedback: str | None = None,
+    plan_id: int | None = None,
+) -> dict:
+    """Create a review record and log an event."""
+    conn.execute(
+        """INSERT INTO review (plan_id, phase_id, stage, result, feedback)
+        VALUES (?, ?, ?, ?, ?)""",
+        (plan_id, phase_id, stage, result, feedback),
+    )
+    review_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
+    _log_event(conn, "review", review_id, None, result, {"stage": stage, "phase_id": phase_id})
+    conn.commit()
+    row = conn.execute("SELECT * FROM review WHERE id = ?", (review_id,)).fetchone()
+    return _row_to_dict(row)
+
+
+def list_reviews(
+    conn: sqlite3.Connection,
+    phase_id: int | None = None,
+    plan_id: int | None = None,
+    limit: int = 20,
+) -> list[dict]:
+    """List reviews, optionally filtered by phase or plan."""
+    clauses = []
+    params: list = []
+    if phase_id is not None:
+        clauses.append("phase_id = ?")
+        params.append(phase_id)
+    if plan_id is not None:
+        clauses.append("plan_id = ?")
+        params.append(plan_id)
+    where = f" WHERE {' AND '.join(clauses)}" if clauses else ""
+    params.append(limit)
+    rows = conn.execute(
+        f"SELECT * FROM review{where} ORDER BY id DESC LIMIT ?", params
+    ).fetchall()
+    return _rows_to_list(rows)
+
+
+# ── Plan Revert ───────────────────────────────────────────────────────────────
+
+
+def revert_plan(
+    conn: sqlite3.Connection,
+    plan_id: int,
+    reason: str | None = None,
+) -> dict:
+    """Revert a completed plan back to pending.
+
+    Clears commit_sha, error_message, completed_at. Logs event with reason.
+    """
+    current = get_plan(conn, plan_id)
+    if not current:
+        raise ValueError(f"Plan {plan_id} not found")
+    if current["status"] != "complete":
+        raise StateTransitionError(
+            f"Can only revert complete plans, current status: {current['status']}"
+        )
+    updates = {
+        "status": "pending",
+        "commit_sha": None,
+        "error_message": None,
+        "completed_at": None,
+    }
+    safe_update(conn, "plan", plan_id, updates)
+    metadata = {"reason": reason} if reason else None
+    _log_event(conn, "plan", plan_id, "complete", "pending", metadata)
+    conn.commit()
+    return get_plan(conn, plan_id)
+
+
+# ── Plan Dependencies ────────────────────────────────────────────────────────
+
+
+def check_dependencies_met(conn: sqlite3.Connection, plan_id: int) -> bool:
+    """Return True if all dependency plans are complete or skipped."""
+    plan = get_plan(conn, plan_id)
+    if not plan or not plan.get("depends_on"):
+        return True
+    dep_ids = json.loads(plan["depends_on"])
+    if not dep_ids:
+        return True
+    placeholders = ",".join("?" for _ in dep_ids)
+    row = conn.execute(
+        f"SELECT COUNT(*) as cnt FROM plan WHERE id IN ({placeholders})"
+        f" AND status NOT IN ('complete', 'skipped')",
+        dep_ids,
+    ).fetchone()
+    return row["cnt"] == 0
 
 
 # ── Git Helpers ───────────────────────────────────────────────────────────────

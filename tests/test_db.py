@@ -15,6 +15,7 @@ from scripts.db import (
     NeroUnreachableError,
     StateTransitionError,
     _migrate_v1_to_v2,
+    _migrate_v2_to_v3,
     backup_database,
     get_schema_version,
     init_schema,
@@ -442,4 +443,71 @@ class TestMigration:
         assert get_schema_version(conn) == 1
         _migrate_v1_to_v2(conn)
         assert get_schema_version(conn) == 2
+        conn.close()
+
+
+class TestMigrationV2ToV3:
+    """Tests for _migrate_v2_to_v3 schema migration."""
+
+    def _create_v2_schema(self):
+        """Create a connection with v2 schema."""
+        conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys=ON")
+        conn.executescript(SCHEMA_SQL)
+        conn.execute("INSERT OR REPLACE INTO schema_version (version) VALUES (?)", (2,))
+        conn.commit()
+        return conn
+
+    def _get_columns(self, conn, table):
+        return {row[1] for row in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+
+    def _get_tables(self, conn):
+        rows = conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+        return {row[0] for row in rows}
+
+    def test_fresh_db_has_v3_tables(self):
+        """A fresh init_schema creates all v3 tables."""
+        conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA foreign_keys=ON")
+        init_schema(conn)
+        tables = self._get_tables(conn)
+        assert "state_event" in tables
+        assert "settings" in tables
+        assert "review" in tables
+        assert "depends_on" in self._get_columns(conn, "plan")
+        conn.close()
+
+    def test_migration_adds_tables(self):
+        """_migrate_v2_to_v3 adds new tables."""
+        conn = self._create_v2_schema()
+        _migrate_v2_to_v3(conn)
+        tables = self._get_tables(conn)
+        assert "state_event" in tables
+        assert "settings" in tables
+        assert "review" in tables
+        conn.close()
+
+    def test_migration_adds_depends_on(self):
+        """_migrate_v2_to_v3 adds depends_on column to plan."""
+        conn = self._create_v2_schema()
+        _migrate_v2_to_v3(conn)
+        assert "depends_on" in self._get_columns(conn, "plan")
+        conn.close()
+
+    def test_idempotent(self):
+        """Running _migrate_v2_to_v3 twice does not raise."""
+        conn = self._create_v2_schema()
+        _migrate_v2_to_v3(conn)
+        _migrate_v2_to_v3(conn)
+        assert "depends_on" in self._get_columns(conn, "plan")
+        conn.close()
+
+    def test_version_bumped_to_3(self):
+        """After migration, schema version is 3."""
+        conn = self._create_v2_schema()
+        assert get_schema_version(conn) == 2
+        _migrate_v2_to_v3(conn)
+        assert get_schema_version(conn) == 3
         conn.close()

@@ -28,9 +28,15 @@ def estimate_file_tokens(file_path: str) -> int:
         return 0
 
 
-def should_checkpoint(estimated_tokens: int) -> bool:
-    """Check if we should trigger an auto-checkpoint."""
-    return estimated_tokens >= AUTO_CHECKPOINT_TOKENS
+def should_checkpoint(estimated_tokens: int, threshold: int | None = None) -> bool:
+    """Check if we should trigger an auto-checkpoint.
+
+    Args:
+        estimated_tokens: Current token estimate.
+        threshold: Override threshold (default: AUTO_CHECKPOINT_TOKENS).
+    """
+    limit = threshold if threshold is not None else AUTO_CHECKPOINT_TOKENS
+    return estimated_tokens >= limit
 
 
 def estimate_plan_context(

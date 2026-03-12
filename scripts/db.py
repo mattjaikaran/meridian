@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 _logging_configured = False
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 SCHEMA_SQL = """
 -- Schema version tracking
@@ -153,6 +153,39 @@ CREATE TABLE IF NOT EXISTS quick_task (
     commit_sha TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     completed_at TEXT
+);
+
+-- State event log
+CREATE TABLE IF NOT EXISTS state_event (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entity_type TEXT NOT NULL CHECK (entity_type IN ('milestone','phase','plan','quick_task','nero_dispatch','review')),
+    entity_id TEXT NOT NULL,
+    old_status TEXT,
+    new_status TEXT NOT NULL,
+    timestamp TEXT DEFAULT (datetime('now')),
+    metadata TEXT
+);
+
+-- Settings
+CREATE TABLE IF NOT EXISTS settings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id TEXT DEFAULT 'default' REFERENCES project(id),
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    UNIQUE(project_id, key)
+);
+
+-- Reviews
+CREATE TABLE IF NOT EXISTS review (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    plan_id INTEGER REFERENCES plan(id),
+    phase_id INTEGER NOT NULL REFERENCES phase(id),
+    stage INTEGER NOT NULL CHECK (stage IN (1, 2)),
+    result TEXT NOT NULL CHECK (result IN ('pass','pass_with_notes','fail')),
+    feedback TEXT,
+    created_at TEXT DEFAULT (datetime('now'))
 );
 """
 
@@ -421,6 +454,17 @@ def _migrate_v1_to_v2(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_v2_to_v3(conn: sqlite3.Connection) -> None:
+    """Add state_event, settings, review tables and depends_on column to plan."""
+    # Tables are created by SCHEMA_SQL (CREATE IF NOT EXISTS), so just ensure
+    # the depends_on column exists on plan
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(plan)").fetchall()}
+    if "depends_on" not in columns:
+        conn.execute("ALTER TABLE plan ADD COLUMN depends_on TEXT")
+    conn.execute("INSERT OR REPLACE INTO schema_version (version) VALUES (?)", (3,))
+    conn.commit()
+
+
 def get_db_path(project_dir: str | Path | None = None) -> Path:
     """Get the path to the Meridian database for a project directory."""
     if project_dir is None:
@@ -451,6 +495,13 @@ def init_schema(conn: sqlite3.Connection, db_path: str | Path | None = None) -> 
             if db_path.exists():
                 backup_database(db_path)
         _migrate_v1_to_v2(conn)
+    current_version = get_schema_version(conn)
+    if current_version < 3:
+        if db_path is not None and str(db_path) != ":memory:":
+            db_path = Path(db_path)
+            if db_path.exists():
+                backup_database(db_path)
+        _migrate_v2_to_v3(conn)
 
 
 def get_schema_version(conn: sqlite3.Connection) -> int:

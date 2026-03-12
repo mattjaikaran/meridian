@@ -1,0 +1,31 @@
+{
+  "name": "CLI Tool",
+  "description": "Command-line tool with argument parsing, commands, output formatting, and tests",
+  "phases": [
+    {
+      "name": "Foundation",
+      "description": "Project setup and CLI framework",
+      "plans": [
+        {"name": "Project Setup", "description": "Initialize project, dependencies, and entry point", "wave": 1, "tdd_required": false},
+        {"name": "Argument Parser", "description": "Implement CLI argument parsing with subcommands and help text", "wave": 1, "tdd_required": true}
+      ]
+    },
+    {
+      "name": "Commands",
+      "description": "Implement CLI commands and business logic",
+      "plans": [
+        {"name": "Core Commands", "description": "Implement primary CLI commands with input validation", "wave": 1, "tdd_required": true},
+        {"name": "Output Formatting", "description": "Table output, JSON output, colored terminal output", "wave": 2, "tdd_required": true}
+      ]
+    },
+    {
+      "name": "Polish",
+      "description": "Error handling, configuration, and packaging",
+      "plans": [
+        {"name": "Error Handling", "description": "User-friendly error messages, exit codes, and verbose mode", "wave": 1, "tdd_required": true},
+        {"name": "Configuration", "description": "Config file support, environment variables, defaults", "wave": 1, "tdd_required": true},
+        {"name": "Packaging", "description": "Build scripts, entry points, and distribution setup", "wave": 2, "tdd_required": false}
+      ]
+    }
+  ]
+}

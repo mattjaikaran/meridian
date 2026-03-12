@@ -9,14 +9,20 @@ Meridian is a SQLite-backed state machine for managing complex development workf
 - debug -- Systematic Debugging
 - dispatch -- Nero Dispatch
 - execute -- Execution Engine
+- history -- Event Timeline
 - init -- Initialize Meridian in Current Project
+- migrate -- Cross-Project Migration
 - plan -- Planning Pipeline
 - quick -- Lightweight Quick Task
 - resume -- Deterministic Resume
+- revert -- Revert Completed Plan
 - review -- Two-Stage Code Review
 - roadmap -- Cross-Milestone Roadmap
+- scan -- Codebase Audit & Work Discovery
 - ship -- Commit + Push + PR
 - status -- Show Project Status
+- template -- Workflow Templates
+- validate -- Git State Validation
 
 ## Architecture
 

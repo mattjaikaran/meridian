@@ -149,3 +149,48 @@ class TestExportStatusSummary:
 
         assert isinstance(result, str)
         assert "not initialized" in result.lower() or "error" in result.lower()
+
+
+class TestExportAsTemplate:
+    def test_correct_structure(self, db):
+        from scripts.export import export_as_template
+        _seed_export_db(db)
+        template = export_as_template(db, "v1.0")
+        assert template["name"] == "Version 1.0"
+        assert len(template["phases"]) == 2
+        assert template["phases"][0]["name"] == "Foundation"
+        assert len(template["phases"][0]["plans"]) == 1
+        assert template["phases"][0]["plans"][0]["name"] == "Setup DB"
+
+    def test_runtime_data_stripped(self, db):
+        from scripts.export import export_as_template
+        _seed_export_db(db)
+        template = export_as_template(db, "v1.0")
+        # No IDs, status, timestamps
+        phase = template["phases"][0]
+        assert "id" not in phase
+        assert "status" not in phase
+        plan = phase["plans"][0]
+        assert "id" not in plan
+        assert "status" not in plan
+        assert "commit_sha" not in plan
+
+    def test_round_trip(self, db):
+        """Template can be used to create new milestone."""
+        from scripts.export import export_as_template
+        from scripts.state import create_milestone, create_phase, create_plan
+        _seed_export_db(db)
+        template = export_as_template(db, "v1.0")
+        # Apply template to new milestone
+        create_milestone(db, "v2.0", template["name"] + " v2")
+        for phase_data in template["phases"]:
+            phase = create_phase(db, "v2.0", phase_data["name"], phase_data.get("description"))
+            for plan_data in phase_data["plans"]:
+                create_plan(db, phase["id"], plan_data["name"], plan_data["description"],
+                           wave=plan_data.get("wave", 1),
+                           tdd_required=plan_data.get("tdd_required", True))
+        from scripts.state import list_phases, list_plans
+        phases = list_phases(db, "v2.0")
+        assert len(phases) == 2
+        plans = list_plans(db, phases[0]["id"])
+        assert len(plans) == 1

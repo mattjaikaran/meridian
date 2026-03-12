@@ -120,6 +120,43 @@ def export_status_summary(
         return "\n".join(lines)
 
 
+def export_as_template(conn, milestone_id: str) -> dict:
+    """Export a milestone's structure as a reusable template.
+
+    Strips runtime data (IDs, status, timestamps, commit_sha) and returns
+    a template-format dict compatible with /meridian:template --apply.
+    """
+    from scripts.state import get_milestone, list_phases, list_plans
+
+    milestone = get_milestone(conn, milestone_id)
+    if not milestone:
+        raise ValueError(f"Milestone {milestone_id} not found")
+
+    phases = list_phases(conn, milestone_id)
+    template_phases = []
+    for phase in phases:
+        plans = list_plans(conn, phase["id"])
+        template_plans = []
+        for plan in plans:
+            template_plans.append({
+                "name": plan["name"],
+                "description": plan["description"],
+                "wave": plan["wave"],
+                "tdd_required": bool(plan.get("tdd_required", True)),
+            })
+        template_phases.append({
+            "name": phase["name"],
+            "description": phase.get("description"),
+            "plans": template_plans,
+        })
+
+    return {
+        "name": milestone["name"],
+        "description": milestone.get("description"),
+        "phases": template_phases,
+    }
+
+
 if __name__ == "__main__":
     import sys
 

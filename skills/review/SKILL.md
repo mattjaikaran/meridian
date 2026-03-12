@@ -73,5 +73,16 @@ conn.close()
 "
 ```
 
+### Step 7: Persist Review Result
+```bash
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+from scripts.db import open_project
+from scripts.state import create_review
+with open_project('.') as conn:
+    create_review(conn, phase_id=<phase_id>, stage=<stage>, result='<pass|pass_with_notes|fail>',
+                  feedback='<review_feedback>')
+"
+```
+
 ## Output
 Display review results in a clear format with PASS/FAIL per stage and specific feedback.

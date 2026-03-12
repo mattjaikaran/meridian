@@ -239,6 +239,77 @@ def get_dispatch_summary(
     return [dict(r) for r in rows]
 
 
+def handle_webhook(
+    conn: sqlite3.Connection,
+    payload: dict,
+) -> dict:
+    """Handle an incoming Nero webhook event.
+
+    Payload format:
+        {event_type, task_id, status, pr_url?, commit_sha?, error?}
+
+    Event types: task.completed, task.failed, task.progress
+
+    Returns {status, message} describing what was processed.
+    """
+    from scripts.state import _log_event
+
+    event_type = payload.get("event_type")
+    task_id = payload.get("task_id")
+    status = payload.get("status")
+
+    if not event_type or not task_id:
+        return {"status": "error", "message": "Missing event_type or task_id"}
+
+    # Find dispatch by nero_task_id
+    dispatch = conn.execute(
+        "SELECT * FROM nero_dispatch WHERE nero_task_id = ?", (task_id,)
+    ).fetchone()
+
+    if not dispatch:
+        return {"status": "error", "message": f"Unknown task_id: {task_id}"}
+
+    dispatch = dict(dispatch)
+    result = {"status": "ok", "event_type": event_type, "dispatch_id": dispatch["id"]}
+
+    if event_type == "task.completed":
+        update_nero_dispatch(
+            conn,
+            dispatch["id"],
+            status="completed",
+            pr_url=payload.get("pr_url"),
+        )
+        if dispatch.get("plan_id"):
+            plan = get_plan(conn, dispatch["plan_id"])
+            if plan and plan["status"] == "executing":
+                transition_plan(
+                    conn,
+                    plan["id"],
+                    "complete",
+                    commit_sha=payload.get("commit_sha"),
+                )
+                result["plan_transitioned"] = "complete"
+
+    elif event_type == "task.failed":
+        update_nero_dispatch(conn, dispatch["id"], status="failed")
+        if dispatch.get("plan_id"):
+            plan = get_plan(conn, dispatch["plan_id"])
+            if plan and plan["status"] == "executing":
+                error_msg = payload.get("error", "Nero task failed")
+                transition_plan(conn, plan["id"], "failed", error_message=error_msg)
+                result["plan_transitioned"] = "failed"
+
+    elif event_type == "task.progress":
+        new_status = status or "running"
+        update_nero_dispatch(conn, dispatch["id"], status=new_status)
+        result["message"] = f"Updated dispatch to {new_status}"
+
+    else:
+        result["message"] = f"Unknown event_type: {event_type}"
+
+    return result
+
+
 if __name__ == "__main__":
     import sys
 

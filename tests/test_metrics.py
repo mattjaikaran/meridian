@@ -268,3 +268,19 @@ class TestProgress:
 
         result = compute_progress(seeded_db)
         assert result["phases"][0]["pct"] == 100
+
+
+class TestSettingsBasedThresholds:
+    def test_velocity_uses_setting(self, seeded_db):
+        from scripts.state import set_setting
+        set_setting(seeded_db, "velocity_window_days", "14")
+        result = compute_velocity(seeded_db)
+        assert result["window_days"] == 14
+
+    def test_stalls_uses_settings(self, seeded_db):
+        from scripts.state import set_setting
+        set_setting(seeded_db, "stall_plan_hours", "12")
+        set_setting(seeded_db, "stall_phase_hours", "24")
+        # Just verifying it runs without error with settings
+        stalls = detect_stalls(seeded_db)
+        assert isinstance(stalls, list)

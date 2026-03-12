@@ -1,0 +1,40 @@
+{
+  "name": "API Service",
+  "description": "Standard API service project with schema, endpoints, auth, tests, and docs",
+  "phases": [
+    {
+      "name": "Foundation",
+      "description": "Project setup, database schema, and core configuration",
+      "plans": [
+        {"name": "Project Scaffolding", "description": "Initialize project structure, dependencies, and configuration files", "wave": 1, "tdd_required": false},
+        {"name": "Database Schema", "description": "Design and implement database models and migrations", "wave": 1, "tdd_required": true},
+        {"name": "Configuration Management", "description": "Environment variables, settings, and config validation", "wave": 2, "tdd_required": true}
+      ]
+    },
+    {
+      "name": "Core API",
+      "description": "Implement primary API endpoints and business logic",
+      "plans": [
+        {"name": "CRUD Endpoints", "description": "Implement core create, read, update, delete endpoints", "wave": 1, "tdd_required": true},
+        {"name": "Business Logic", "description": "Implement domain-specific business rules and validation", "wave": 1, "tdd_required": true},
+        {"name": "Error Handling", "description": "Standardized error responses, validation errors, and error middleware", "wave": 2, "tdd_required": true}
+      ]
+    },
+    {
+      "name": "Authentication & Authorization",
+      "description": "Implement auth system and access control",
+      "plans": [
+        {"name": "Auth System", "description": "Implement authentication (JWT/session) with login, logout, refresh", "wave": 1, "tdd_required": true},
+        {"name": "Authorization", "description": "Role-based access control and permission checks on endpoints", "wave": 2, "tdd_required": true}
+      ]
+    },
+    {
+      "name": "Testing & Documentation",
+      "description": "Integration tests and API documentation",
+      "plans": [
+        {"name": "Integration Tests", "description": "End-to-end API tests covering all endpoints and edge cases", "wave": 1, "tdd_required": true},
+        {"name": "API Documentation", "description": "OpenAPI/Swagger docs, usage examples, and deployment guide", "wave": 1, "tdd_required": false}
+      ]
+    }
+  ]
+}

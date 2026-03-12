@@ -23,6 +23,7 @@ from scripts.state import (
 from scripts.sync import (
     _nero_rpc,
     get_dispatch_summary,
+    handle_webhook,
     pull_dispatch_status,
     push_state_to_nero,
     sync_all,
@@ -318,3 +319,75 @@ class TestDispatchSummary:
         assert len(summary) == 1
         assert summary[0]["plan_name"] == "Plan 1"
         assert summary[0]["phase_name"] == "Foundation"
+
+
+class TestWebhookHandler:
+    def test_completed_webhook_transitions_plan(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        pid = phase["id"]
+        transition_phase(seeded_db, pid, "context_gathered")
+        transition_phase(seeded_db, pid, "planned_out")
+        transition_phase(seeded_db, pid, "executing")
+        plan = create_plan(seeded_db, pid, "Plan 1", "Do it")
+        transition_plan(seeded_db, plan["id"], "executing")
+        create_nero_dispatch(
+            seeded_db, dispatch_type="plan", plan_id=plan["id"],
+            phase_id=pid, nero_task_id="nero-wh-1",
+        )
+        result = handle_webhook(seeded_db, {
+            "event_type": "task.completed",
+            "task_id": "nero-wh-1",
+            "commit_sha": "abc123",
+            "pr_url": "https://github.com/pr/1",
+        })
+        assert result["status"] == "ok"
+        assert result["plan_transitioned"] == "complete"
+        updated = get_plan(seeded_db, plan["id"])
+        assert updated["status"] == "complete"
+
+    def test_failed_webhook(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        pid = phase["id"]
+        transition_phase(seeded_db, pid, "context_gathered")
+        transition_phase(seeded_db, pid, "planned_out")
+        transition_phase(seeded_db, pid, "executing")
+        plan = create_plan(seeded_db, pid, "Plan 1", "Do it")
+        transition_plan(seeded_db, plan["id"], "executing")
+        create_nero_dispatch(
+            seeded_db, dispatch_type="plan", plan_id=plan["id"],
+            phase_id=pid, nero_task_id="nero-wh-2",
+        )
+        result = handle_webhook(seeded_db, {
+            "event_type": "task.failed",
+            "task_id": "nero-wh-2",
+            "error": "Build failed",
+        })
+        assert result["plan_transitioned"] == "failed"
+
+    def test_unknown_task_id(self, seeded_db):
+        result = handle_webhook(seeded_db, {
+            "event_type": "task.completed",
+            "task_id": "nonexistent",
+        })
+        assert result["status"] == "error"
+        assert "Unknown" in result["message"]
+
+    def test_event_logged(self, seeded_db):
+        from scripts.state import list_events
+        phase = list_phases(seeded_db, "v1.0")[0]
+        pid = phase["id"]
+        transition_phase(seeded_db, pid, "context_gathered")
+        transition_phase(seeded_db, pid, "planned_out")
+        transition_phase(seeded_db, pid, "executing")
+        plan = create_plan(seeded_db, pid, "Plan 1", "Do it")
+        transition_plan(seeded_db, plan["id"], "executing")
+        create_nero_dispatch(
+            seeded_db, dispatch_type="plan", plan_id=plan["id"],
+            phase_id=pid, nero_task_id="nero-wh-3",
+        )
+        handle_webhook(seeded_db, {
+            "event_type": "task.completed",
+            "task_id": "nero-wh-3",
+        })
+        events = list_events(seeded_db, entity_type="nero_dispatch")
+        assert len(events) >= 1

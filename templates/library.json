@@ -1,0 +1,31 @@
+{
+  "name": "Library",
+  "description": "Reusable library with core logic, public API surface, tests, and packaging",
+  "phases": [
+    {
+      "name": "Core",
+      "description": "Core library logic and internal architecture",
+      "plans": [
+        {"name": "Core Module", "description": "Implement core library functionality and internal data structures", "wave": 1, "tdd_required": true},
+        {"name": "Utilities", "description": "Helper functions, type definitions, and constants", "wave": 1, "tdd_required": true}
+      ]
+    },
+    {
+      "name": "Public API",
+      "description": "Design and implement the public-facing API surface",
+      "plans": [
+        {"name": "API Surface", "description": "Define and implement public functions, classes, and interfaces", "wave": 1, "tdd_required": true},
+        {"name": "Validation & Errors", "description": "Input validation, custom exceptions, and error messages", "wave": 2, "tdd_required": true}
+      ]
+    },
+    {
+      "name": "Quality & Distribution",
+      "description": "Testing, documentation, and packaging",
+      "plans": [
+        {"name": "Test Suite", "description": "Unit tests, property tests, and edge case coverage", "wave": 1, "tdd_required": true},
+        {"name": "Documentation", "description": "API reference, usage examples, and README", "wave": 1, "tdd_required": false},
+        {"name": "Packaging", "description": "Build configuration, versioning, and distribution setup", "wave": 2, "tdd_required": false}
+      ]
+    }
+  ]
+}

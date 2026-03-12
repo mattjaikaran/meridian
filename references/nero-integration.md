@@ -162,6 +162,48 @@ dispatches = get_dispatch_summary(conn)
 # [{"id": 1, "status": "completed", "plan_name": "Setup CI", "phase_name": "Foundation", ...}]
 ```
 
+## Webhooks
+
+Nero can push events to Meridian via `handle_webhook()` instead of requiring Meridian to poll.
+
+### Webhook Payload Format
+```json
+{
+    "event_type": "task.completed",
+    "task_id": "nero-task-uuid",
+    "status": "completed",
+    "pr_url": "https://github.com/.../pull/42",
+    "commit_sha": "abc123",
+    "error": null
+}
+```
+
+### Event Types
+
+| Event | Description | Effect |
+|-------|-------------|--------|
+| `task.completed` | Task finished successfully | Dispatch → completed, Plan → complete |
+| `task.failed` | Task failed | Dispatch → failed, Plan → failed |
+| `task.progress` | Status update (running, etc.) | Dispatch status updated |
+
+### Setup
+
+1. Configure Nero to POST webhook events to your Meridian endpoint
+2. Route incoming payloads to `handle_webhook(conn, payload)`
+
+```python
+from scripts.sync import handle_webhook
+result = handle_webhook(conn, {
+    "event_type": "task.completed",
+    "task_id": "nero-123",
+    "commit_sha": "abc123",
+    "pr_url": "https://github.com/pr/1",
+})
+# {"status": "ok", "dispatch_id": 1, "plan_transitioned": "complete"}
+```
+
+All webhook events are logged to the `state_event` table for audit.
+
 ## Sync Lifecycle
 
 ```
