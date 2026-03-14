@@ -19,8 +19,8 @@ Requirements for v1.1 Polish & Reliability. Each maps to roadmap phases.
 
 ### Code Quality
 
-- [ ] **QUAL-01**: All E501 lint violations fixed in SQL schema definitions
-- [ ] **QUAL-02**: All E501 lint violations fixed in generate_commands.py
+- [x] **QUAL-01**: All E501 lint violations fixed in SQL schema definitions
+- [x] **QUAL-02**: All E501 lint violations fixed in generate_commands.py
 
 ## Future Requirements
 
@@ -42,8 +42,8 @@ None identified yet.
 | ROAD-02 | Phase 7 | Pending |
 | COMP-01 | Phase 6 | Pending |
 | COMP-02 | Phase 6 | Pending |
-| QUAL-01 | Phase 5 | Pending |
-| QUAL-02 | Phase 5 | Pending |
+| QUAL-01 | Phase 5 | Complete |
+| QUAL-02 | Phase 5 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 6 total
@@ -52,4 +52,4 @@ None identified yet.
 
 ---
 *Requirements defined: 2026-03-14*
-*Last updated: 2026-03-14 after roadmap creation*
+*Last updated: 2026-03-14 after 05-01 plan completion*

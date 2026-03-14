@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Polish & Reliability
-status: ready_to_plan
+status: executing
 stopped_at: null
 last_updated: "2026-03-14"
-last_activity: "2026-03-14 -- Roadmap created for v1.1 (3 phases, 6 requirements)"
+last_activity: "2026-03-14 -- Completed 05-01 lint cleanup (E501 fixes)"
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 1
+  completed_plans: 1
+  percent: 10
 ---
 
 # Project State
@@ -26,22 +26,25 @@ See: .planning/PROJECT.md (updated 2026-03-14)
 ## Current Position
 
 Phase: 5 of 7 (Lint Cleanup) -- first phase of v1.1
-Plan: --
-Status: Ready to plan
-Last activity: 2026-03-14 -- Roadmap created for v1.1
+Plan: 1 of 1 complete
+Status: Executing
+Last activity: 2026-03-14 -- Completed 05-01 lint cleanup (E501 fixes)
 
 Progress: [##########..........] 57% (4/7 phases complete across all milestones)
 
 ## Performance Metrics
 
 **v1.0 completed:** 4 phases, 11 plans
-**v1.1:** Not started
+**v1.1:** 1 plan complete (05-01: E501 lint fixes, 1min)
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
+
+- 05-01: Split SQL CHECK IN clauses across multiple lines for E501 compliance
+- 05-01: Reflow markdown doc strings at sentence boundaries
 
 ### Pending Todos
 
@@ -54,4 +57,4 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-14
-Stopped at: Roadmap created, ready to plan Phase 5
+Stopped at: Completed 05-01-PLAN.md (E501 lint cleanup)

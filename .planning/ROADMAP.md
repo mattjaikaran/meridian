@@ -21,7 +21,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details
 
 ### v1.1 Polish & Reliability
 
-- [ ] **Phase 5: Lint Cleanup** - Fix all E501 violations in SQL schema and command generator
+- [x] **Phase 5: Lint Cleanup** - Fix all E501 violations in SQL schema and command generator
 - [ ] **Phase 6: Nyquist Compliance** - Fill validation gaps so every phase has accurate pass/fail frontmatter
 - [ ] **Phase 7: Roadmap Automation** - Auto-sync ROADMAP.md checkboxes and requirement traceability from DB state
 
@@ -37,7 +37,7 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details
   3. No functional behavior changes in either file (tests still pass)
 **Plans:** 1 plan
 Plans:
-- [ ] 05-01-PLAN.md — Fix all E501 line-length violations in db.py and generate_commands.py
+- [x] 05-01-PLAN.md — Fix all E501 line-length violations in db.py and generate_commands.py
 
 ### Phase 6: Nyquist Compliance
 **Goal**: VALIDATION.md accurately reflects execution results for every phase
@@ -70,6 +70,6 @@ Phases 5, 6, 7 are independent and can execute in any order.
 | 2. Error Infrastructure | v1.0 | 3/3 | Complete | 2026-03-11 |
 | 3. Command Routing | v1.0 | 2/2 | Complete | 2026-03-11 |
 | 4. Test Coverage & Hardening | v1.0 | 4/4 | Complete | 2026-03-11 |
-| 5. Lint Cleanup | v1.1 | 0/1 | Not started | - |
+| 5. Lint Cleanup | v1.1 | 1/1 | Complete | 2026-03-14 |
 | 6. Nyquist Compliance | v1.1 | 0/0 | Not started | - |
 | 7. Roadmap Automation | v1.1 | 0/0 | Not started | - |
