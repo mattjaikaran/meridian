@@ -158,7 +158,10 @@ CREATE TABLE IF NOT EXISTS quick_task (
 -- State event log
 CREATE TABLE IF NOT EXISTS state_event (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    entity_type TEXT NOT NULL CHECK (entity_type IN ('milestone','phase','plan','quick_task','nero_dispatch','review')),
+    entity_type TEXT NOT NULL CHECK (entity_type IN (
+        'milestone','phase','plan','quick_task',
+        'nero_dispatch','review'
+    )),
     entity_id TEXT NOT NULL,
     old_status TEXT,
     new_status TEXT NOT NULL,
