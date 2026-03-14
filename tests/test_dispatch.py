@@ -239,3 +239,207 @@ class TestCheckDispatchStatus:
         # Should return the cached dispatch record, not raise
         assert result["nero_task_id"] == "nero-test"
         assert result["status"] == "dispatched"
+
+    def test_returns_error_when_dispatch_not_found(self, db):
+        """check_dispatch_status returns error when dispatch_id doesn't exist."""
+        from scripts.dispatch import check_dispatch_status
+
+        _seed_dispatch_db(db)
+        with patch("scripts.dispatch.open_project", return_value=_mock_open_project(db)):
+            result = check_dispatch_status(project_dir="/tmp/test", dispatch_id=9999)
+
+        assert result["status"] == "error"
+        assert "9999" in result["message"]
+
+    def test_updates_status_when_nero_returns_new_status(self, db):
+        """check_dispatch_status updates DB when Nero reports a different status."""
+        from scripts.dispatch import check_dispatch_status
+        from scripts.state import create_nero_dispatch
+
+        phase = _seed_dispatch_db(db)
+        plan = create_plan(db, phase_id=phase["id"], name="P", description="d")
+        dispatch = create_nero_dispatch(
+            db,
+            dispatch_type="plan",
+            plan_id=plan["id"],
+            phase_id=phase["id"],
+            nero_task_id="nero-update",
+        )
+
+        mock_send = MagicMock(return_value={"status": "completed", "pr_url": "https://github.com/pr/1"})
+        with (
+            patch("scripts.dispatch.open_project", return_value=_mock_open_project(db)),
+            patch("scripts.dispatch._send_to_nero", mock_send),
+        ):
+            result = check_dispatch_status(
+                project_dir="/tmp/test", dispatch_id=dispatch["id"]
+            )
+
+        assert result["status"] == "completed"
+        assert result["pr_url"] == "https://github.com/pr/1"
+
+
+class TestSendToNero:
+    """Tests for _send_to_nero HTTP handling (mocking urllib)."""
+
+    def test_http_4xx_error_raises_immediately(self):
+        """4xx errors are not retried — they raise HTTPError directly."""
+        import urllib.error
+
+        from scripts.dispatch import _send_to_nero
+
+        mock_response = MagicMock()
+        mock_response.code = 400
+        http_error = urllib.error.HTTPError(
+            "http://nero:8080/rpc", 400, "Bad Request", {}, None
+        )
+        with patch("urllib.request.urlopen", side_effect=http_error):
+            with pytest.raises(urllib.error.HTTPError) as exc_info:
+                _send_to_nero("http://nero:8080/rpc", {"method": "test"}, timeout=1)
+            assert exc_info.value.code == 400
+
+    def test_http_5xx_error_retries_then_raises_nero_unreachable(self):
+        """5xx errors are retried and eventually raise NeroUnreachableError."""
+        import urllib.error
+
+        from scripts.db import NeroUnreachableError
+        from scripts.dispatch import _send_to_nero
+
+        http_error = urllib.error.HTTPError(
+            "http://nero:8080/rpc", 503, "Service Unavailable", {}, None
+        )
+        with (
+            patch("urllib.request.urlopen", side_effect=http_error),
+            patch("scripts.db.time.sleep"),  # Skip actual sleep in retry decorator
+        ):
+            with pytest.raises(NeroUnreachableError):
+                _send_to_nero("http://nero:8080/rpc", {"method": "test"}, timeout=1)
+
+    def test_timeout_error_retries_then_raises_nero_unreachable(self):
+        """TimeoutError is retried and eventually raises NeroUnreachableError."""
+        from scripts.db import NeroUnreachableError
+        from scripts.dispatch import _send_to_nero
+
+        with (
+            patch("urllib.request.urlopen", side_effect=TimeoutError("timed out")),
+            patch("scripts.db.time.sleep"),
+        ):
+            with pytest.raises(NeroUnreachableError, match="timed out"):
+                _send_to_nero("http://nero:8080/rpc", {"method": "test"}, timeout=1)
+
+    def test_connection_refused_retries_then_raises_nero_unreachable(self):
+        """Connection refused (URLError) is retried and raises NeroUnreachableError."""
+        import urllib.error
+
+        from scripts.db import NeroUnreachableError
+        from scripts.dispatch import _send_to_nero
+
+        url_error = urllib.error.URLError("Connection refused")
+        with (
+            patch("urllib.request.urlopen", side_effect=url_error),
+            patch("scripts.db.time.sleep"),
+        ):
+            with pytest.raises(NeroUnreachableError, match="Connection refused"):
+                _send_to_nero("http://nero:8080/rpc", {"method": "test"}, timeout=1)
+
+    def test_successful_response_returns_parsed_json(self):
+        """Successful response returns parsed JSON dict."""
+        from scripts.dispatch import _send_to_nero
+
+        mock_resp = MagicMock()
+        mock_resp.read.return_value = json.dumps({"task_id": "abc"}).encode("utf-8")
+        mock_resp.__enter__ = MagicMock(return_value=mock_resp)
+        mock_resp.__exit__ = MagicMock(return_value=False)
+
+        with patch("urllib.request.urlopen", return_value=mock_resp):
+            result = _send_to_nero("http://nero:8080/rpc", {"method": "test"}, timeout=5)
+
+        assert result == {"task_id": "abc"}
+
+    def test_http_404_raises_without_retry(self):
+        """404 errors raise immediately without retrying."""
+        import urllib.error
+
+        from scripts.dispatch import _send_to_nero
+
+        http_error = urllib.error.HTTPError(
+            "http://nero:8080/rpc", 404, "Not Found", {}, None
+        )
+        with patch("urllib.request.urlopen", side_effect=http_error) as mock_urlopen:
+            with pytest.raises(urllib.error.HTTPError) as exc_info:
+                _send_to_nero("http://nero:8080/rpc", {"method": "test"}, timeout=1)
+            assert exc_info.value.code == 404
+            # Should only be called once (no retry for 4xx)
+            assert mock_urlopen.call_count == 1
+
+
+class TestDispatchPlanEdgeCases:
+    """Edge cases for dispatch_plan payload building."""
+
+    def test_plan_with_no_files_to_create(self, db):
+        """dispatch_plan handles plan with no files_to_create gracefully."""
+        from scripts.dispatch import dispatch_plan
+
+        phase = _seed_dispatch_db(db)
+        plan = create_plan(
+            db, phase_id=phase["id"], name="No Files", description="Minimal plan"
+        )
+
+        mock_send = MagicMock(return_value={"task_id": "nero-min"})
+        with (
+            patch("scripts.dispatch.open_project", return_value=_mock_open_project(db)),
+            patch("scripts.dispatch._send_to_nero", mock_send),
+        ):
+            result = dispatch_plan(project_dir="/tmp/test", plan_id=plan["id"])
+
+        url, payload = mock_send.call_args[0]
+        assert payload["params"]["plan"]["files_to_create"] == []
+        assert payload["params"]["plan"]["files_to_modify"] == []
+        assert result["status"] == "dispatched"
+
+    def test_plan_with_none_plan_id_raises(self, db):
+        """dispatch_plan with plan_id=None raises ValueError (plan not found)."""
+        from scripts.dispatch import dispatch_plan
+
+        _seed_dispatch_db(db)
+        with patch("scripts.dispatch.open_project", return_value=_mock_open_project(db)):
+            with pytest.raises(ValueError, match="not found"):
+                dispatch_plan(project_dir="/tmp/test", plan_id=None)
+
+    def test_dispatch_plan_uses_default_cwd_when_project_dir_none(self, db):
+        """dispatch_plan defaults to cwd when project_dir is None."""
+        from scripts.dispatch import dispatch_plan
+
+        # Should fail with "Project not initialized" since the mock DB has no project,
+        # but the path resolution should work
+        with patch("scripts.dispatch.open_project", return_value=_mock_open_project(db)):
+            with pytest.raises(ValueError, match="Project not initialized"):
+                dispatch_plan(project_dir=None, plan_id=1)
+
+
+class TestDispatchPhaseEdgeCases:
+    """Edge cases for dispatch_phase."""
+
+    def test_swarm_mode_dispatches_all_waves(self, db):
+        """dispatch_phase with swarm=True dispatches plans from all waves."""
+        from scripts.dispatch import dispatch_phase
+
+        phase = _seed_dispatch_db(db)
+        create_plan(db, phase_id=phase["id"], name="W1", description="w1", wave=1)
+        create_plan(db, phase_id=phase["id"], name="W2", description="w2", wave=2)
+        create_plan(db, phase_id=phase["id"], name="W3", description="w3", wave=3)
+
+        mock_send = MagicMock(return_value={"task_id": "t-swarm"})
+        with (
+            patch(
+                "scripts.dispatch.open_project",
+                side_effect=lambda *a, **kw: _mock_open_project(db),
+            ),
+            patch("scripts.dispatch._send_to_nero", mock_send),
+        ):
+            results = dispatch_phase(
+                project_dir="/tmp/test", phase_id=phase["id"], swarm=True
+            )
+
+        # All 3 plans from all waves should be dispatched
+        assert len(results) == 3

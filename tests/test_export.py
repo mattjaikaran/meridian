@@ -194,3 +194,159 @@ class TestExportAsTemplate:
         assert len(phases) == 2
         plans = list_plans(db, phases[0]["id"])
         assert len(plans) == 1
+
+
+class TestExportStateEdgeCases:
+    """Edge cases for export_state."""
+
+    def test_empty_database_no_milestones(self, db, tmp_path):
+        """export_state with project but no milestones produces valid JSON."""
+        from scripts.export import export_state
+
+        create_project(db, name="Empty Project", repo_path="/tmp/empty", project_id="default")
+        with patch("scripts.export.open_project", return_value=_mock_open_project(db)):
+            result_path = export_state(project_dir=tmp_path)
+
+        data = json.loads(result_path.read_text())
+        assert data["version"] == 1
+        assert data["project"]["name"] == "Empty Project"
+        assert data["milestones"] == []
+        assert data["decisions"] == []
+        assert data["checkpoints"] == []
+
+    def test_milestone_with_no_phases(self, db, tmp_path):
+        """export_state handles milestones that have no phases."""
+        from scripts.export import export_state
+
+        create_project(db, name="Bare Project", repo_path="/tmp/bare", project_id="default")
+        create_milestone(db, milestone_id="v1.0", name="Bare Milestone", project_id="default")
+        with patch("scripts.export.open_project", return_value=_mock_open_project(db)):
+            result_path = export_state(project_dir=tmp_path)
+
+        data = json.loads(result_path.read_text())
+        assert len(data["milestones"]) == 1
+        assert data["milestones"][0]["phases"] == []
+
+    def test_special_characters_in_names(self, db, tmp_path):
+        """export_state handles special characters in project/phase/plan names."""
+        from scripts.export import export_state
+
+        create_project(
+            db, name='Project "Alpha" & <Beta>', repo_path="/tmp/special", project_id="default"
+        )
+        create_milestone(db, milestone_id="v1.0", name="Milestone: 100% done!", project_id="default")
+        transition_milestone(db, "v1.0", "active")
+        phase = create_phase(db, milestone_id="v1.0", name="Phase\twith\ttabs", description="desc with\nnewlines")
+        create_plan(db, phase_id=phase["id"], name="Plan 'quoted'", description="emoji: \u2728")
+
+        with patch("scripts.export.open_project", return_value=_mock_open_project(db)):
+            result_path = export_state(project_dir=tmp_path)
+
+        # Should produce valid JSON despite special characters
+        data = json.loads(result_path.read_text())
+        assert data["project"]["name"] == 'Project "Alpha" & <Beta>'
+        assert data["milestones"][0]["phases"][0]["name"] == "Phase\twith\ttabs"
+        assert data["milestones"][0]["phases"][0]["plans"][0]["name"] == "Plan 'quoted'"
+
+    def test_file_io_error_permission_denied(self, db, tmp_path):
+        """export_state raises error when output path is not writable."""
+        from scripts.export import export_state
+
+        create_project(db, name="Test", repo_path="/tmp/test", project_id="default")
+
+        # Use a path that will fail on write
+        bad_path = tmp_path / "readonly"
+        bad_path.mkdir()
+        meridian_dir = bad_path / ".meridian"
+        meridian_dir.mkdir()
+        # Make the directory read-only so file creation fails
+        import os
+        os.chmod(str(meridian_dir), 0o444)
+
+        try:
+            with patch("scripts.export.open_project", return_value=_mock_open_project(db)):
+                with pytest.raises(PermissionError):
+                    export_state(project_dir=bad_path)
+        finally:
+            # Restore permissions for cleanup
+            os.chmod(str(meridian_dir), 0o755)
+
+    def test_round_trip_json_structure(self, db, tmp_path):
+        """Export produces valid JSON that can be parsed and re-serialized identically."""
+        from scripts.export import export_state
+
+        _seed_export_db(db)
+        with patch("scripts.export.open_project", return_value=_mock_open_project(db)):
+            result_path = export_state(project_dir=tmp_path)
+
+        # Parse and re-serialize
+        data = json.loads(result_path.read_text())
+        reserialized = json.dumps(data, indent=2, default=str)
+        reparsed = json.loads(reserialized)
+
+        # Should be structurally identical
+        assert data == reparsed
+        assert data["version"] == 1
+        assert isinstance(data["milestones"], list)
+        assert isinstance(data["decisions"], list)
+        assert isinstance(data["checkpoints"], list)
+
+        # Verify nested structure integrity
+        for ms in data["milestones"]:
+            assert "name" in ms
+            assert "phases" in ms
+            for phase in ms["phases"]:
+                assert "name" in phase
+                assert "plans" in phase
+
+
+class TestExportStatusSummaryEdgeCases:
+    """Edge cases for export_status_summary."""
+
+    def test_summary_with_no_phases(self, db):
+        """export_status_summary handles project with no phases."""
+        from scripts.export import export_status_summary
+
+        create_project(db, name="Empty", repo_path="/tmp/empty", project_id="default")
+        create_milestone(db, milestone_id="v1.0", name="Empty MS", project_id="default")
+        transition_milestone(db, "v1.0", "active")
+
+        with patch("scripts.export.open_project", return_value=_mock_open_project(db)):
+            result = export_status_summary(project_dir="/tmp/test")
+
+        assert isinstance(result, str)
+        assert "Empty" in result
+
+    def test_summary_includes_next_action(self, db):
+        """export_status_summary always includes a next action."""
+        from scripts.export import export_status_summary
+
+        _seed_export_db(db)
+        with patch("scripts.export.open_project", return_value=_mock_open_project(db)):
+            result = export_status_summary(project_dir="/tmp/test")
+
+        assert "Next Action" in result
+
+
+class TestExportAsTemplateEdgeCases:
+    """Edge cases for export_as_template."""
+
+    def test_raises_for_nonexistent_milestone(self, db):
+        """export_as_template raises ValueError for missing milestone."""
+        from scripts.export import export_as_template
+
+        _seed_export_db(db)
+        with pytest.raises(ValueError, match="not found"):
+            export_as_template(db, "v99.0")
+
+    def test_template_with_empty_phases(self, db):
+        """export_as_template handles milestone with phases but no plans."""
+        from scripts.export import export_as_template
+
+        create_project(db, name="Test", repo_path="/tmp", project_id="default")
+        create_milestone(db, milestone_id="v1.0", name="Empty", project_id="default")
+        create_phase(db, milestone_id="v1.0", name="Phase A", description="No plans")
+
+        template = export_as_template(db, "v1.0")
+        assert len(template["phases"]) == 1
+        assert template["phases"][0]["plans"] == []
