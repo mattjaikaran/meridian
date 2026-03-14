@@ -124,11 +124,12 @@ class TestExtractMetadata:
 class TestGenerateWrapper:
     """generate_wrapper() produces the correct command file content."""
 
-    def test_wrapper_starts_with_marker(self) -> None:
+    def test_wrapper_starts_with_frontmatter_and_contains_marker(self) -> None:
         from scripts.generate_commands import generate_wrapper
 
         result = generate_wrapper({"name": "init", "description": "Init", "argument_hint": ""})
-        assert result.startswith("<!-- meridian:generated -->")
+        assert result.startswith("---\n")
+        assert "<!-- meridian:generated -->" in result
 
     def test_wrapper_has_frontmatter(self) -> None:
         from scripts.generate_commands import generate_wrapper

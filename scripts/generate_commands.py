@@ -90,8 +90,9 @@ def generate_wrapper(skill: dict) -> str:
     frontmatter_lines.append("---")
 
     parts = [
-        GENERATED_MARKER,
         "\n".join(frontmatter_lines),
+        "",
+        GENERATED_MARKER,
         "",
         f"{description}.",
         "",
@@ -105,9 +106,8 @@ def generate_wrapper(skill: dict) -> str:
 def is_generated(filepath: Path) -> bool:
     """Check if a command file was created by this generator."""
     try:
-        first_line = filepath.read_text().splitlines()[0]
-        return first_line.strip() == GENERATED_MARKER
-    except (IndexError, OSError):
+        return GENERATED_MARKER in filepath.read_text()
+    except OSError:
         return False
 
 
