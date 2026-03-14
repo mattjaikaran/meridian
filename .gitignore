@@ -10,3 +10,13 @@ __pycache__/
 
 # OS
 .DS_Store
+
+# Editors / IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Linting cache
+.ruff_cache/

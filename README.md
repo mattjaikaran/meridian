@@ -2,6 +2,30 @@
 
 Unified workflow engine for Claude Code. SQLite-backed state machine with deterministic resume, fresh-context subagents, and engineering discipline protocols.
 
+## Quick Start
+
+1. **Prerequisites**: Python 3.11+, [uv](https://docs.astral.sh/uv/), git
+2. **Install**:
+   ```bash
+   git clone <repo-url> ~/dev/meridian
+   ln -sfn ~/dev/meridian ~/.claude/skills/meridian
+   cd ~/dev/meridian && uv run python scripts/generate_commands.py --fix-symlink
+   uv run python scripts/generate_commands.py
+   ```
+3. **Initialize a project**:
+   ```bash
+   # In any project directory:
+   /meridian:init
+   ```
+4. **Plan work**:
+   ```bash
+   /meridian:plan "Build user authentication"
+   ```
+5. **Execute**:
+   ```bash
+   /meridian:execute
+   ```
+
 ## Why Meridian
 
 | Problem | Solution |
@@ -279,14 +303,38 @@ meridian/
 
 ## Setup
 
+### Prerequisites
+
+- Python 3.11+
+- [uv](https://docs.astral.sh/uv/) package manager
+- git
+- Claude Code with skills support
+
+### Installation
+
 ```bash
-# Install (symlink to Claude Code skills)
+# Clone the repo
+git clone <repo-url> ~/dev/meridian
+
+# Symlink to Claude Code skills directory
 ln -sfn ~/dev/meridian ~/.claude/skills/meridian
 
-# Run tests
+# Generate slash command wrappers
+cd ~/dev/meridian
+uv run python scripts/generate_commands.py --fix-symlink
+uv run python scripts/generate_commands.py
+```
+
+### Running Tests
+
+```bash
 cd ~/dev/meridian
 uv run pytest tests/ -v
 ```
+
+### Verify Installation
+
+After setup, open Claude Code in any project and run `/meridian:init`. You should see a `.meridian/` directory created with `state.db` inside.
 
 ## Schema
 
@@ -325,6 +373,62 @@ assert prompt1 == prompt2  # Guaranteed
 ```
 
 Every field maps to a discrete DB query. No LLM-written prose. The `next_action` is computed from state transition rules, not guessed. This is what makes resume reliable across context resets.
+
+## Commands Reference
+
+| Command | Description |
+|---------|-------------|
+| `/meridian:init` | Initialize Meridian in current project — creates `.meridian/` and `state.db` |
+| `/meridian:plan` | Planning pipeline — brainstorm, context gather, generate plans with waves |
+| `/meridian:execute` | Execution engine — run plans via fresh subagents with TDD enforcement |
+| `/meridian:resume` | Deterministic resume — regenerate exact state from SQLite for context restore |
+| `/meridian:status` | Show project status — progress, phase state, blockers, next action |
+| `/meridian:dashboard` | Project dashboard — health indicator, velocity, stalls, Nero dispatches |
+| `/meridian:roadmap` | Cross-milestone roadmap — progress bars and ETAs across all milestones |
+| `/meridian:dispatch` | Nero dispatch — send plans to Nero for autonomous execution |
+| `/meridian:review` | Two-stage code review — spec compliance then code quality |
+| `/meridian:ship` | Commit + push + PR via gh CLI |
+| `/meridian:debug` | Systematic debugging — 4-phase investigation with decision logging |
+| `/meridian:quick` | Lightweight quick task — no phase overhead, still tracked |
+| `/meridian:checkpoint` | Manual save point — snapshot state with notes |
+| `/meridian:history` | Event timeline — view state transitions and activity log |
+| `/meridian:migrate` | Cross-project migration — move Meridian state between projects |
+| `/meridian:revert` | Revert completed plan — undo a plan's changes |
+| `/meridian:template` | Workflow templates — apply pre-built project templates |
+| `/meridian:validate` | Git state validation — verify working tree and DB consistency |
+
+## Troubleshooting
+
+### "Module not found" or PYTHONPATH errors
+
+Meridian scripts need the repo root on PYTHONPATH. Use the runner script:
+```bash
+~/dev/meridian/scripts/run.sh '<python code>'
+```
+Or set manually: `PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "..."`
+
+### "Database is locked"
+
+Multiple concurrent operations can lock SQLite. Meridian uses WAL mode and automatic retry with exponential backoff. If persistent, check for zombie processes:
+```bash
+lsof .meridian/state.db
+```
+
+### "State seems corrupted"
+
+Meridian creates automatic backups before migrations in `.meridian/backups/`. Restore with:
+```bash
+cp .meridian/backups/state-<timestamp>.db .meridian/state.db
+```
+
+### Commands not showing in Claude Code
+
+Regenerate command wrappers:
+```bash
+cd ~/dev/meridian
+uv run python scripts/generate_commands.py
+uv run python scripts/generate_commands.py --fix-symlink
+```
 
 ## License
 
