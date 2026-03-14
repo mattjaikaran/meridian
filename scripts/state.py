@@ -7,7 +7,7 @@ import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
-from scripts.db import StateTransitionError
+from scripts.db import StateTransitionError, retry_on_busy
 
 # Valid state transitions
 PHASE_TRANSITIONS = {
@@ -93,6 +93,7 @@ def _rows_to_list(rows: list[sqlite3.Row]) -> list[dict]:
 # ── Project CRUD ──────────────────────────────────────────────────────────────
 
 
+@retry_on_busy()
 def create_project(
     conn: sqlite3.Connection,
     name: str,
@@ -126,6 +127,7 @@ def get_project(conn: sqlite3.Connection, project_id: str = "default") -> dict |
     return _row_to_dict(row)
 
 
+@retry_on_busy()
 def update_project(conn: sqlite3.Connection, project_id: str, **kwargs) -> dict | None:
     allowed = {"name", "repo_path", "repo_url", "tech_stack", "nero_endpoint", "axis_project_id"}
     updates = {k: v for k, v in kwargs.items() if k in allowed}
@@ -142,6 +144,7 @@ def update_project(conn: sqlite3.Connection, project_id: str, **kwargs) -> dict 
 # ── Milestone CRUD ────────────────────────────────────────────────────────────
 
 
+@retry_on_busy()
 def create_milestone(
     conn: sqlite3.Connection,
     milestone_id: str,
@@ -169,6 +172,7 @@ def list_milestones(conn: sqlite3.Connection, project_id: str = "default") -> li
     return _rows_to_list(rows)
 
 
+@retry_on_busy()
 def transition_milestone(conn: sqlite3.Connection, milestone_id: str, new_status: str) -> dict:
     current = get_milestone(conn, milestone_id)
     if not current:
@@ -191,6 +195,7 @@ def transition_milestone(conn: sqlite3.Connection, milestone_id: str, new_status
 # ── Phase CRUD ────────────────────────────────────────────────────────────────
 
 
+@retry_on_busy()
 def create_phase(
     conn: sqlite3.Connection,
     milestone_id: str,
@@ -235,6 +240,7 @@ def list_phases(conn: sqlite3.Connection, milestone_id: str) -> list[dict]:
     return _rows_to_list(rows)
 
 
+@retry_on_busy()
 def transition_phase(conn: sqlite3.Connection, phase_id: int, new_status: str) -> dict:
     current = get_phase(conn, phase_id)
     if not current:
@@ -256,6 +262,7 @@ def transition_phase(conn: sqlite3.Connection, phase_id: int, new_status: str) -
     return get_phase(conn, phase_id)
 
 
+@retry_on_busy()
 def update_phase(conn: sqlite3.Connection, phase_id: int, **kwargs) -> dict | None:
     allowed = {"name", "description", "context_doc", "acceptance_criteria", "axis_ticket_id"}
     updates = {k: v for k, v in kwargs.items() if k in allowed}
@@ -271,6 +278,7 @@ def update_phase(conn: sqlite3.Connection, phase_id: int, **kwargs) -> dict | No
 # ── Plan CRUD ─────────────────────────────────────────────────────────────────
 
 
+@retry_on_busy()
 def create_plan(
     conn: sqlite3.Connection,
     phase_id: int,
@@ -333,6 +341,7 @@ def get_plans_by_wave(conn: sqlite3.Connection, phase_id: int, wave: int) -> lis
     return _rows_to_list(rows)
 
 
+@retry_on_busy()
 def transition_plan(
     conn: sqlite3.Connection,
     plan_id: int,
@@ -364,6 +373,7 @@ def transition_plan(
     return get_plan(conn, plan_id)
 
 
+@retry_on_busy()
 def update_plan(conn: sqlite3.Connection, plan_id: int, **kwargs) -> dict | None:
     allowed = {
         "name",
@@ -391,6 +401,7 @@ def update_plan(conn: sqlite3.Connection, plan_id: int, **kwargs) -> dict | None
 # ── Checkpoint CRUD ───────────────────────────────────────────────────────────
 
 
+@retry_on_busy()
 def create_checkpoint(
     conn: sqlite3.Connection,
     trigger: str,
@@ -454,6 +465,7 @@ def list_checkpoints(
 # ── Decision CRUD ─────────────────────────────────────────────────────────────
 
 
+@retry_on_busy()
 def create_decision(
     conn: sqlite3.Connection,
     summary: str,
@@ -494,6 +506,7 @@ def list_decisions(
 # ── Quick Task CRUD ───────────────────────────────────────────────────────────
 
 
+@retry_on_busy()
 def create_quick_task(
     conn: sqlite3.Connection,
     description: str,
@@ -508,6 +521,7 @@ def create_quick_task(
     return _row_to_dict(row)
 
 
+@retry_on_busy()
 def transition_quick_task(
     conn: sqlite3.Connection,
     task_id: int,
@@ -536,6 +550,7 @@ def transition_quick_task(
 # ── Nero Dispatch CRUD ────────────────────────────────────────────────────────
 
 
+@retry_on_busy()
 def create_nero_dispatch(
     conn: sqlite3.Connection,
     dispatch_type: str,
@@ -554,6 +569,7 @@ def create_nero_dispatch(
     return _row_to_dict(row)
 
 
+@retry_on_busy()
 def update_nero_dispatch(
     conn: sqlite3.Connection,
     dispatch_id: int,
@@ -634,6 +650,7 @@ def check_auto_advance(conn: sqlite3.Connection, phase_id: int) -> dict:
     return result
 
 
+@retry_on_busy()
 def add_priority(
     conn: sqlite3.Connection,
     entity_type: str,
@@ -965,6 +982,7 @@ def get_setting(
     return row["value"] if row else default
 
 
+@retry_on_busy()
 def set_setting(
     conn: sqlite3.Connection,
     key: str,
@@ -996,6 +1014,7 @@ def list_settings(
 # ── Review Persistence ────────────────────────────────────────────────────────
 
 
+@retry_on_busy()
 def create_review(
     conn: sqlite3.Connection,
     phase_id: int,
@@ -1043,6 +1062,7 @@ def list_reviews(
 # ── Plan Revert ───────────────────────────────────────────────────────────────
 
 
+@retry_on_busy()
 def revert_plan(
     conn: sqlite3.Connection,
     plan_id: int,

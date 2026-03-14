@@ -400,12 +400,14 @@ def backup_database(
     source_path: str | Path,
     backup_dir: Path | None = None,
     max_backups: int = 100,
-) -> Path:
+) -> Path | None:
     """Create a hot snapshot of the database using connection.backup().
 
-    Returns the path to the backup file.
+    Returns the path to the backup file, or None if the database doesn't exist yet.
     """
     source_path = Path(source_path)
+    if not source_path.exists():
+        return None
     if backup_dir is None:
         backup_dir = source_path.parent / "backups"
     backup_dir.mkdir(parents=True, exist_ok=True)
@@ -491,16 +493,12 @@ def init_schema(conn: sqlite3.Connection, db_path: str | Path | None = None) -> 
     current_version = get_schema_version(conn)
     if current_version < 2:
         if db_path is not None and str(db_path) != ":memory:":
-            db_path = Path(db_path)
-            if db_path.exists():
-                backup_database(db_path)
+            backup_database(Path(db_path), max_backups=5)
         _migrate_v1_to_v2(conn)
     current_version = get_schema_version(conn)
     if current_version < 3:
         if db_path is not None and str(db_path) != ":memory:":
-            db_path = Path(db_path)
-            if db_path.exists():
-                backup_database(db_path)
+            backup_database(Path(db_path), max_backups=5)
         _migrate_v2_to_v3(conn)
 
 
