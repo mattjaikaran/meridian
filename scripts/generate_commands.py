@@ -171,7 +171,9 @@ def update_root_skill(repo_root: Path, skills: list[dict]) -> None:
 
     content = f"""# Meridian -- Unified Workflow Engine
 
-Meridian is a SQLite-backed state machine for managing complex development workflows with deterministic resume, fresh-context subagents, and engineering discipline protocols.
+Meridian is a SQLite-backed state machine for managing
+complex development workflows with deterministic resume,
+fresh-context subagents, and engineering discipline protocols.
 
 ## Available Skills
 
@@ -179,7 +181,9 @@ Meridian is a SQLite-backed state machine for managing complex development workf
 
 ## Architecture
 
-State is stored in `.meridian/state.db` (SQLite) in each project directory. The state machine enforces valid transitions and computes the next action deterministically.
+State is stored in `.meridian/state.db` (SQLite) in each
+project directory. The state machine enforces valid transitions
+and computes the next action deterministically.
 
 ### Hierarchy
 ```
