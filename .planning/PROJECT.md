@@ -39,7 +39,14 @@ Deterministic workflow state that survives context resets — every resume produ
 
 ### Active
 
-(None — define in next milestone with `/gsd:new-milestone`)
+#### Current Milestone: v1.1 Polish & Reliability
+
+**Goal:** Fix workflow automation gaps, compliance issues, and lint hygiene discovered during v1.0
+
+**Target features:**
+- Automated ROADMAP.md tracking (replace manual checkbox updates with auto-sync from DB state)
+- Nyquist compliance fix (VALIDATION.md frontmatter not updated post-execution)
+- Fix pre-existing E501 lint issues in SQL schema / generate_commands.py
 
 ### Out of Scope
 
@@ -79,4 +86,4 @@ Two-machine model: MacBook Pro (interactive) dispatches to Mac Mini (Nero) for a
 | Generated command wrappers | Thin .md files with @ references, regenerable from skills | ✓ Good |
 
 ---
-*Last updated: 2026-03-11 after v1.0 milestone*
+*Last updated: 2026-03-14 after v1.1 milestone start*
