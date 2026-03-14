@@ -2,6 +2,7 @@
 """Axis PM ticket sync — sync Meridian phases with Axis kanban board."""
 
 import json
+import sqlite3
 import subprocess
 from pathlib import Path
 
@@ -153,7 +154,7 @@ def create_axis_tickets_for_phases(
         return created
 
 
-def _get_active_milestone_id(conn, project_id: str) -> str | None:
+def _get_active_milestone_id(conn: sqlite3.Connection, project_id: str) -> str | None:
     row = conn.execute(
         "SELECT id FROM milestone WHERE project_id = ? AND status = 'active'"
         " ORDER BY created_at LIMIT 1",

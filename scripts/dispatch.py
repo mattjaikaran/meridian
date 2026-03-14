@@ -2,11 +2,12 @@
 """Nero HTTP dispatch client — sends plans to Mac Mini for autonomous execution."""
 
 import json
-import logging
+import urllib.error
 import urllib.request
 from pathlib import Path
 
 from scripts.db import NeroUnreachableError, open_project, retry_on_http_error
+from scripts.logging_config import get_logger
 from scripts.state import (
     create_nero_dispatch,
     get_phase,
@@ -16,7 +17,7 @@ from scripts.state import (
     update_nero_dispatch,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger("meridian.dispatch")
 
 
 @retry_on_http_error()
@@ -28,8 +29,18 @@ def _send_to_nero(url: str, payload: dict, timeout: int = 30) -> dict:
         headers={"Content-Type": "application/json"},
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    logger.debug("Sending payload to %s: %s", url, json.dumps(payload, default=str))
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+            logger.info("Nero request to %s succeeded", url)
+            return result
+    except urllib.error.URLError as exc:
+        logger.error("Nero request to %s failed: %s", url, exc)
+        raise
+    except TimeoutError:
+        logger.error("Nero request to %s timed out after %ds", url, timeout)
+        raise
 
 
 def dispatch_plan(
@@ -93,10 +104,12 @@ def dispatch_plan(
         endpoint = project["nero_endpoint"].rstrip("/")
         url = f"{endpoint}/rpc"
 
+        logger.info("Dispatching plan '%s' (id=%s) to %s", plan["name"], plan_id, url)
         result = _send_to_nero(url, payload, timeout=30)
 
         # Record dispatch
         nero_task_id = result.get("task_id")
+        logger.info("Plan dispatched successfully, nero_task_id=%s", nero_task_id)
         dispatch = create_nero_dispatch(
             conn,
             dispatch_type="plan",
@@ -134,6 +147,7 @@ def dispatch_phase(
         pending = [p for p in plans if p["status"] == "pending"]
 
         if not pending:
+            logger.info("No pending plans to dispatch for phase %s", phase_id)
             return [{"status": "info", "message": "No pending plans to dispatch"}]
 
         if not swarm:
@@ -188,6 +202,6 @@ def check_dispatch_status(
                         conn, dispatch_id, status=new_status, pr_url=pr_url
                     )
             except NeroUnreachableError:
-                pass  # Can't reach Nero, return cached status
+                logger.error("Cannot reach Nero to check dispatch %s status", dispatch_id)
 
         return dispatch

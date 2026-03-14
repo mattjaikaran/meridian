@@ -2,6 +2,7 @@
 """Export Meridian SQLite state to JSON for git tracking and Nero consumption."""
 
 import json
+import sqlite3
 from collections import defaultdict
 from pathlib import Path
 
@@ -120,7 +121,7 @@ def export_status_summary(
         return "\n".join(lines)
 
 
-def export_as_template(conn, milestone_id: str) -> dict:
+def export_as_template(conn: sqlite3.Connection, milestone_id: str) -> dict:
     """Export a milestone's structure as a reusable template.
 
     Strips runtime data (IDs, status, timestamps, commit_sha) and returns
