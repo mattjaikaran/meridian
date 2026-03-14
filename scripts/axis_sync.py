@@ -37,6 +37,10 @@ def _run_pm_command(args: list[str]) -> str:
     """Run a pm.sh command and return output.
 
     Args are passed as a list to avoid shell splitting issues with spaces.
+
+    Raises:
+        FileNotFoundError: If pm.sh script is not found.
+        subprocess.SubprocessError: If the command fails or times out.
     """
     pm_script = Path.home() / "zeroclaw" / "skills" / "kanban" / "pm.sh"
     if not pm_script.exists():
@@ -87,7 +91,7 @@ def sync_phase_to_axis(
                         "status": axis_status,
                     }
                 )
-            except Exception as e:
+            except (OSError, subprocess.SubprocessError) as e:
                 synced.append(
                     {
                         "phase": phase["name"],
@@ -148,7 +152,7 @@ def create_axis_tickets_for_phases(
                             "error": f"Could not parse ticket ID from: {output}",
                         }
                     )
-            except Exception as e:
+            except (OSError, subprocess.SubprocessError) as e:
                 created.append({"phase": phase["name"], "error": str(e)})
 
         return created

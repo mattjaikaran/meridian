@@ -5,7 +5,7 @@ import sqlite3
 import subprocess
 
 
-def validate_state(conn: sqlite3.Connection, repo_path: str = ".") -> dict:
+def validate_state(conn: sqlite3.Connection, repo_path: str = ".") -> dict[str, list[int]]:
     """Check completed plans with commit_sha against the git repo.
 
     Returns:
@@ -41,7 +41,7 @@ def validate_state(conn: sqlite3.Connection, repo_path: str = ".") -> dict:
                 valid.append(plan_id)
             else:
                 missing.append(plan_id)
-        except Exception:
+        except (OSError, subprocess.SubprocessError):
             missing.append(plan_id)
 
     return {"valid": valid, "drift": drift, "missing": missing}

@@ -5,7 +5,7 @@ Queries SQLite, produces identical prompt for identical state.
 """
 
 import json
-import subprocess
+import sqlite3
 import textwrap
 from collections import defaultdict
 from pathlib import Path
@@ -24,42 +24,28 @@ from scripts.state import (
 
 def _get_git_log(repo_path: str, count: int = 10) -> str:
     """Get recent git log."""
-    try:
-        result = subprocess.run(
-            ["git", "log", "--oneline", f"-{count}"],
-            capture_output=True,
-            text=True,
-            cwd=repo_path,
-        )
-        return result.stdout.strip() or "(no commits)"
-    except Exception:
-        return "(git unavailable)"
+    from scripts.state import _run_git
+
+    result = _run_git(
+        ["log", "--oneline", f"-{count}"], repo_path, default="(no commits)",
+    )
+    return result or "(no commits)"
 
 
 def _get_git_branch(repo_path: str) -> str:
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            capture_output=True,
-            text=True,
-            cwd=repo_path,
-        )
-        return result.stdout.strip() or "unknown"
-    except Exception:
-        return "unknown"
+    from scripts.state import _run_git
+
+    return _run_git(
+        ["rev-parse", "--abbrev-ref", "HEAD"], repo_path, default="unknown",
+    ) or "unknown"
 
 
 def _get_git_sha(repo_path: str) -> str:
-    try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True,
-            text=True,
-            cwd=repo_path,
-        )
-        return result.stdout.strip() or "unknown"
-    except Exception:
-        return "unknown"
+    from scripts.state import _run_git
+
+    return _run_git(
+        ["rev-parse", "--short", "HEAD"], repo_path, default="unknown",
+    ) or "unknown"
 
 
 def generate_resume_prompt(
@@ -82,7 +68,7 @@ def generate_resume_prompt(
     with open_project(project_dir) as conn:
         try:
             project = get_project(conn, project_id)
-        except Exception:
+        except (sqlite3.Error, KeyError):
             project = None
         if not project:
             return "# Meridian Resume\n\nProject not initialized. Run `/meridian:init`."

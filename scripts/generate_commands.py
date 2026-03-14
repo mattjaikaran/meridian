@@ -285,7 +285,7 @@ def main() -> None:
         print(f"Skipped: {skipped} custom files")
     if removed:
         print(f"Removed: {', '.join(removed)} (orphans)")
-    print(f"Root SKILL.md updated.")
+    print("Root SKILL.md updated.")
 
 
 if __name__ == "__main__":

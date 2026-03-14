@@ -80,6 +80,11 @@ def _now() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _json_list(value: list | None) -> str | None:
+    """Serialize a list to JSON string, or return None if falsy."""
+    return json.dumps(value) if value else None
+
+
 def _row_to_dict(row: sqlite3.Row | None) -> dict | None:
     if row is None:
         return None
@@ -113,7 +118,7 @@ def create_project(
             name,
             repo_path,
             repo_url,
-            json.dumps(tech_stack) if tech_stack else None,
+            _json_list(tech_stack),
             nero_endpoint,
             axis_project_id,
         ),
@@ -220,7 +225,7 @@ def create_phase(
             sequence,
             name,
             description,
-            json.dumps(acceptance_criteria) if acceptance_criteria else None,
+            _json_list(acceptance_criteria),
             axis_ticket_id,
         ),
     )
@@ -310,11 +315,11 @@ def create_plan(
             description,
             wave,
             1 if tdd_required else 0,
-            json.dumps(files_to_create) if files_to_create else None,
-            json.dumps(files_to_modify) if files_to_modify else None,
+            _json_list(files_to_create),
+            _json_list(files_to_modify),
             test_command,
             executor_type,
-            json.dumps(depends_on) if depends_on else None,
+            _json_list(depends_on),
         ),
     )
     conn.commit()
@@ -430,8 +435,8 @@ def create_checkpoint(
             phase_id,
             plan_id,
             plan_status,
-            json.dumps(decisions) if decisions else None,
-            json.dumps(blockers) if blockers else None,
+            _json_list(decisions),
+            _json_list(blockers),
             notes,
             git_branch,
             git_sha,
@@ -533,7 +538,9 @@ def transition_quick_task(
     if not current:
         raise ValueError(f"Quick task {task_id} not found")
     if new_status not in valid.get(current["status"], []):
-        raise StateTransitionError(f"Invalid quick task transition: {current['status']} → {new_status}")
+        raise StateTransitionError(
+            f"Invalid quick task transition: {current['status']} → {new_status}"
+        )
     old_status = current["status"]
     updates = {"status": new_status}
     if new_status == "complete":
@@ -683,6 +690,80 @@ def add_priority(
 # ── Next Action Computation ───────────────────────────────────────────────────
 
 
+def _action_for_executing_phase(conn: sqlite3.Connection, phase: dict) -> dict:
+    """Determine the next action for a phase in 'executing' status."""
+    pending_plans = conn.execute(
+        "SELECT * FROM plan WHERE phase_id = ? AND status = 'pending'"
+        " ORDER BY wave, sequence",
+        (phase["id"],),
+    ).fetchall()
+
+    plan = None
+    has_blocked_plans = False
+    for candidate in pending_plans:
+        if check_dependencies_met(conn, candidate["id"]):
+            plan = candidate
+            break
+        else:
+            has_blocked_plans = True
+
+    if plan:
+        # Check if earlier wave plans are still running
+        earlier_running = conn.execute(
+            """SELECT COUNT(*) as cnt FROM plan
+            WHERE phase_id = ? AND wave < ? AND status IN ('executing', 'paused')""",
+            (phase["id"], plan["wave"]),
+        ).fetchone()
+        if earlier_running["cnt"] > 0:
+            return {
+                "action": "wait_for_wave",
+                "message": (
+                    f"Wave {plan['wave'] - 1} plans still executing. Wait for completion."
+                ),
+                "phase_id": phase["id"],
+            }
+        return {
+            "action": "execute_plan",
+            "message": f"Execute plan: '{plan['name']}' (wave {plan['wave']}).",
+            "phase_id": phase["id"],
+            "plan_id": plan["id"],
+            "plan_name": plan["name"],
+            "wave": plan["wave"],
+        }
+
+    if has_blocked_plans:
+        return {
+            "action": "wait_for_dependencies",
+            "message": "All pending plans have unmet dependencies. "
+            "Complete dependency plans first.",
+            "phase_id": phase["id"],
+        }
+
+    # Check for failed plans
+    failed = conn.execute(
+        "SELECT * FROM plan WHERE phase_id = ? AND status = 'failed' ORDER BY sequence LIMIT 1",
+        (phase["id"],),
+    ).fetchone()
+    if failed:
+        return {
+            "action": "fix_failed_plan",
+            "message": (
+                f"Plan '{failed['name']}' failed: {failed['error_message'] or 'unknown error'}"
+            ),
+            "phase_id": phase["id"],
+            "plan_id": failed["id"],
+        }
+
+    # All plans complete or skipped — move to verifying
+    return {
+        "action": "verify_phase",
+        "message": (
+            f"All plans in phase '{phase['name']}' are done. Verify acceptance criteria."
+        ),
+        "phase_id": phase["id"],
+    }
+
+
 def compute_next_action(conn: sqlite3.Connection, project_id: str = "default") -> dict:
     """Compute the next action based on current state. Returns action type + context."""
 
@@ -784,76 +865,7 @@ def compute_next_action(conn: sqlite3.Connection, project_id: str = "default") -
         }
 
     if phase["status"] == "executing":
-        # Find next pending plan with met dependencies
-        pending_plans = conn.execute(
-            "SELECT * FROM plan WHERE phase_id = ? AND status = 'pending'"
-            " ORDER BY wave, sequence",
-            (phase["id"],),
-        ).fetchall()
-
-        plan = None
-        has_blocked_plans = False
-        for candidate in pending_plans:
-            if check_dependencies_met(conn, candidate["id"]):
-                plan = candidate
-                break
-            else:
-                has_blocked_plans = True
-
-        if plan:
-            # Check if earlier wave plans are still running
-            earlier_running = conn.execute(
-                """SELECT COUNT(*) as cnt FROM plan
-                WHERE phase_id = ? AND wave < ? AND status IN ('executing', 'paused')""",
-                (phase["id"], plan["wave"]),
-            ).fetchone()
-            if earlier_running["cnt"] > 0:
-                return {
-                    "action": "wait_for_wave",
-                    "message": (
-                        f"Wave {plan['wave'] - 1} plans still executing. Wait for completion."
-                    ),
-                    "phase_id": phase["id"],
-                }
-            return {
-                "action": "execute_plan",
-                "message": f"Execute plan: '{plan['name']}' (wave {plan['wave']}).",
-                "phase_id": phase["id"],
-                "plan_id": plan["id"],
-                "plan_name": plan["name"],
-                "wave": plan["wave"],
-            }
-
-        if has_blocked_plans and not plan:
-            return {
-                "action": "wait_for_dependencies",
-                "message": "All pending plans have unmet dependencies. Complete dependency plans first.",
-                "phase_id": phase["id"],
-            }
-
-        # Check for failed plans
-        failed = conn.execute(
-            "SELECT * FROM plan WHERE phase_id = ? AND status = 'failed' ORDER BY sequence LIMIT 1",
-            (phase["id"],),
-        ).fetchone()
-        if failed:
-            return {
-                "action": "fix_failed_plan",
-                "message": (
-                    f"Plan '{failed['name']}' failed: {failed['error_message'] or 'unknown error'}"
-                ),
-                "phase_id": phase["id"],
-                "plan_id": failed["id"],
-            }
-
-        # All plans complete or skipped — move to verifying
-        return {
-            "action": "verify_phase",
-            "message": (
-                f"All plans in phase '{phase['name']}' are done. Verify acceptance criteria."
-            ),
-            "phase_id": phase["id"],
-        }
+        return _action_for_executing_phase(conn, phase)
 
     if phase["status"] == "verifying":
         return {
@@ -937,7 +949,7 @@ def _log_event(
             str(entity_id),
             old_status,
             new_status,
-            json.dumps(metadata) if metadata else None,
+            json.dumps(metadata) if metadata else None,  # dict, not list — no _json_list
         ),
     )
 
@@ -993,7 +1005,8 @@ def set_setting(
     conn.execute(
         """INSERT INTO settings (project_id, key, value, updated_at)
         VALUES (?, ?, ?, datetime('now'))
-        ON CONFLICT(project_id, key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')""",
+        ON CONFLICT(project_id, key) DO UPDATE SET
+            value = excluded.value, updated_at = datetime('now')""",
         (project_id, key, value),
     )
     conn.commit()
@@ -1115,30 +1128,21 @@ def check_dependencies_met(conn: sqlite3.Connection, plan_id: int) -> bool:
 # ── Git Helpers ───────────────────────────────────────────────────────────────
 
 
+def _run_git(args: list[str], cwd: str, default: str | None = None) -> str | None:
+    """Run a git command and return stripped stdout, or default on failure."""
+    try:
+        result = subprocess.run(
+            ["git", *args], capture_output=True, text=True, cwd=cwd,
+        )
+        return result.stdout.strip() or default
+    except (OSError, subprocess.SubprocessError):
+        return default
+
+
 def _get_git_state(repo_path: str | None = None) -> tuple[str | None, str | None, bool]:
     """Get current git branch, SHA, and dirty state."""
     cwd = repo_path or str(Path.cwd())
-    try:
-        branch = (
-            subprocess.run(
-                ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-                capture_output=True,
-                text=True,
-                cwd=cwd,
-            ).stdout.strip()
-            or None
-        )
-        sha = (
-            subprocess.run(
-                ["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=cwd
-            ).stdout.strip()
-            or None
-        )
-        dirty = bool(
-            subprocess.run(
-                ["git", "status", "--porcelain"], capture_output=True, text=True, cwd=cwd
-            ).stdout.strip()
-        )
-        return branch, sha, dirty
-    except Exception:
-        return None, None, False
+    branch = _run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd)
+    sha = _run_git(["rev-parse", "HEAD"], cwd)
+    dirty_output = _run_git(["status", "--porcelain"], cwd, default="")
+    return branch, sha, bool(dirty_output)

@@ -2,11 +2,11 @@
 """Bidirectional Nero sync — pull dispatch status and push state for scheduling."""
 
 import json
-import logging
 import sqlite3
 import urllib.request
 
 from scripts.db import NeroUnreachableError, open_project, retry_on_http_error
+from scripts.logging_config import get_logger
 from scripts.state import (
     get_plan,
     get_project,
@@ -16,7 +16,7 @@ from scripts.state import (
     update_nero_dispatch,
 )
 
-logger = logging.getLogger(__name__)
+logger = get_logger("meridian.sync")
 
 
 @retry_on_http_error(max_retries=3, base_delay=1.0)
@@ -252,8 +252,6 @@ def handle_webhook(
 
     Returns {status, message} describing what was processed.
     """
-    from scripts.state import _log_event
-
     event_type = payload.get("event_type")
     task_id = payload.get("task_id")
     status = payload.get("status")
