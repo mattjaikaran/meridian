@@ -15,7 +15,7 @@ import argparse
 import re
 from pathlib import Path
 
-REPO_ROOT = Path("/Users/mattjaikaran/dev/meridian")
+REPO_ROOT = Path(__file__).resolve().parent.parent
 COMMANDS_DIR = Path.home() / ".claude" / "commands" / "meridian"
 SYMLINK_PATH = Path.home() / ".claude" / "skills" / "meridian"
 GENERATED_MARKER = "<!-- meridian:generated -->"
@@ -98,7 +98,7 @@ def generate_wrapper(skill: dict) -> str:
         "",
         "## Procedure",
         "",
-        f"@/Users/mattjaikaran/.claude/skills/meridian/skills/{name}/SKILL.md",
+        f"@{SYMLINK_PATH}/skills/{name}/SKILL.md",
     ]
     return "\n".join(parts) + "\n"
 

@@ -140,10 +140,10 @@ class TestGenerateWrapper:
         assert 'argument-hint: "<goal>"' in result
 
     def test_wrapper_has_at_reference(self) -> None:
-        from scripts.generate_commands import generate_wrapper
+        from scripts.generate_commands import SYMLINK_PATH, generate_wrapper
 
         result = generate_wrapper({"name": "init", "description": "Init", "argument_hint": ""})
-        assert "@/Users/mattjaikaran/.claude/skills/meridian/skills/init/SKILL.md" in result
+        assert f"@{SYMLINK_PATH}/skills/init/SKILL.md" in result
 
     def test_wrapper_no_argument_hint_when_empty(self) -> None:
         from scripts.generate_commands import generate_wrapper
