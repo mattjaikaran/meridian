@@ -32,26 +32,24 @@ None identified yet.
 |---------|--------|
 | Full CI/CD pipeline | Not needed for local-only tool |
 | Automated test generation | Over-engineering for polish milestone |
-| Dogfooding on external project | Process activity, not a code requirement — do separately |
+| Dogfooding on external project | Process activity, not a code requirement -- do separately |
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
-
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROAD-01 | TBD | Pending |
-| ROAD-02 | TBD | Pending |
-| COMP-01 | TBD | Pending |
-| COMP-02 | TBD | Pending |
-| QUAL-01 | TBD | Pending |
-| QUAL-02 | TBD | Pending |
+| ROAD-01 | Phase 7 | Pending |
+| ROAD-02 | Phase 7 | Pending |
+| COMP-01 | Phase 6 | Pending |
+| COMP-02 | Phase 6 | Pending |
+| QUAL-01 | Phase 5 | Pending |
+| QUAL-02 | Phase 5 | Pending |
 
 **Coverage:**
 - v1.1 requirements: 6 total
-- Mapped to phases: 0
-- Unmapped: 6 ⚠️
+- Mapped to phases: 6
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-14*
-*Last updated: 2026-03-14 after initial definition*
+*Last updated: 2026-03-14 after roadmap creation*
