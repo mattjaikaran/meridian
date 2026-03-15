@@ -47,7 +47,10 @@ Plans:
   1. After plan execution completes, VALIDATION.md frontmatter contains actual pass/fail results (not stale placeholders)
   2. Every previously-executed phase that skipped validation has its VALIDATION.md gap filled with retroactive results
   3. Running `/meridian:verify-phase` on any completed phase finds a VALIDATION.md with current, accurate frontmatter
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 06-01-PLAN.md — Build Nyquist validation engine (parse, run, update VALIDATION.md frontmatter)
+- [ ] 06-02-PLAN.md — Retroactive gap fill and /meridian:verify-phase skill
 
 ### Phase 7: Roadmap Automation
 **Goal**: ROADMAP.md and REQUIREMENTS.md stay in sync with DB state without manual edits
@@ -71,5 +74,5 @@ Phases 5, 6, 7 are independent and can execute in any order.
 | 3. Command Routing | v1.0 | 2/2 | Complete | 2026-03-11 |
 | 4. Test Coverage & Hardening | v1.0 | 4/4 | Complete | 2026-03-11 |
 | 5. Lint Cleanup | v1.1 | 1/1 | Complete | 2026-03-14 |
-| 6. Nyquist Compliance | v1.1 | 0/0 | Not started | - |
+| 6. Nyquist Compliance | v1.1 | 0/2 | Not started | - |
 | 7. Roadmap Automation | v1.1 | 0/0 | Not started | - |
