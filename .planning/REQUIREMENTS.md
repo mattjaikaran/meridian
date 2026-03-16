@@ -14,7 +14,7 @@ Requirements for v1.1 Polish & Reliability. Each maps to roadmap phases.
 
 ### Compliance
 
-- [ ] **COMP-01**: VALIDATION.md frontmatter updated post-execution with actual pass/fail results
+- [x] **COMP-01**: VALIDATION.md frontmatter updated post-execution with actual pass/fail results
 - [ ] **COMP-02**: Nyquist validation gaps filled for phases that skipped validation
 
 ### Code Quality
@@ -40,7 +40,7 @@ None identified yet.
 |-------------|-------|--------|
 | ROAD-01 | Phase 7 | Pending |
 | ROAD-02 | Phase 7 | Pending |
-| COMP-01 | Phase 6 | Pending |
+| COMP-01 | Phase 6 | Complete |
 | COMP-02 | Phase 6 | Pending |
 | QUAL-01 | Phase 5 | Complete |
 | QUAL-02 | Phase 5 | Complete |
