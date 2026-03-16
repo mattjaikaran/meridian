@@ -1,12 +1,12 @@
 ---
 phase: 3
 slug: command-routing
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-03-11
+wave_0_validated: "2026-03-16T16:51:59Z"
 ---
-
 # Phase 3 — Validation Strategy
 
 > Per-phase validation contract for feedback sampling during execution.

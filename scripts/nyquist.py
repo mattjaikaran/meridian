@@ -82,6 +82,15 @@ def _extract_command(body: str, label: str) -> str | None:
     return match.group(1) if match else None
 
 
+def _find_validation_md(phase_dir: Path) -> Path | None:
+    """Find the VALIDATION.md file in a phase directory.
+
+    Handles both `VALIDATION.md` and `NN-VALIDATION.md` naming conventions.
+    """
+    matches = sorted(phase_dir.glob("*VALIDATION.md"))
+    return matches[0] if matches else None
+
+
 def parse_validation_md(phase_dir: Path) -> dict | None:
     """Parse a VALIDATION.md file from a phase directory.
 
@@ -92,8 +101,8 @@ def parse_validation_md(phase_dir: Path) -> dict | None:
         Dict with frontmatter fields + quick_command + full_command,
         or None if file missing, or dict with 'error' key if malformed.
     """
-    vmd = phase_dir / "VALIDATION.md"
-    if not vmd.exists():
+    vmd = _find_validation_md(phase_dir)
+    if vmd is None:
         return None
 
     text = vmd.read_text()
@@ -198,8 +207,8 @@ def update_validation_frontmatter(phase_dir: Path, wave_results: dict) -> None:
         wave_results: Dict from run_wave_validation with wave, passed,
                       validated_at keys.
     """
-    vmd = phase_dir / "VALIDATION.md"
-    if not vmd.exists():
+    vmd = _find_validation_md(phase_dir)
+    if vmd is None:
         return
 
     text = vmd.read_text()
@@ -285,8 +294,8 @@ def backfill_validation(
 
         # If test failed, also add failure_reason to frontmatter
         if not wave_result["passed"]:
-            vmd = phase_dir / "VALIDATION.md"
-            if vmd.exists():
+            vmd = _find_validation_md(phase_dir)
+            if vmd is not None:
                 text = vmd.read_text()
                 fm, body = _parse_frontmatter(text)
                 if fm is not None:
