@@ -1,10 +1,10 @@
 """Tests for roadmap_sync module -- pure text transformation functions."""
 
 from scripts.roadmap_sync import (
-    sync_roadmap_plan_checkbox,
-    sync_roadmap_phase_checkbox,
-    sync_roadmap_progress_table,
     sync_requirements_status,
+    sync_roadmap_phase_checkbox,
+    sync_roadmap_plan_checkbox,
+    sync_roadmap_progress_table,
 )
 
 # ---------------------------------------------------------------------------
