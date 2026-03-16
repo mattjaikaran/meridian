@@ -1248,6 +1248,11 @@ def revert_plan(
     metadata = {"reason": reason} if reason else None
     _log_event(conn, "plan", plan_id, "complete", "pending", metadata)
     conn.commit()
+
+    # Roadmap sync -- uncheck the plan checkbox
+    phase = get_phase(conn, current["phase_id"])
+    _roadmap_sync_on_plan(get_plan(conn, plan_id), phase)
+
     return get_plan(conn, plan_id)
 
 

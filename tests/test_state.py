@@ -860,3 +860,155 @@ class TestPlanDependencies:
         transition_plan(seeded_db, p1["id"], "executing")
         action = compute_next_action(seeded_db)
         assert action["action"] == "wait_for_dependencies"
+
+
+# ── Roadmap Sync Integration Tests ──────────────────────────────────────────
+
+
+INTEGRATION_ROADMAP = """\
+# Roadmap: Test Project
+
+### v1.0
+
+- [ ] **Phase 1: Foundation** - Build the base
+- [ ] **Phase 2: Features** - Add features
+
+## Phase Details
+
+### Phase 1: Foundation
+**Requirements**: REQ-01, REQ-02
+Plans:
+- [ ] 01-01-PLAN.md — First plan
+- [ ] 01-02-PLAN.md — Second plan
+
+### Phase 2: Features
+**Requirements**: REQ-03
+Plans:
+- [ ] 02-01-PLAN.md — Feature plan
+
+## Progress
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. Foundation | v1.0 | 0/2 | Not started | - |
+| 2. Features | v1.0 | 0/1 | Not started | - |
+"""
+
+INTEGRATION_REQUIREMENTS = """\
+## Traceability
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| REQ-01 | Phase 1 | Pending |
+| REQ-02 | Phase 1 | Pending |
+| REQ-03 | Phase 2 | Pending |
+"""
+
+
+class TestRoadmapSyncIntegration:
+    """Integration tests: DB transition -> roadmap_sync -> file updated."""
+
+    def test_plan_completion_updates_roadmap_checkbox(self, seeded_db, tmp_path, monkeypatch):
+        """Completing a plan checks the corresponding ROADMAP.md checkbox."""
+        import scripts.state as state_mod
+
+        roadmap = tmp_path / "ROADMAP.md"
+        roadmap.write_text(INTEGRATION_ROADMAP, encoding="utf-8")
+        monkeypatch.setattr(state_mod, "ROADMAP_PATH", roadmap)
+
+        # Create plan in phase 1 (sequence=1) with plan sequence=1
+        phase = list_phases(seeded_db, "v1.0")[0]  # sequence=1
+        transition_phase(seeded_db, phase["id"], "context_gathered")
+        transition_phase(seeded_db, phase["id"], "planned_out")
+        transition_phase(seeded_db, phase["id"], "executing")
+        plan = create_plan(seeded_db, phase["id"], "First plan", "Do it")
+        # plan sequence=1, phase sequence=1 -> slug "01-01-PLAN.md"
+
+        transition_plan(seeded_db, plan["id"], "executing")
+        transition_plan(seeded_db, plan["id"], "complete")
+
+        text = roadmap.read_text(encoding="utf-8")
+        assert "- [x] 01-01-PLAN.md" in text
+        # Other plan still unchecked
+        assert "- [ ] 01-02-PLAN.md" in text
+
+    def test_phase_completion_updates_progress_table(self, seeded_db, tmp_path, monkeypatch):
+        """Completing a phase updates the progress table and requirements."""
+        import scripts.state as state_mod
+
+        roadmap = tmp_path / "ROADMAP.md"
+        roadmap.write_text(INTEGRATION_ROADMAP, encoding="utf-8")
+        requirements = tmp_path / "REQUIREMENTS.md"
+        requirements.write_text(INTEGRATION_REQUIREMENTS, encoding="utf-8")
+        monkeypatch.setattr(state_mod, "ROADMAP_PATH", roadmap)
+        monkeypatch.setattr(state_mod, "REQUIREMENTS_PATH", requirements)
+
+        phase = list_phases(seeded_db, "v1.0")[0]  # sequence=1, "Foundation"
+        transition_phase(seeded_db, phase["id"], "context_gathered")
+        transition_phase(seeded_db, phase["id"], "planned_out")
+        transition_phase(seeded_db, phase["id"], "executing")
+        transition_phase(seeded_db, phase["id"], "verifying")
+        transition_phase(seeded_db, phase["id"], "reviewing")
+        transition_phase(seeded_db, phase["id"], "complete")
+
+        roadmap_text = roadmap.read_text(encoding="utf-8")
+        # Phase checkbox checked
+        assert "- [x] **Phase 1:" in roadmap_text
+        # Progress table updated
+        for line in roadmap_text.splitlines():
+            if "1. Foundation" in line:
+                assert "Complete" in line
+                break
+        else:
+            raise AssertionError("Phase 1 row not found in progress table")
+
+        # Requirements updated
+        req_text = requirements.read_text(encoding="utf-8")
+        for line in req_text.splitlines():
+            if "REQ-01" in line:
+                assert "Complete" in line
+                break
+        else:
+            raise AssertionError("REQ-01 not found")
+
+    def test_sync_failure_does_not_block_transition(self, seeded_db, monkeypatch):
+        """Missing ROADMAP.md does not crash plan transitions."""
+        import scripts.state as state_mod
+        from pathlib import Path
+
+        # Point to nonexistent file
+        monkeypatch.setattr(state_mod, "ROADMAP_PATH", Path("/nonexistent/ROADMAP.md"))
+
+        phase = list_phases(seeded_db, "v1.0")[0]
+        transition_phase(seeded_db, phase["id"], "context_gathered")
+        transition_phase(seeded_db, phase["id"], "planned_out")
+        transition_phase(seeded_db, phase["id"], "executing")
+        plan = create_plan(seeded_db, phase["id"], "Plan", "Do it")
+        transition_plan(seeded_db, plan["id"], "executing")
+        # This should NOT raise despite missing file
+        result = transition_plan(seeded_db, plan["id"], "complete")
+        assert result["status"] == "complete"
+
+    def test_plan_revert_unchecks_roadmap(self, seeded_db, tmp_path, monkeypatch):
+        """Reverting a completed plan unchecks the ROADMAP.md checkbox."""
+        import scripts.state as state_mod
+
+        roadmap = tmp_path / "ROADMAP.md"
+        roadmap.write_text(INTEGRATION_ROADMAP, encoding="utf-8")
+        monkeypatch.setattr(state_mod, "ROADMAP_PATH", roadmap)
+
+        phase = list_phases(seeded_db, "v1.0")[0]
+        transition_phase(seeded_db, phase["id"], "context_gathered")
+        transition_phase(seeded_db, phase["id"], "planned_out")
+        transition_phase(seeded_db, phase["id"], "executing")
+        plan = create_plan(seeded_db, phase["id"], "First plan", "Do it")
+        transition_plan(seeded_db, plan["id"], "executing")
+        transition_plan(seeded_db, plan["id"], "complete")
+
+        text = roadmap.read_text(encoding="utf-8")
+        assert "- [x] 01-01-PLAN.md" in text
+
+        # Revert unchecks the checkbox
+        revert_plan(seeded_db, plan["id"])
+        text_after = roadmap.read_text(encoding="utf-8")
+        assert "- [ ] 01-01-PLAN.md" in text_after
