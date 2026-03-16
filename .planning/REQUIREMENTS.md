@@ -9,8 +9,8 @@ Requirements for v1.1 Polish & Reliability. Each maps to roadmap phases.
 
 ### Roadmap Automation
 
-- [ ] **ROAD-01**: ROADMAP.md checkboxes auto-update when phase/plan status changes in DB
-- [ ] **ROAD-02**: Requirement traceability status auto-syncs from DB state (no manual edits)
+- [x] **ROAD-01**: ROADMAP.md checkboxes auto-update when phase/plan status changes in DB
+- [x] **ROAD-02**: Requirement traceability status auto-syncs from DB state (no manual edits)
 
 ### Compliance
 
@@ -38,8 +38,8 @@ None identified yet.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ROAD-01 | Phase 7 | Pending |
-| ROAD-02 | Phase 7 | Pending |
+| ROAD-01 | Phase 7 | Complete |
+| ROAD-02 | Phase 7 | Complete |
 | COMP-01 | Phase 6 | Complete |
 | COMP-02 | Phase 6 | Complete |
 | QUAL-01 | Phase 5 | Complete |
@@ -52,4 +52,4 @@ None identified yet.
 
 ---
 *Requirements defined: 2026-03-14*
-*Last updated: 2026-03-14 after 05-01 plan completion*
+*Last updated: 2026-03-16 after 07-02 plan completion*
