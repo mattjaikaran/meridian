@@ -2,6 +2,7 @@
 """Meridian state management — CRUD, transitions, and next-action computation."""
 
 import json
+import logging
 import re
 import sqlite3
 import subprocess
@@ -10,6 +11,14 @@ from pathlib import Path
 
 from scripts.db import StateTransitionError, retry_on_busy
 from scripts.nyquist import run_wave_validation, update_validation_frontmatter
+from scripts.roadmap_sync import (
+    sync_requirements_status,
+    sync_roadmap_phase_checkbox,
+    sync_roadmap_plan_checkbox,
+    sync_roadmap_progress_table,
+)
+
+logger = logging.getLogger(__name__)
 
 # Valid state transitions
 PHASE_TRANSITIONS = {
@@ -95,6 +104,114 @@ def _row_to_dict(row: sqlite3.Row | None) -> dict | None:
 
 def _rows_to_list(rows: list[sqlite3.Row]) -> list[dict]:
     return [dict(r) for r in rows]
+
+
+# ── Roadmap Sync Helpers ──────────────────────────────────────────────────────
+
+ROADMAP_PATH = Path(".planning/ROADMAP.md")
+REQUIREMENTS_PATH = Path(".planning/REQUIREMENTS.md")
+
+
+def _sync_roadmap_file(filepath: Path, transform_fn) -> None:
+    """Read a markdown file, apply a transform, and write back if changed.
+
+    Errors are logged as warnings and never raised -- sync is informational.
+    """
+    try:
+        text = filepath.read_text(encoding="utf-8")
+        new_text = transform_fn(text)
+        if new_text != text:
+            filepath.write_text(new_text, encoding="utf-8")
+    except Exception as exc:
+        logger.warning("Roadmap sync failed for %s: %s", filepath, exc)
+
+
+def _roadmap_sync_on_plan(plan: dict, phase: dict) -> None:
+    """Sync ROADMAP.md plan checkbox after a plan transition.
+
+    Only fires when plan status is 'complete' (check) or reverted from
+    complete (uncheck).
+    """
+    is_complete = plan["status"] == "complete"
+    if not is_complete and plan["status"] != "pending":
+        # Only sync on complete or revert-to-pending (from complete)
+        return
+
+    plan_slug = (
+        f"{phase['sequence']:02d}-{plan['sequence']:02d}-PLAN.md"
+    )
+    _sync_roadmap_file(
+        ROADMAP_PATH,
+        lambda text: sync_roadmap_plan_checkbox(text, plan_slug, is_complete),
+    )
+
+
+def _roadmap_sync_on_phase(phase: dict, conn: sqlite3.Connection) -> None:
+    """Sync ROADMAP.md and REQUIREMENTS.md after a phase transition.
+
+    Only fires when phase transitions to 'complete' or away from 'complete'.
+    """
+    is_complete = phase["status"] == "complete"
+    if not is_complete and phase["status"] != "reviewing":
+        # Only sync on complete or revert-from-complete (to reviewing)
+        return
+
+    phase_num = phase["sequence"]
+
+    # Phase checkbox
+    _sync_roadmap_file(
+        ROADMAP_PATH,
+        lambda text: sync_roadmap_phase_checkbox(text, phase_num, is_complete),
+    )
+
+    # Progress table
+    completed_date = phase.get("completed_at", "")
+    if completed_date:
+        # Extract date portion from ISO timestamp
+        completed_date = completed_date[:10]
+    status_str = "Complete" if is_complete else "In progress"
+    _sync_roadmap_file(
+        ROADMAP_PATH,
+        lambda text: sync_roadmap_progress_table(
+            text, phase_num, status_str, completed_date or None,
+        ),
+    )
+
+    # Requirements traceability -- look up requirements from ROADMAP.md
+    if is_complete:
+        try:
+            roadmap_text = ROADMAP_PATH.read_text(encoding="utf-8")
+            # Find requirements line in phase details section
+            # Search for requirements after the phase heading
+            req_pattern = (
+                rf"### Phase {phase_num}:.*?(?=### Phase|\Z)"
+            )
+            section_match = re.search(
+                req_pattern, roadmap_text, re.DOTALL,
+            )
+            if section_match:
+                section = section_match.group()
+                req_line = re.search(
+                    r"\*\*Requirements\*\*:\s*(.+)",
+                    section,
+                )
+                if req_line:
+                    req_ids = [
+                        r.strip()
+                        for r in req_line.group(1).split(",")
+                    ]
+                    for req_id in req_ids:
+                        _sync_roadmap_file(
+                            REQUIREMENTS_PATH,
+                            lambda text, rid=req_id: sync_requirements_status(
+                                text, rid, "Complete",
+                            ),
+                        )
+        except Exception as exc:
+            logger.warning(
+                "Requirements sync failed for phase %d: %s",
+                phase_num, exc,
+            )
 
 
 # ── Project CRUD ──────────────────────────────────────────────────────────────
@@ -266,6 +383,11 @@ def transition_phase(conn: sqlite3.Connection, phase_id: int, new_status: str) -
     safe_update(conn, "phase", phase_id, updates)
     _log_event(conn, "phase", phase_id, old_status, new_status)
     conn.commit()
+
+    # Roadmap sync (informational, non-blocking)
+    if new_status == "complete" or old_status == "complete":
+        _roadmap_sync_on_phase(get_phase(conn, phase_id), conn)
+
     return get_phase(conn, phase_id)
 
 
@@ -377,6 +499,12 @@ def transition_plan(
     safe_update(conn, "plan", plan_id, updates)
     _log_event(conn, "plan", plan_id, old_status, new_status)
     conn.commit()
+
+    # Roadmap sync (informational, non-blocking)
+    if new_status == "complete" or (old_status == "complete" and new_status == "pending"):
+        phase = get_phase(conn, current["phase_id"])
+        _roadmap_sync_on_plan(get_plan(conn, plan_id), phase)
+
     return get_plan(conn, plan_id)
 
 
