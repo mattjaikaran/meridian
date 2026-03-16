@@ -2,12 +2,14 @@
 """Meridian state management — CRUD, transitions, and next-action computation."""
 
 import json
+import re
 import sqlite3
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
 from scripts.db import StateTransitionError, retry_on_busy
+from scripts.nyquist import run_wave_validation, update_validation_frontmatter
 
 # Valid state transitions
 PHASE_TRANSITIONS = {
@@ -644,6 +646,22 @@ def check_auto_advance(conn: sqlite3.Connection, phase_id: int) -> dict:
         "message": f"All plans complete — phase '{phase['name']}' auto-advanced to verifying",
         "phase_id": phase_id,
     }
+
+    # Run Nyquist wave validation (informational, does not block advancement)
+    try:
+        slug = re.sub(r"[^a-z0-9]+", "-", phase["name"].lower()).strip("-")
+        phase_dir = Path(
+            f".planning/phases/{phase['sequence']:02d}-{slug}"
+        )
+        # Find the highest wave number among completed plans
+        max_wave = max(p.get("wave", 0) for p in plans)
+        wave_result = run_wave_validation(phase_dir, wave=max_wave)
+        update_validation_frontmatter(phase_dir, wave_result)
+        result["validation"] = wave_result
+    except Exception as exc:
+        result["validation_warning"] = (
+            f"Nyquist validation skipped: {exc}"
+        )
 
     # Check if all phases in milestone are complete (after this one finishes review)
     milestone_id = phase["milestone_id"]
