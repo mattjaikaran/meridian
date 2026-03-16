@@ -62,7 +62,7 @@ Plans:
   3. After any state transition, `ROADMAP.md` progress table reflects current DB state without human intervention
 **Plans:** 2 plans
 Plans:
-- [ ] 07-01-PLAN.md — Build and test roadmap_sync.py with TDD (pure text transformations)
+- [x] 07-01-PLAN.md — Build and test roadmap_sync.py with TDD (pure text transformations)
 - [ ] 07-02-PLAN.md — Wire sync hooks into state.py transition functions
 
 ## Progress
@@ -78,4 +78,4 @@ Phases 5, 6, 7 are independent and can execute in any order.
 | 4. Test Coverage & Hardening | v1.0 | 4/4 | Complete | 2026-03-11 |
 | 5. Lint Cleanup | v1.1 | 1/1 | Complete | 2026-03-14 |
 | 6. Nyquist Compliance | v1.1 | 0/2 | Not started | - |
-| 7. Roadmap Automation | v1.1 | 0/2 | Not started | - |
+| 7. Roadmap Automation | v1.1 | 1/2 | In progress | - |
