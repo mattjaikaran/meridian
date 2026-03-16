@@ -233,3 +233,80 @@ def update_validation_frontmatter(phase_dir: Path, wave_results: dict) -> None:
 
     # Write back
     vmd.write_text(_serialize_frontmatter(fm) + body)
+
+
+def backfill_validation(
+    planning_dir: Path = Path(".planning"),
+    repo_path: str = ".",
+) -> list[dict]:
+    """Scan all phases and run tests for non-compliant ones.
+
+    For each phase with VALIDATION.md where nyquist_compliant is false
+    (or status is "draft"), runs the full suite command. Updates
+    frontmatter with real results. Skips phases already compliant or
+    without VALIDATION.md.
+
+    Args:
+        planning_dir: Path to the .planning directory.
+        repo_path: Working directory for command execution.
+
+    Returns:
+        List of result dicts with keys: phase, slug, passed, command,
+        error (optional).
+    """
+    phases_dir = planning_dir / "phases"
+    if not phases_dir.is_dir():
+        return []
+
+    results: list[dict] = []
+
+    for phase_dir in sorted(phases_dir.iterdir()):
+        if not phase_dir.is_dir():
+            continue
+
+        parsed = parse_validation_md(phase_dir)
+        if parsed is None:
+            continue  # No VALIDATION.md -- skip silently
+
+        if "error" in parsed:
+            continue  # Malformed -- skip
+
+        # Skip already-compliant phases
+        if parsed.get("nyquist_compliant") is True:
+            continue
+
+        # Run the full suite command as wave 0 (retroactive validation)
+        wave_result = run_wave_validation(
+            phase_dir, wave=0, repo_path=repo_path
+        )
+
+        # Update frontmatter with results
+        update_validation_frontmatter(phase_dir, wave_result)
+
+        # If test failed, also add failure_reason to frontmatter
+        if not wave_result["passed"]:
+            vmd = phase_dir / "VALIDATION.md"
+            if vmd.exists():
+                text = vmd.read_text()
+                fm, body = _parse_frontmatter(text)
+                if fm is not None:
+                    error_msg = wave_result.get("error", "")
+                    output = wave_result.get("output", "")
+                    reason = error_msg or output or "Test command failed"
+                    # Truncate long reasons
+                    if len(reason) > 200:
+                        reason = reason[:200] + "..."
+                    fm["failure_reason"] = reason
+                    vmd.write_text(
+                        _serialize_frontmatter(fm) + body
+                    )
+
+        results.append({
+            "phase": parsed.get("phase", "?"),
+            "slug": parsed.get("slug", phase_dir.name),
+            "passed": wave_result["passed"],
+            "command": wave_result.get("command", ""),
+            "error": wave_result.get("error"),
+        })
+
+    return results
