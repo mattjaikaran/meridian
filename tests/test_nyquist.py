@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 
 from scripts.nyquist import (
+    backfill_validation,
     parse_validation_md,
     run_wave_validation,
     update_validation_frontmatter,
@@ -228,3 +229,166 @@ def test_nyquist_compliant_true_when_all_waves_pass(tmp_path: Path):
     updated = vmd.read_text()
     assert "nyquist_compliant: true" in updated
     assert "status: validated" in updated
+
+
+# ── backfill_validation ────────────────────────────────────────────────────
+
+
+BACKFILL_COMPLIANT = """\
+---
+phase: 5
+slug: lint-cleanup
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
+wave_0_validated: "2026-03-14"
+created: 2026-03-14
+---
+
+# Phase 5 — Validation Strategy
+
+## Test Infrastructure
+
+| Property | Value |
+|----------|-------|
+| **Quick run command** | `echo quick` |
+| **Full suite command** | `echo PASS` |
+"""
+
+BACKFILL_NON_COMPLIANT_PASS = """\
+---
+phase: 1
+slug: database-foundation
+status: draft
+nyquist_compliant: false
+wave_0_complete: false
+created: 2026-03-10
+---
+
+# Phase 1 — Validation Strategy
+
+## Test Infrastructure
+
+| Property | Value |
+|----------|-------|
+| **Quick run command** | `echo quick` |
+| **Full suite command** | `true` |
+"""
+
+BACKFILL_NON_COMPLIANT_FAIL = """\
+---
+phase: 2
+slug: error-infrastructure
+status: draft
+nyquist_compliant: false
+wave_0_complete: false
+created: 2026-03-10
+---
+
+# Phase 2 — Validation Strategy
+
+## Test Infrastructure
+
+| Property | Value |
+|----------|-------|
+| **Quick run command** | `echo quick` |
+| **Full suite command** | `false` |
+"""
+
+
+def _setup_backfill_dirs(tmp_path: Path) -> Path:
+    """Create a fake planning dir with phases for backfill tests."""
+    planning = tmp_path / ".planning"
+    phases = planning / "phases"
+
+    # Phase 5: already compliant
+    p5 = phases / "05-lint-cleanup"
+    p5.mkdir(parents=True)
+    (p5 / "VALIDATION.md").write_text(BACKFILL_COMPLIANT)
+
+    # Phase 1: non-compliant, command passes
+    p1 = phases / "01-database-foundation"
+    p1.mkdir(parents=True)
+    (p1 / "VALIDATION.md").write_text(BACKFILL_NON_COMPLIANT_PASS)
+
+    # Phase 2: non-compliant, command fails
+    p2 = phases / "02-error-infrastructure"
+    p2.mkdir(parents=True)
+    (p2 / "VALIDATION.md").write_text(BACKFILL_NON_COMPLIANT_FAIL)
+
+    # Phase 3: no VALIDATION.md at all
+    p3 = phases / "03-command-routing"
+    p3.mkdir(parents=True)
+
+    return planning
+
+
+def test_backfill_skips_compliant(tmp_path: Path):
+    """backfill_validation skips phases already nyquist_compliant: true."""
+    planning = _setup_backfill_dirs(tmp_path)
+    results = backfill_validation(
+        planning_dir=planning, repo_path=str(tmp_path)
+    )
+
+    # Phase 5 should not appear in results (it was skipped)
+    slugs = [r["slug"] for r in results]
+    assert "lint-cleanup" not in slugs
+
+    # Phase 5 VALIDATION.md should be untouched
+    p5_vmd = (
+        planning / "phases" / "05-lint-cleanup" / "VALIDATION.md"
+    )
+    text = p5_vmd.read_text()
+    assert "nyquist_compliant: true" in text
+    assert "status: validated" in text
+
+
+def test_backfill_updates_passing(tmp_path: Path):
+    """backfill_validation updates non-compliant phase to validated when tests pass."""
+    planning = _setup_backfill_dirs(tmp_path)
+    backfill_validation(planning_dir=planning, repo_path=str(tmp_path))
+
+    p1_vmd = (
+        planning / "phases" / "01-database-foundation" / "VALIDATION.md"
+    )
+    text = p1_vmd.read_text()
+    assert "nyquist_compliant: true" in text
+    assert "status: validated" in text
+    assert "wave_0_complete: true" in text
+
+
+def test_backfill_updates_failing(tmp_path: Path):
+    """backfill_validation updates non-compliant phase to failed with failure_reason."""
+    planning = _setup_backfill_dirs(tmp_path)
+    backfill_validation(planning_dir=planning, repo_path=str(tmp_path))
+
+    p2_vmd = (
+        planning / "phases" / "02-error-infrastructure" / "VALIDATION.md"
+    )
+    text = p2_vmd.read_text()
+    assert "nyquist_compliant: false" in text
+    assert "status: failed" in text
+    assert "failure_reason:" in text
+
+
+def test_backfill_returns_summary(tmp_path: Path):
+    """backfill_validation returns list of result dicts with correct fields."""
+    planning = _setup_backfill_dirs(tmp_path)
+    results = backfill_validation(
+        planning_dir=planning, repo_path=str(tmp_path)
+    )
+
+    assert isinstance(results, list)
+    # Should have results for phase 1 and 2 (not 5 which is compliant, not 3 which has no VALIDATION.md)
+    assert len(results) == 2
+
+    for r in results:
+        assert "phase" in r
+        assert "slug" in r
+        assert "passed" in r
+        assert "command" in r
+
+    # Check specific results
+    by_slug = {r["slug"]: r for r in results}
+    assert by_slug["database-foundation"]["passed"] is True
+    assert by_slug["error-infrastructure"]["passed"] is False
