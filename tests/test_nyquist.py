@@ -66,7 +66,7 @@ created: 2026-03-10
 
 def test_parse_extracts_frontmatter_and_commands(tmp_path: Path):
     """Parse extracts YAML frontmatter fields and test commands from body."""
-    vmd = tmp_path / "VALIDATION.md"
+    vmd = tmp_path / "05-VALIDATION.md"
     vmd.write_text(SAMPLE_VALIDATION)
 
     result = parse_validation_md(tmp_path)
@@ -88,7 +88,7 @@ def test_parse_returns_none_for_missing_file(tmp_path: Path):
 
 def test_parse_handles_malformed_frontmatter(tmp_path: Path):
     """parse_validation_md returns partial dict with error for bad frontmatter."""
-    vmd = tmp_path / "VALIDATION.md"
+    vmd = tmp_path / "99-VALIDATION.md"
     vmd.write_text("not valid frontmatter at all\n---\nbody\n")
 
     result = parse_validation_md(tmp_path)
@@ -98,7 +98,7 @@ def test_parse_handles_malformed_frontmatter(tmp_path: Path):
 
 def test_parse_handles_no_test_commands(tmp_path: Path):
     """parse_validation_md works when no test commands in body."""
-    vmd = tmp_path / "VALIDATION.md"
+    vmd = tmp_path / "01-VALIDATION.md"
     vmd.write_text("---\nphase: 1\nstatus: draft\n---\n\nNo table here.\n")
 
     result = parse_validation_md(tmp_path)
@@ -112,7 +112,7 @@ def test_parse_handles_no_test_commands(tmp_path: Path):
 
 def test_run_wave_validation_with_passing_command(tmp_path: Path):
     """run_wave_validation returns structured result with passing command."""
-    vmd = tmp_path / "VALIDATION.md"
+    vmd = tmp_path / "05-VALIDATION.md"
     vmd.write_text(SAMPLE_VALIDATION)
 
     result = run_wave_validation(tmp_path, wave=1, repo_path=str(tmp_path))
@@ -128,7 +128,7 @@ def test_run_wave_validation_with_failing_command(tmp_path: Path):
         "| **Full suite command** | `echo PASS` |",
         "| **Full suite command** | `false` |",
     )
-    vmd = tmp_path / "VALIDATION.md"
+    vmd = tmp_path / "05-VALIDATION.md"
     vmd.write_text(content)
 
     result = run_wave_validation(tmp_path, wave=1, repo_path=str(tmp_path))
@@ -147,7 +147,7 @@ def test_run_wave_validation_missing_validation_md(tmp_path: Path):
 
 def test_update_frontmatter_writes_wave_results(tmp_path: Path):
     """update_validation_frontmatter writes wave_N_complete and wave_N_validated."""
-    vmd = tmp_path / "VALIDATION.md"
+    vmd = tmp_path / "05-VALIDATION.md"
     vmd.write_text(SAMPLE_VALIDATION)
 
     wave_result = {
@@ -170,7 +170,7 @@ def test_update_frontmatter_writes_wave_results(tmp_path: Path):
 
 def test_update_frontmatter_preserves_existing_fields(tmp_path: Path):
     """update_validation_frontmatter preserves all existing frontmatter fields."""
-    vmd = tmp_path / "VALIDATION.md"
+    vmd = tmp_path / "05-VALIDATION.md"
     vmd.write_text(SAMPLE_VALIDATION)
 
     wave_result = {
@@ -191,7 +191,7 @@ def test_update_frontmatter_preserves_existing_fields(tmp_path: Path):
 
 def test_nyquist_compliant_false_when_any_wave_fails(tmp_path: Path):
     """nyquist_compliant stays false when not all waves pass."""
-    vmd = tmp_path / "VALIDATION.md"
+    vmd = tmp_path / "03-VALIDATION.md"
     vmd.write_text(SAMPLE_VALIDATION_MULTI_WAVE)
 
     # Wave 1 fails
@@ -212,7 +212,7 @@ def test_nyquist_compliant_false_when_any_wave_fails(tmp_path: Path):
 
 def test_nyquist_compliant_true_when_all_waves_pass(tmp_path: Path):
     """nyquist_compliant becomes true only when all wave_N_complete are true."""
-    vmd = tmp_path / "VALIDATION.md"
+    vmd = tmp_path / "03-VALIDATION.md"
     vmd.write_text(SAMPLE_VALIDATION_MULTI_WAVE)
 
     # Wave 1 passes (wave 0 already true in fixture)
@@ -304,17 +304,17 @@ def _setup_backfill_dirs(tmp_path: Path) -> Path:
     # Phase 5: already compliant
     p5 = phases / "05-lint-cleanup"
     p5.mkdir(parents=True)
-    (p5 / "VALIDATION.md").write_text(BACKFILL_COMPLIANT)
+    (p5 / "05-VALIDATION.md").write_text(BACKFILL_COMPLIANT)
 
     # Phase 1: non-compliant, command passes
     p1 = phases / "01-database-foundation"
     p1.mkdir(parents=True)
-    (p1 / "VALIDATION.md").write_text(BACKFILL_NON_COMPLIANT_PASS)
+    (p1 / "01-VALIDATION.md").write_text(BACKFILL_NON_COMPLIANT_PASS)
 
     # Phase 2: non-compliant, command fails
     p2 = phases / "02-error-infrastructure"
     p2.mkdir(parents=True)
-    (p2 / "VALIDATION.md").write_text(BACKFILL_NON_COMPLIANT_FAIL)
+    (p2 / "02-VALIDATION.md").write_text(BACKFILL_NON_COMPLIANT_FAIL)
 
     # Phase 3: no VALIDATION.md at all
     p3 = phases / "03-command-routing"
@@ -336,7 +336,7 @@ def test_backfill_skips_compliant(tmp_path: Path):
 
     # Phase 5 VALIDATION.md should be untouched
     p5_vmd = (
-        planning / "phases" / "05-lint-cleanup" / "VALIDATION.md"
+        planning / "phases" / "05-lint-cleanup" / "05-VALIDATION.md"
     )
     text = p5_vmd.read_text()
     assert "nyquist_compliant: true" in text
@@ -349,7 +349,7 @@ def test_backfill_updates_passing(tmp_path: Path):
     backfill_validation(planning_dir=planning, repo_path=str(tmp_path))
 
     p1_vmd = (
-        planning / "phases" / "01-database-foundation" / "VALIDATION.md"
+        planning / "phases" / "01-database-foundation" / "01-VALIDATION.md"
     )
     text = p1_vmd.read_text()
     assert "nyquist_compliant: true" in text
@@ -363,7 +363,7 @@ def test_backfill_updates_failing(tmp_path: Path):
     backfill_validation(planning_dir=planning, repo_path=str(tmp_path))
 
     p2_vmd = (
-        planning / "phases" / "02-error-infrastructure" / "VALIDATION.md"
+        planning / "phases" / "02-error-infrastructure" / "02-VALIDATION.md"
     )
     text = p2_vmd.read_text()
     assert "nyquist_compliant: false" in text
