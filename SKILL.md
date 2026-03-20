@@ -1,32 +1,46 @@
 # Meridian -- Unified Workflow Engine
 
-Meridian is a SQLite-backed state machine for managing complex development workflows with deterministic resume, fresh-context subagents, and engineering discipline protocols.
+Meridian is a SQLite-backed state machine for managing
+complex development workflows with deterministic resume,
+fresh-context subagents, and engineering discipline protocols.
 
 ## Available Skills
 
+- audit-uat -- uat — Cross-Phase Verification Debt Audit
 - checkpoint -- Manual Save Point
 - dashboard -- Project Dashboard
 - debug -- Systematic Debugging
 - dispatch -- Nero Dispatch
+- do -- Freeform Command Router
 - execute -- Execution Engine
+- fast -- Inline Fast Task
 - history -- Event Timeline
 - init -- Initialize Meridian in Current Project
 - migrate -- Cross-Project Migration
+- next -- Advance to Next Workflow Step
+- note -- Quick Note Capture
+- pause -- Session Handoff
 - plan -- Planning Pipeline
+- pr-branch -- branch — Create Clean PR Branch
+- profile -- Developer Preference Profiling
 - quick -- Lightweight Quick Task
 - resume -- Deterministic Resume
 - revert -- Revert Completed Plan
 - review -- Two-Stage Code Review
 - roadmap -- Cross-Milestone Roadmap
 - scan -- Codebase Audit & Work Discovery
+- seed -- Backlog Seed Management
 - ship -- Commit + Push + PR
 - status -- Show Project Status
 - template -- Workflow Templates
 - validate -- Git State Validation
+- verify-phase -- phase -- Nyquist Compliance Check
 
 ## Architecture
 
-State is stored in `.meridian/state.db` (SQLite) in each project directory. The state machine enforces valid transitions and computes the next action deterministically.
+State is stored in `.meridian/state.db` (SQLite) in each
+project directory. The state machine enforces valid transitions
+and computes the next action deterministically.
 
 ### Hierarchy
 ```
