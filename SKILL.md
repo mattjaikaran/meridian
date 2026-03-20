@@ -15,7 +15,9 @@ fresh-context subagents, and engineering discipline protocols.
 - execute -- Execution Engine
 - fast -- Inline Fast Task
 - history -- Event Timeline
+- freeze -- Edit Scope Lock
 - init -- Initialize Meridian in Current Project
+- learn -- Execution Learning System
 - migrate -- Cross-Project Migration
 - next -- Advance to Next Workflow Step
 - note -- Quick Note Capture
@@ -25,6 +27,7 @@ fresh-context subagents, and engineering discipline protocols.
 - profile -- Developer Preference Profiling
 - quick -- Lightweight Quick Task
 - resume -- Deterministic Resume
+- retro -- Structured Retrospective
 - revert -- Revert Completed Plan
 - review -- Two-Stage Code Review
 - roadmap -- Cross-Milestone Roadmap

@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 _logging_configured = False
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 SCHEMA_SQL = """
 -- Schema version tracking
@@ -188,7 +188,20 @@ CREATE TABLE IF NOT EXISTS review (
     stage INTEGER NOT NULL CHECK (stage IN (1, 2)),
     result TEXT NOT NULL CHECK (result IN ('pass','pass_with_notes','fail')),
     feedback TEXT,
+    model TEXT DEFAULT 'claude',
     created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Learnings
+CREATE TABLE IF NOT EXISTS learning (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id TEXT DEFAULT 'default' REFERENCES project(id),
+    scope TEXT DEFAULT 'project' CHECK (scope IN ('global','project','phase')),
+    phase_id INTEGER REFERENCES phase(id),
+    rule TEXT NOT NULL,
+    source TEXT CHECK (source IN ('manual','execution','review','debug')),
+    created_at TEXT DEFAULT (datetime('now')),
+    applied_count INTEGER DEFAULT 0
 );
 """
 
@@ -506,6 +519,29 @@ def _migrate_v3_to_v4(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_v4_to_v5(conn: sqlite3.Connection) -> None:
+    """Add learning table and model column to review table."""
+    # Create learning table
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS learning (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id TEXT DEFAULT 'default' REFERENCES project(id),
+            scope TEXT DEFAULT 'project' CHECK (scope IN ('global','project','phase')),
+            phase_id INTEGER REFERENCES phase(id),
+            rule TEXT NOT NULL,
+            source TEXT CHECK (source IN ('manual','execution','review','debug')),
+            created_at TEXT DEFAULT (datetime('now')),
+            applied_count INTEGER DEFAULT 0
+        )
+    """)
+    # Add model column to review table
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(review)").fetchall()}
+    if "model" not in columns:
+        conn.execute("ALTER TABLE review ADD COLUMN model TEXT DEFAULT 'claude'")
+    conn.execute("INSERT OR REPLACE INTO schema_version (version) VALUES (?)", (5,))
+    conn.commit()
+
+
 def get_db_path(project_dir: str | Path | None = None) -> Path:
     """Get the path to the Meridian database for a project directory."""
     if project_dir is None:
@@ -544,6 +580,11 @@ def init_schema(conn: sqlite3.Connection, db_path: str | Path | None = None) -> 
         if db_path is not None and str(db_path) != ":memory:":
             backup_database(Path(db_path), max_backups=5)
         _migrate_v3_to_v4(conn)
+    current_version = get_schema_version(conn)
+    if current_version < 5:
+        if db_path is not None and str(db_path) != ":memory:":
+            backup_database(Path(db_path), max_backups=5)
+        _migrate_v4_to_v5(conn)
 
 
 def get_schema_version(conn: sqlite3.Connection) -> int:
