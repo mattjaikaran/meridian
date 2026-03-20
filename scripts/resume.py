@@ -11,6 +11,7 @@ from collections import defaultdict
 from pathlib import Path
 
 from scripts.db import get_db_path, open_project
+from scripts.handoff import consume_handoff, format_handoff_section
 from scripts.state import (
     compute_next_action,
     get_latest_checkpoint,
@@ -64,6 +65,9 @@ def generate_resume_prompt(
     db_path = get_db_path(project_dir)
     if not db_path.exists():
         return "# Meridian Resume\n\nProject not initialized. Run `/meridian:init`."
+
+    # Check for session handoff (richer context from /meridian:pause)
+    handoff = consume_handoff(project_dir)
 
     with open_project(project_dir) as conn:
         try:
@@ -123,6 +127,11 @@ def generate_resume_prompt(
         # Header
         sections.append(f"# Meridian Resume — {project['name']}")
         sections.append("")
+
+        # Session handoff (if present from /meridian:pause)
+        if handoff:
+            sections.append(format_handoff_section(handoff))
+            sections.append("")
 
         # Position
         sections.append("## Position")
