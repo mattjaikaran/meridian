@@ -72,6 +72,10 @@ pending -> executing -> complete
 - `scripts/retro.py` -- Structured retrospective (streaks, failures, velocity)
 - `scripts/sessions.py` -- Session awareness (PID-based concurrent detection)
 - `scripts/cross_review.py` -- Cross-model review (Codex, Gemini, Aider integration)
+- `scripts/auto_learn.py` -- Auto-capture learnings from failures and reviews
+- `scripts/html_dashboard.py` -- Standalone HTML dashboard with inline CSS
+- `scripts/coverage_audit.py` -- Test coverage audit (scripts vs tests mapping)
+- `scripts/context_bridge.py` -- Import external context (matt-stack, CLAUDE.md, package.json)
 - `scripts/resume.py` -- Deterministic resume prompt generator
 - `scripts/export.py` -- SQLite -> JSON export for Nero
 - `scripts/dispatch.py` -- Nero HTTP dispatch client (push only)

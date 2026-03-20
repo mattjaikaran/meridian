@@ -24,8 +24,16 @@
 - [x] Phase 19: Session Awareness — PID-based concurrent session detection
 - [x] Phase 20: Cross-Model Review — `--cross-model` flag on `/meridian:review` (secondary AI CLI)
 
+## v1.5 Integration & Polish (shipped 2026-03-20)
+- [x] Phase 21: Learnings Auto-Capture — auto-suggest from failures and review rejections
+- [x] Phase 22: HTML Dashboard — `/meridian:dashboard --html` standalone dark-themed report
+- [x] Phase 23: Freeze Integration — check freeze state before subagent file edits
+- [x] Phase 24: Test Coverage Audit — scripts vs tests coverage mapping
+- [x] Phase 25: Context Bridge — matt-stack + external context import
+- [x] Phase 26: Retro Auto-Scheduling — prompt for retro every N completed phases
+
 ## Stats
-- Tests: 876 passing
-- Python modules: 28 in scripts/
+- Tests: 928 passing
+- Python modules: 32 in scripts/
 - Slash commands: 32
-- Milestones shipped: v1.0, v1.1, v1.2, v1.3, v1.4
+- Milestones shipped: v1.0, v1.1, v1.2, v1.3, v1.4, v1.5
