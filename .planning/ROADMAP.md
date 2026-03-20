@@ -3,8 +3,9 @@
 ## Milestones
 
 - ✅ **v1.0 Meridian Hardening** — Phases 1-4 (shipped 2026-03-11)
-- 🚧 **v1.1 Polish & Reliability** — Phases 5-7 (in progress)
-- 📋 **v1.2 Feature Parity** — Phases 8-11 (planned)
+- ✅ **v1.1 Polish & Reliability** — Phases 5-7 (shipped 2026-03-20)
+- 🚧 **v1.2 Feature Parity** — Phases 8-11 (in progress)
+- 📋 **v1.3 Advanced Capabilities** — Phases 12-14 (planned)
 
 ## Phases
 
@@ -84,10 +85,10 @@ Plans:
   4. `/meridian:next` auto-detects workflow state and advances to the next logical step
 **Plans:** 4 plans (wave 1: fast, do, note | wave 2: next)
 Plans:
-- [ ] 08-01-PLAN.md — `/meridian:fast` inline task execution with complexity check
-- [ ] 08-02-PLAN.md — `/meridian:do` freeform text router
-- [ ] 08-03-PLAN.md — `/meridian:note` zero-friction idea capture
-- [ ] 08-04-PLAN.md — `/meridian:next` auto-advance workflow step
+- [x] 08-01-PLAN.md — `/meridian:fast` inline task execution with complexity check
+- [x] 08-02-PLAN.md — `/meridian:do` freeform text router
+- [x] 08-03-PLAN.md — `/meridian:note` zero-friction idea capture
+- [x] 08-04-PLAN.md — `/meridian:next` auto-advance workflow step
 
 ### Phase 9: Quality Gates
 **Goal**: Automated quality checks that catch regressions, coverage gaps, and placeholder code
@@ -100,10 +101,10 @@ Plans:
   4. `/meridian:audit-uat` produces a cross-phase verification debt report
 **Plans:** 4 plans (wave 1: regression + coverage gates | wave 2: stubs + audit)
 Plans:
-- [ ] 09-01-PLAN.md — Cross-phase regression gate
-- [ ] 09-02-PLAN.md — Requirements coverage gate
-- [ ] 09-03-PLAN.md — Stub/placeholder detection
-- [ ] 09-04-PLAN.md — `/meridian:audit-uat` verification debt tracking
+- [x] 09-01-PLAN.md — Cross-phase regression gate
+- [x] 09-02-PLAN.md — Requirements coverage gate
+- [x] 09-03-PLAN.md — Stub/placeholder detection
+- [x] 09-04-PLAN.md — `/meridian:audit-uat` verification debt tracking
 
 ### Phase 10: Session Intelligence
 **Goal**: Richer context preservation across sessions and traceable decision making
@@ -115,9 +116,9 @@ Plans:
   3. Decisions get unique IDs and link to the plans they informed
 **Plans:** 3 plans (wave 1: handoff + debug KB | wave 2: decision IDs)
 Plans:
-- [ ] 10-01-PLAN.md — Structured session handoff (HANDOFF.json)
-- [ ] 10-02-PLAN.md — Persistent debug knowledge base
-- [ ] 10-03-PLAN.md — Decision IDs with discuss→plan traceability
+- [x] 10-01-PLAN.md — Structured session handoff (HANDOFF.json)
+- [x] 10-02-PLAN.md — Persistent debug knowledge base
+- [x] 10-03-PLAN.md — Decision IDs with discuss→plan traceability
 
 ### Phase 11: Security & PR Hygiene
 **Goal**: Centralized input validation and clean PR branches without planning artifacts
@@ -128,25 +129,67 @@ Plans:
   2. `/meridian:pr-branch` creates a code-only branch filtering `.planning/` and `.meridian/` commits
 **Plans:** 2 plans (wave 1: both parallel)
 Plans:
-- [ ] 11-01-PLAN.md — Centralized security module
-- [ ] 11-02-PLAN.md — `/meridian:pr-branch` clean PR branch creation
+- [x] 11-01-PLAN.md — Centralized security module
+- [x] 11-02-PLAN.md — `/meridian:pr-branch` clean PR branch creation
+
+### Phase 12: Developer Experience
+**Goal**: Developer profiling, backlog management, and discussion audit trail
+**Depends on**: Phase 10 (uses decision IDs)
+**Requirements**: DX-01, DX-02, DX-03
+**Success Criteria** (what must be TRUE):
+  1. `/meridian:profile` generates a USER-PROFILE.md from project analysis
+  2. `/meridian:seed` captures ideas with trigger conditions that surface automatically
+  3. Discussion decisions are logged in DISCUSSION-LOG.md with decision ID links
+**Plans:** 3 plans (wave 1: all parallel)
+Plans:
+- [ ] 12-01-PLAN.md — `/meridian:profile` developer preference profiling
+- [ ] 12-02-PLAN.md — `/meridian:seed` backlog parking lot with triggers
+- [ ] 12-03-PLAN.md — Discussion audit trail with decision ID linking
+
+### Phase 13: Execution Resilience
+**Goal**: Interactive execution mode and automatic recovery from plan failures
+**Depends on**: Nothing (independent)
+**Requirements**: EXEC-01, EXEC-02
+**Success Criteria** (what must be TRUE):
+  1. `--interactive` flag pauses execution after each task for user review
+  2. Failed plans trigger auto-recovery (RETRY/DECOMPOSE/PRUNE) within a configurable budget
+**Plans:** 2 plans (wave 1: both parallel)
+Plans:
+- [ ] 13-01-PLAN.md — Interactive executor mode for pair-programming
+- [ ] 13-02-PLAN.md — Node repair operators (RETRY/DECOMPOSE/PRUNE)
+
+### Phase 14: Agent Intelligence
+**Goal**: MCP tool awareness and context window optimization for subagents
+**Depends on**: Nothing (independent)
+**Requirements**: AGENT-01, AGENT-02
+**Success Criteria** (what must be TRUE):
+  1. Subagent prompts include relevant MCP tools when available
+  2. Prompt sizing adapts to available context window (1M vs 200k)
+**Plans:** 2 plans (wave 1: both parallel)
+Plans:
+- [ ] 14-01-PLAN.md — MCP tool discovery and relevance scoring
+- [ ] 14-02-PLAN.md — Context window awareness and prompt sizing
 
 ## Progress
 
 **Execution Order:**
-- v1.1: Phases 5, 6, 7 are independent and can execute in any order.
-- v1.2: Phases 8-11 are independent. Within phases, waves enforce ordering.
+- v1.1: Phases 5, 6, 7 — independent. All complete.
+- v1.2: Phases 8-11 — independent. All complete.
+- v1.3: Phases 12-14 — independent. Within phases, waves enforce ordering.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 1. Database Foundation | v1.0 | 2/2 | Complete | 2026-03-20 |
-| 2. Error Infrastructure | v1.0 | 3/3 | Complete | 2026-03-20 |
+| 1. Database Foundation | v1.0 | 2/2 | Complete | 2026-03-10 |
+| 2. Error Infrastructure | v1.0 | 3/3 | Complete | 2026-03-11 |
 | 3. Command Routing | v1.0 | 2/2 | Complete | 2026-03-11 |
 | 4. Test Coverage & Hardening | v1.0 | 4/4 | Complete | 2026-03-11 |
 | 5. Lint Cleanup | v1.1 | 1/1 | Complete | 2026-03-14 |
 | 6. Nyquist Compliance | v1.1 | 2/2 | Complete | 2026-03-20 |
 | 7. Roadmap Automation | v1.1 | 2/2 | Complete | 2026-03-16 |
-| 8. Quick Workflow | v1.2 | 0/4 | Not started | - |
-| 9. Quality Gates | v1.2 | 0/4 | Not started | - |
-| 10. Session Intelligence | v1.2 | 0/3 | Not started | - |
-| 11. Security & PR Hygiene | v1.2 | 0/2 | Not started | - |
+| 8. Quick Workflow | v1.2 | 4/4 | Complete | 2026-03-20 |
+| 9. Quality Gates | v1.2 | 4/4 | Complete | 2026-03-20 |
+| 10. Session Intelligence | v1.2 | 3/3 | Complete | 2026-03-20 |
+| 11. Security & PR Hygiene | v1.2 | 2/2 | Complete | 2026-03-20 |
+| 12. Developer Experience | v1.3 | 0/3 | Not started | - |
+| 13. Execution Resilience | v1.3 | 0/2 | Not started | - |
+| 14. Agent Intelligence | v1.3 | 0/2 | Not started | - |
