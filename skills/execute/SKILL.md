@@ -67,13 +67,52 @@ conn.close()
 "
 ```
 
-2. **Dispatch subagent** with the implementer prompt (`prompts/implementer.md`):
+2. **Check freeze state** before dispatching:
+```bash
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+import json
+from scripts.db import connect, get_db_path
+from scripts.freeze import get_freeze
+conn = connect(get_db_path('.'))
+frozen = get_freeze(conn)
+conn.close()
+print(json.dumps({'frozen_directory': frozen}))
+"
+```
+If freeze is active, verify plan's files_to_create and files_to_modify are within the frozen directory. If any file is outside, warn the user and ask for confirmation before proceeding.
+
+3. **Inject learnings** into subagent prompt:
+```bash
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+from scripts.db import connect, get_db_path
+from scripts.learnings import get_learnings_for_prompt
+conn = connect(get_db_path('.'))
+print(get_learnings_for_prompt(conn, phase_id=<phase_id>))
+conn.close()
+"
+```
+
+4. **Check for retro prompt** (auto-scheduling):
+```bash
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+import json
+from scripts.db import connect, get_db_path
+from scripts.auto_learn import check_phase_for_retro_prompt
+conn = connect(get_db_path('.'))
+print(json.dumps(check_phase_for_retro_prompt(conn)))
+conn.close()
+"
+```
+If `should_prompt` is True, suggest running `/meridian:retro` after execution completes.
+
+5. **Dispatch subagent** with the implementer prompt (`prompts/implementer.md`):
    - Use Agent tool with `subagent_type: "general-purpose"`
    - Include plan description, files to create/modify, test command
    - Include project context from phase's `context_doc`
+   - Include learnings section from step 3
    - If TDD required, include TDD protocol from discipline-protocols.md
 
-3. **On success**: Mark plan complete with commit SHA:
+6. **On success**: Mark plan complete with commit SHA:
 ```bash
 PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
@@ -84,7 +123,7 @@ conn.close()
 "
 ```
 
-4. **On failure**: Mark plan failed:
+7. **On failure**: Mark plan failed and suggest learning:
 ```bash
 PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
@@ -94,6 +133,20 @@ transition_plan(conn, <plan_id>, 'failed', error_message='<error>')
 conn.close()
 "
 ```
+
+After marking failed, suggest a learning:
+```bash
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+import json
+from scripts.db import connect, get_db_path
+from scripts.auto_learn import suggest_learning_from_failure
+conn = connect(get_db_path('.'))
+suggestion = suggest_learning_from_failure(conn, <plan_id>, '<error_message>')
+print(json.dumps(suggestion, indent=2, default=str))
+conn.close()
+"
+```
+If the plan is later fixed, ask the user: "Save this as a learning?" and use `/meridian:learn` to persist.
 
 #### 3c. Plans in the same wave CAN be dispatched in parallel using multiple Agent calls.
 
