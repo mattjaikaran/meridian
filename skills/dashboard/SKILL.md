@@ -77,4 +77,20 @@ If any phases or plans have `priority` set, show a priority summary:
 
 ## Options
 - `--json` — Output raw JSON instead of formatted dashboard
+- `--html [path]` — Generate standalone HTML dashboard (default: .meridian/dashboard.html)
 - `--no-sync` — Skip pulling Nero dispatch status before rendering
+
+### HTML Dashboard
+
+If `--html` is specified:
+```bash
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+from scripts.db import open_project
+from scripts.html_dashboard import write_dashboard
+with open_project('.') as conn:
+    path = write_dashboard(conn, '<output_path>')
+    print(f'Dashboard written to {path}')
+"
+```
+
+Opens in browser automatically if on macOS: `open <output_path>`
