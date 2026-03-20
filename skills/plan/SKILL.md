@@ -40,7 +40,7 @@ conn.close()
 "
 ```
 
-### Step 3.5: Office Hours (if --deep)
+### Step 3.5: Deep Discovery (if --deep)
 
 If `--deep` flag is present, ask these 5 forcing questions BEFORE brainstorming.
 Use AskUserQuestion for each. Do NOT skip any.
@@ -57,7 +57,7 @@ PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_decision
 conn = connect(get_db_path('.'))
-create_decision(conn, 'Office Hours: <goal summary>', category='constraint',
+create_decision(conn, 'Deep Discovery: <goal summary>', category='constraint',
     rationale='''Who: <answer1>
 Status Quo: <answer2>
 Narrowest Wedge: <answer3>

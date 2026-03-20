@@ -28,9 +28,9 @@ class TestOfficeHoursQuestions:
         for question in REQUIRED_QUESTIONS:
             assert question in content, f"Missing question: {question}"
 
-    def test_office_hours_step_exists(self):
+    def test_deep_discovery_step_exists(self):
         content = PLAN_SKILL_PATH.read_text()
-        assert "Office Hours" in content
+        assert "Deep Discovery" in content
         assert "Step 3.5" in content
 
     def test_constraint_category_used(self):
