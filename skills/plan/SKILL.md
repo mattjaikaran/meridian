@@ -6,6 +6,7 @@ Brainstorm → Context Gather → Generate Plans with Wave Assignments.
 - `<goal>` — What to build (required on first run, or creates milestone)
 - `--milestone <id>` — Target milestone (default: active milestone)
 - `--phase <id>` — Plan a specific phase (skip brainstorming)
+- `--deep` — Office hours mode: force 5 strategic questions before brainstorming
 
 ## Procedure
 
@@ -38,6 +39,37 @@ transition_milestone(conn, '<id>', 'active')
 conn.close()
 "
 ```
+
+### Step 3.5: Office Hours (if --deep)
+
+If `--deep` flag is present, ask these 5 forcing questions BEFORE brainstorming.
+Use AskUserQuestion for each. Do NOT skip any.
+
+1. **Who needs this?** — "Who is the specific user or persona that benefits? Not 'everyone' — name the person or role."
+2. **What's the status quo?** — "How is this handled today without this feature? What workaround exists?"
+3. **What's the narrowest wedge?** — "What is the absolute smallest version that delivers value? Strip it to bare minimum."
+4. **What breaks without it?** — "What are the consequences of NOT building this? Who is hurt and how?"
+5. **What does success look like?** — "Describe a concrete, measurable outcome. How do we know it worked?"
+
+After collecting all 5 answers, store them as a decision:
+```bash
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+from scripts.db import connect, get_db_path
+from scripts.state import create_decision
+conn = connect(get_db_path('.'))
+create_decision(conn, 'Office Hours: <goal summary>', category='constraint',
+    rationale='''Who: <answer1>
+Status Quo: <answer2>
+Narrowest Wedge: <answer3>
+Without It: <answer4>
+Success: <answer5>''')
+conn.close()
+"
+```
+
+Feed these answers into Step 4 brainstorming and Step 5 context gathering.
+Use the "narrowest wedge" answer to constrain scope.
+Use the "success" answer to shape acceptance criteria.
 
 ### Step 4: Brainstorm Phases
 Think through the work as an architect:
