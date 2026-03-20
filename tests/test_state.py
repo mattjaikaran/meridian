@@ -19,10 +19,12 @@ from scripts.state import (
     create_project,
     create_quick_task,
     create_review,
+    get_decisions_for_plan,
     get_latest_checkpoint,
     get_project,
     get_setting,
     get_status,
+    link_decision_to_plan,
     list_decisions,
     list_events,
     list_milestones,
@@ -253,6 +255,85 @@ class TestDecision:
         phase_decisions = list_decisions(seeded_db, phase_id=phase["id"])
         assert len(phase_decisions) == 1
         assert phase_decisions[0]["summary"] == "Phase-specific"
+
+    def test_auto_generates_decision_id(self, seeded_db):
+        d1 = create_decision(seeded_db, "First decision")
+        d2 = create_decision(seeded_db, "Second decision")
+        assert d1["decision_id"] == "DEC-001"
+        assert d2["decision_id"] == "DEC-002"
+
+    def test_decision_id_sequential(self, seeded_db):
+        for i in range(5):
+            d = create_decision(seeded_db, f"Decision {i + 1}")
+            assert d["decision_id"] == f"DEC-{i + 1:03d}"
+
+    def test_decision_id_unique(self, seeded_db):
+        d1 = create_decision(seeded_db, "First")
+        d2 = create_decision(seeded_db, "Second")
+        assert d1["decision_id"] != d2["decision_id"]
+
+
+# ── Decision Linking Tests ───────────────────────────────────────────────────
+
+
+class TestDecisionLinking:
+    def test_link_decision_to_plan(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        plan = create_plan(seeded_db, phase["id"], "Test Plan", "desc")
+        dec = create_decision(seeded_db, "Use approach X")
+        link_decision_to_plan(seeded_db, dec["decision_id"], plan["id"])
+        linked = get_decisions_for_plan(seeded_db, plan["id"])
+        assert len(linked) == 1
+        assert linked[0]["decision_id"] == dec["decision_id"]
+
+    def test_multiple_decisions_per_plan(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        plan = create_plan(seeded_db, phase["id"], "Test Plan", "desc")
+        d1 = create_decision(seeded_db, "Decision A")
+        d2 = create_decision(seeded_db, "Decision B")
+        link_decision_to_plan(seeded_db, d1["decision_id"], plan["id"])
+        link_decision_to_plan(seeded_db, d2["decision_id"], plan["id"])
+        linked = get_decisions_for_plan(seeded_db, plan["id"])
+        assert len(linked) == 2
+
+    def test_decision_linked_to_multiple_plans(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        p1 = create_plan(seeded_db, phase["id"], "Plan A", "desc")
+        p2 = create_plan(seeded_db, phase["id"], "Plan B", "desc")
+        dec = create_decision(seeded_db, "Shared decision")
+        link_decision_to_plan(seeded_db, dec["decision_id"], p1["id"])
+        link_decision_to_plan(seeded_db, dec["decision_id"], p2["id"])
+        assert len(get_decisions_for_plan(seeded_db, p1["id"])) == 1
+        assert len(get_decisions_for_plan(seeded_db, p2["id"])) == 1
+
+    def test_get_decisions_empty_plan(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        plan = create_plan(seeded_db, phase["id"], "Empty Plan", "desc")
+        linked = get_decisions_for_plan(seeded_db, plan["id"])
+        assert linked == []
+
+    def test_standalone_decision_no_link(self, seeded_db):
+        """Decisions without linked plans still work fine."""
+        dec = create_decision(seeded_db, "Standalone decision")
+        assert dec["decision_id"] is not None
+        decisions = list_decisions(seeded_db)
+        assert len(decisions) == 1
+
+    def test_link_nonexistent_decision_raises(self, seeded_db):
+        phase = list_phases(seeded_db, "v1.0")[0]
+        plan = create_plan(seeded_db, phase["id"], "Plan", "desc")
+        with pytest.raises(ValueError, match="Decision not found"):
+            link_decision_to_plan(seeded_db, "DEC-999", plan["id"])
+
+    def test_duplicate_link_ignored(self, seeded_db):
+        """Linking same decision to same plan twice doesn't error (INSERT OR IGNORE)."""
+        phase = list_phases(seeded_db, "v1.0")[0]
+        plan = create_plan(seeded_db, phase["id"], "Plan", "desc")
+        dec = create_decision(seeded_db, "Decision")
+        link_decision_to_plan(seeded_db, dec["decision_id"], plan["id"])
+        link_decision_to_plan(seeded_db, dec["decision_id"], plan["id"])
+        linked = get_decisions_for_plan(seeded_db, plan["id"])
+        assert len(linked) == 1
 
 
 # ── Quick Task Tests ──────────────────────────────────────────────────────────

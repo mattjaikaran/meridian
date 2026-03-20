@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 _logging_configured = False
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 SCHEMA_SQL = """
 -- Schema version tracking
@@ -470,6 +470,42 @@ def _migrate_v2_to_v3(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_v3_to_v4(conn: sqlite3.Connection) -> None:
+    """Add decision_id column to decision table and plan_decision junction table."""
+    # Add decision_id column if not present
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(decision)").fetchall()}
+    if "decision_id" not in columns:
+        conn.execute("ALTER TABLE decision ADD COLUMN decision_id TEXT")
+    # Create unique index (idempotent) — can't use UNIQUE constraint in ALTER TABLE
+    conn.execute(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_decision_decision_id"
+        " ON decision(decision_id)"
+    )
+
+    # Create plan_decision junction table
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS plan_decision (
+            plan_id INTEGER NOT NULL REFERENCES plan(id),
+            decision_id TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now')),
+            PRIMARY KEY (plan_id, decision_id)
+        )
+    """)
+
+    # Backfill existing decisions with DEC-001, DEC-002, etc.
+    rows = conn.execute(
+        "SELECT id FROM decision WHERE decision_id IS NULL ORDER BY id"
+    ).fetchall()
+    for i, row in enumerate(rows, start=1):
+        conn.execute(
+            "UPDATE decision SET decision_id = ? WHERE id = ?",
+            (f"DEC-{i:03d}", row["id"]),
+        )
+
+    conn.execute("INSERT OR REPLACE INTO schema_version (version) VALUES (?)", (4,))
+    conn.commit()
+
+
 def get_db_path(project_dir: str | Path | None = None) -> Path:
     """Get the path to the Meridian database for a project directory."""
     if project_dir is None:
@@ -503,6 +539,11 @@ def init_schema(conn: sqlite3.Connection, db_path: str | Path | None = None) -> 
         if db_path is not None and str(db_path) != ":memory:":
             backup_database(Path(db_path), max_backups=5)
         _migrate_v2_to_v3(conn)
+    current_version = get_schema_version(conn)
+    if current_version < 4:
+        if db_path is not None and str(db_path) != ":memory:":
+            backup_database(Path(db_path), max_backups=5)
+        _migrate_v3_to_v4(conn)
 
 
 def get_schema_version(conn: sqlite3.Connection) -> int:

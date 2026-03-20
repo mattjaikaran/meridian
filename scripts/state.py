@@ -600,6 +600,20 @@ def list_checkpoints(
 # ── Decision CRUD ─────────────────────────────────────────────────────────────
 
 
+def _next_decision_id(conn: sqlite3.Connection) -> str:
+    """Generate the next DEC-NNN decision ID."""
+    row = conn.execute(
+        "SELECT decision_id FROM decision WHERE decision_id IS NOT NULL"
+        " ORDER BY decision_id DESC LIMIT 1"
+    ).fetchone()
+    if not row or not row["decision_id"]:
+        return "DEC-001"
+    match = re.match(r"DEC-(\d+)", row["decision_id"])
+    if not match:
+        return "DEC-001"
+    return f"DEC-{int(match.group(1)) + 1:03d}"
+
+
 @retry_on_busy()
 def create_decision(
     conn: sqlite3.Connection,
@@ -609,10 +623,11 @@ def create_decision(
     project_id: str = "default",
     phase_id: int | None = None,
 ) -> dict:
+    decision_id = _next_decision_id(conn)
     conn.execute(
-        "INSERT INTO decision (project_id, phase_id, category, summary, rationale)"
-        " VALUES (?, ?, ?, ?, ?)",
-        (project_id, phase_id, category, summary, rationale),
+        "INSERT INTO decision (project_id, phase_id, category, summary, rationale, decision_id)"
+        " VALUES (?, ?, ?, ?, ?, ?)",
+        (project_id, phase_id, category, summary, rationale, decision_id),
     )
     conn.commit()
     row = conn.execute("SELECT * FROM decision WHERE id = last_insert_rowid()").fetchone()
@@ -635,6 +650,43 @@ def list_decisions(
             "SELECT * FROM decision WHERE project_id = ? ORDER BY id DESC LIMIT ?",
             (project_id, limit),
         ).fetchall()
+    return _rows_to_list(rows)
+
+
+@retry_on_busy()
+def link_decision_to_plan(
+    conn: sqlite3.Connection,
+    decision_id: str,
+    plan_id: int,
+) -> None:
+    """Link a decision to a plan via the plan_decision junction table.
+
+    Raises ValueError if the decision_id doesn't exist.
+    """
+    row = conn.execute(
+        "SELECT id FROM decision WHERE decision_id = ?", (decision_id,),
+    ).fetchone()
+    if not row:
+        raise ValueError(f"Decision not found: {decision_id}")
+    conn.execute(
+        "INSERT OR IGNORE INTO plan_decision (plan_id, decision_id) VALUES (?, ?)",
+        (plan_id, decision_id),
+    )
+    conn.commit()
+
+
+def get_decisions_for_plan(
+    conn: sqlite3.Connection,
+    plan_id: int,
+) -> list[dict]:
+    """Return all decisions linked to a plan."""
+    rows = conn.execute(
+        """SELECT d.* FROM decision d
+        JOIN plan_decision pd ON d.decision_id = pd.decision_id
+        WHERE pd.plan_id = ?
+        ORDER BY d.id""",
+        (plan_id,),
+    ).fetchall()
     return _rows_to_list(rows)
 
 
