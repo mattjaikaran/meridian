@@ -39,14 +39,24 @@ Deterministic workflow state that survives context resets — every resume produ
 
 ### Active
 
-#### Current Milestone: v1.1 Polish & Reliability
+#### Current Milestone: v1.2 Feature Parity
 
-**Goal:** Fix workflow automation gaps, compliance issues, and lint hygiene discovered during v1.0
+**Goal:** Catch up with GSD feature set — lightweight commands, quality gates, session intelligence, security hardening
 
 **Target features:**
-- Automated ROADMAP.md tracking (replace manual checkbox updates with auto-sync from DB state)
-- Nyquist compliance fix (VALIDATION.md frontmatter not updated post-execution)
-- Fix pre-existing E501 lint issues in SQL schema / generate_commands.py
+- Quick workflow commands: `/fast`, `/do`, `/note`, `/next`
+- Quality gates: cross-phase regression, requirements coverage, stub detection, UAT audit
+- Session intelligence: structured handoff, debug knowledge base, decision IDs
+- Security & PR hygiene: centralized security module, clean PR branches
+
+#### Completed: v1.1 Polish & Reliability
+
+**Shipped:** 2026-03-20
+
+**Delivered:**
+- Automated ROADMAP.md tracking (auto-sync from DB state)
+- Nyquist compliance fix (VALIDATION.md frontmatter updated post-execution, all phases backfilled)
+- E501 lint cleanup in SQL schema / generate_commands.py
 
 ### Out of Scope
 
@@ -59,9 +69,9 @@ Deterministic workflow state that survives context resets — every resume produ
 
 ## Context
 
-Shipped v1.0 Hardening milestone with 6,227 lines Python across scripts/ and tests/.
+Shipped v1.0 Hardening (2026-03-11) and v1.1 Polish (2026-03-20).
 Tech stack: Python 3.12+ (stdlib-only), SQLite (WAL mode), pytest, uv.
-217 tests passing across 10 test files. All 31 requirements satisfied.
+378 tests passing across 16 test files. 20 slash commands planned (13 shipped + 7 new in v1.2).
 Two-machine model: MacBook Pro (interactive) dispatches to Mac Mini (Nero) for autonomous execution.
 
 ## Constraints
@@ -86,4 +96,4 @@ Two-machine model: MacBook Pro (interactive) dispatches to Mac Mini (Nero) for a
 | Generated command wrappers | Thin .md files with @ references, regenerable from skills | ✓ Good |
 
 ---
-*Last updated: 2026-03-14 after v1.1 milestone start*
+*Last updated: 2026-03-20 after v1.2 milestone start*
