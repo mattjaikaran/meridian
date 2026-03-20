@@ -6,6 +6,7 @@ Run spec compliance + code quality review on completed work.
 - `--phase <id>` — Review specific phase (default: current phase)
 - `--stage <1|2>` — Run only one stage
 - `--files <paths>` — Review specific files instead of full phase
+- `--cross-model` — Run independent review from a secondary AI model after Stage 2
 
 ## Procedure
 
@@ -46,6 +47,48 @@ Launch Agent (subagent_type: general-purpose) with `prompts/code-quality-reviewe
 - Populate with phase name, changed files, project conventions
 - Agent reviews code quality, security, performance
 - Returns APPROVE, PASS WITH NOTES, or REQUEST CHANGES
+
+### Step 4.5: Cross-Model Review (if --cross-model)
+
+Only runs if Stage 2 passes. Requires a secondary AI CLI installed.
+
+```bash
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+import json
+from scripts.cross_review import detect_models
+models = detect_models()
+print(json.dumps(models, indent=2))
+"
+```
+
+If models are available, build and run the cross-review:
+```bash
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+from scripts.cross_review import build_review_prompt, run_external_review, parse_findings
+prompt = build_review_prompt(<changed_files>, phase_name='<name>', phase_description='<desc>')
+result = run_external_review('<model_id>', prompt)
+if result['success']:
+    findings = parse_findings(result['output'])
+    import json
+    print(json.dumps(findings, indent=2))
+else:
+    print(f'Cross-review failed: {result[\"error\"]}')
+"
+```
+
+Compare with Claude's findings and display the comparison report.
+Store the cross-review result:
+```bash
+PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+from scripts.db import open_project
+from scripts.state import create_review
+with open_project('.') as conn:
+    create_review(conn, phase_id=<phase_id>, stage=2, result='<pass|fail>',
+                  feedback='<cross_review_summary>', model='<model_id>')
+"
+```
+
+If no secondary models are available, skip with a note: "No secondary AI CLI detected. Install codex, gemini, or aider for cross-model review."
 
 ### Step 5: Transition Phase
 If both stages pass:
