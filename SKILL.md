@@ -65,8 +65,13 @@ pending -> executing -> complete
 ```
 
 ## Scripts (Python, stdlib only)
-- `scripts/db.py` -- Schema init + migrations (v2: priority column)
+- `scripts/db.py` -- Schema init + migrations (v5: learning table, review.model column)
 - `scripts/state.py` -- CRUD + transitions + next-action + auto-advancement + priority
+- `scripts/learnings.py` -- Execution learning system (capture, dedup, prompt injection)
+- `scripts/freeze.py` -- Edit scope lock (directory-based advisory safety)
+- `scripts/retro.py` -- Structured retrospective (streaks, failures, velocity)
+- `scripts/sessions.py` -- Session awareness (PID-based concurrent detection)
+- `scripts/cross_review.py` -- Cross-model review (Codex, Gemini, Aider integration)
 - `scripts/resume.py` -- Deterministic resume prompt generator
 - `scripts/export.py` -- SQLite -> JSON export for Nero
 - `scripts/dispatch.py` -- Nero HTTP dispatch client (push only)
