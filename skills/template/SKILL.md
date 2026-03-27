@@ -11,10 +11,10 @@ Apply or list workflow templates for rapid project scaffolding.
 
 ### If --list:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json, glob
 from pathlib import Path
-templates_dir = Path('~/dev/meridian/templates').expanduser()
+templates_dir = Path('$MERIDIAN_HOME/templates').expanduser()
 templates = []
 for f in sorted(templates_dir.glob('*.json')):
     data = json.loads(f.read_text())
@@ -25,13 +25,13 @@ print(json.dumps(templates, indent=2))
 
 ### If --apply:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from pathlib import Path
 from scripts.db import open_project
 from scripts.state import create_milestone, create_phase, create_plan
 
-template_path = Path('~/dev/meridian/templates/<name>.json').expanduser()
+template_path = Path('$MERIDIAN_HOME/templates/<name>.json').expanduser()
 template = json.loads(template_path.read_text())
 
 with open_project('.') as conn:

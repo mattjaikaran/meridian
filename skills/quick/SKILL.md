@@ -9,7 +9,7 @@ Execute a small task without phase/plan overhead. Still tracked in SQLite.
 
 ### Step 1: Create Quick Task
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.state import create_quick_task
@@ -22,7 +22,7 @@ conn.close()
 
 ### Step 2: Mark Executing
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import transition_quick_task
 conn = connect(get_db_path('.'))
@@ -39,7 +39,7 @@ Execute the task inline (no subagent needed for quick tasks).
 
 ### Step 4: Mark Complete
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import transition_quick_task
 conn = connect(get_db_path('.'))

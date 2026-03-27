@@ -13,7 +13,7 @@ profile, preferences, patterns, style, conventions, developer, analyze, history
 
 ### Generate Profile
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from pathlib import Path
 from scripts.profiler import analyze_project_patterns, generate_profile, save_profile
@@ -27,7 +27,7 @@ print(content)
 
 ### Refresh Profile
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from pathlib import Path
 from scripts.profiler import analyze_project_patterns, generate_profile, save_profile
 patterns = analyze_project_patterns(Path('.'))

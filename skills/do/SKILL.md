@@ -12,7 +12,7 @@ do, run, execute, help, what, how, route, find command
 
 ### Step 1: Route the Input
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.router import route_freeform
 result = route_freeform('<text>')

@@ -6,7 +6,7 @@ Generate and load a resume prompt from SQLite state. Start exactly where you lef
 
 ### Step 1: Generate Resume Prompt
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.resume import generate_resume_prompt
 print(generate_resume_prompt('.'))
 "

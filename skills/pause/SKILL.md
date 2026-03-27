@@ -9,7 +9,7 @@ Create a structured HANDOFF.json before ending a session. The next `/meridian:re
 
 ### Step 1: Create Handoff
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.handoff import create_handoff
 handoff = create_handoff('.', user_notes='<notes>')
@@ -19,7 +19,7 @@ print(json.dumps(handoff, indent=2))
 
 ### Step 2: Create Checkpoint
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_checkpoint
 conn = connect(get_db_path('.'))

@@ -10,7 +10,7 @@ Revert a completed plan back to pending status.
 
 ### Step 1: Verify Plan Status
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.db import open_project
 from scripts.state import get_plan
@@ -24,7 +24,7 @@ Confirm the plan is in `complete` status before proceeding.
 
 ### Step 2: Revert Plan
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.db import open_project
 from scripts.state import revert_plan

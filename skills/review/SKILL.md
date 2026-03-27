@@ -12,7 +12,7 @@ Run spec compliance + code quality review on completed work.
 
 ### Step 1: Gather Review Context
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.state import get_phase, list_plans
@@ -53,7 +53,7 @@ Launch Agent (subagent_type: general-purpose) with `prompts/code-quality-reviewe
 Only runs if Stage 2 passes. Requires a secondary AI CLI installed.
 
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.cross_review import detect_models
 models = detect_models()
@@ -63,7 +63,7 @@ print(json.dumps(models, indent=2))
 
 If models are available, build and run the cross-review:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.cross_review import build_review_prompt, run_external_review, parse_findings
 prompt = build_review_prompt(<changed_files>, phase_name='<name>', phase_description='<desc>')
 result = run_external_review('<model_id>', prompt)
@@ -79,7 +79,7 @@ else:
 Compare with Claude's findings and display the comparison report.
 Store the cross-review result:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import open_project
 from scripts.state import create_review
 with open_project('.') as conn:
@@ -93,7 +93,7 @@ If no secondary models are available, skip with a note: "No secondary AI CLI det
 ### Step 5: Transition Phase
 If both stages pass:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import transition_phase
 conn = connect(get_db_path('.'))
@@ -106,7 +106,7 @@ If either stage fails, log findings and keep phase in current state.
 
 ### Step 6: Log Review Decision
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_decision
 conn = connect(get_db_path('.'))
@@ -118,7 +118,7 @@ conn.close()
 
 ### Step 7: Persist Review Result
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import open_project
 from scripts.state import create_review
 with open_project('.') as conn:

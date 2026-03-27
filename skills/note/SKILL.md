@@ -14,7 +14,7 @@ note, idea, capture, remember, jot, thought, memo, append, promote
 
 ### Subcommand: append
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from pathlib import Path
 from scripts.notes import append_note
@@ -25,7 +25,7 @@ print(json.dumps(result, indent=2))
 
 ### Subcommand: list
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from pathlib import Path
 from scripts.notes import list_notes
@@ -38,7 +38,7 @@ for n in notes:
 
 ### Subcommand: promote
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from pathlib import Path
 from scripts.db import connect, get_db_path

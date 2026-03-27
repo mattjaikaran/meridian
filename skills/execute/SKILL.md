@@ -13,7 +13,7 @@ Run plans via fresh-context subagents with TDD enforcement and 2-stage review.
 
 ### Step 1: Determine What to Execute
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.state import compute_next_action, get_phase, list_plans
@@ -28,7 +28,7 @@ If action is `execute` or `execute_plan`, proceed. Otherwise, show the required 
 
 ### Step 2: Transition Phase to Executing
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import transition_phase
 conn = connect(get_db_path('.'))
@@ -43,7 +43,7 @@ For each wave (starting from 1):
 
 #### 3a. Get plans for current wave
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.state import get_plans_by_wave
@@ -58,7 +58,7 @@ conn.close()
 
 1. **Mark plan as executing**:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import transition_plan
 conn = connect(get_db_path('.'))
@@ -69,7 +69,7 @@ conn.close()
 
 2. **Check freeze state** before dispatching:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.freeze import get_freeze
@@ -83,7 +83,7 @@ If freeze is active, verify plan's files_to_create and files_to_modify are withi
 
 3. **Inject learnings** into subagent prompt:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import connect, get_db_path
 from scripts.learnings import get_learnings_for_prompt
 conn = connect(get_db_path('.'))
@@ -94,7 +94,7 @@ conn.close()
 
 4. **Check for retro prompt** (auto-scheduling):
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.auto_learn import check_phase_for_retro_prompt
@@ -114,7 +114,7 @@ If `should_prompt` is True, suggest running `/meridian:retro` after execution co
 
 6. **On success**: Mark plan complete with commit SHA:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import transition_plan
 conn = connect(get_db_path('.'))
@@ -125,7 +125,7 @@ conn.close()
 
 7. **On failure**: Mark plan failed and suggest learning:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import transition_plan
 conn = connect(get_db_path('.'))
@@ -136,7 +136,7 @@ conn.close()
 
 After marking failed, suggest a learning:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.auto_learn import suggest_learning_from_failure
@@ -154,7 +154,7 @@ If the plan is later fixed, ask the user: "Save this as a learning?" and use `/m
 
 Transition phase to verifying:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import transition_phase
 conn = connect(get_db_path('.'))
@@ -182,7 +182,7 @@ Check each acceptance criterion against the implemented code. Run tests.
 ### Step 7: Complete Phase
 If review passes:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import transition_phase
 conn = connect(get_db_path('.'))
@@ -197,7 +197,7 @@ If review fails, transition back to `executing` with notes on what needs fixing.
 ### Step 8: Checkpoint
 Create automatic checkpoint after phase completion:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_checkpoint
 conn = connect(get_db_path('.'))
@@ -208,7 +208,7 @@ conn.close()
 
 ### Step 9: Export and Show Next Action
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.export import export_state
 from scripts.db import connect, get_db_path
 from scripts.state import compute_next_action

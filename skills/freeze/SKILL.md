@@ -16,7 +16,7 @@ freeze, lock, scope, restrict, directory, unfreeze, guard, safety
 
 **If `--status`**: Show freeze state:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import open_project
 from scripts.freeze import format_freeze_status
 with open_project('.') as conn:
@@ -26,7 +26,7 @@ with open_project('.') as conn:
 
 **If `--clear`**: Remove freeze:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import open_project
 from scripts.freeze import clear_freeze
 with open_project('.') as conn:
@@ -38,7 +38,7 @@ with open_project('.') as conn:
 ### Step 2: Set Freeze
 
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.db import open_project
 from scripts.freeze import set_freeze

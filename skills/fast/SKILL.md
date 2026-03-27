@@ -12,7 +12,7 @@ fast, quick, trivial, fix, typo, small, inline, one-liner, tweak, config
 
 ### Step 1: Estimate Complexity
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.fast import estimate_complexity
 result = estimate_complexity('<description>')
@@ -24,7 +24,7 @@ If `is_trivial` is False, suggest `/meridian:quick` or `/meridian:plan` instead.
 
 ### Step 2: Execute Fast Task
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.fast import execute_fast_task
@@ -43,7 +43,7 @@ Execute the task inline (no subagent):
 
 ### Step 4: Mark Complete
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import connect, get_db_path
 from scripts.fast import complete_fast_task
 conn = connect(get_db_path('.'))

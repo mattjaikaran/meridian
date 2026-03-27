@@ -19,7 +19,7 @@ learn, learning, rule, pattern, remember, lesson, mistake, capture, inject
 
 **If `--list`**: Show all learnings:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.db import open_project
 from scripts.learnings import list_learnings
@@ -33,7 +33,7 @@ Display grouped by scope (global → project → phase), showing ID, rule, sourc
 
 **If `--prune`**: Remove stale learnings:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import open_project
 from scripts.learnings import prune_stale
 with open_project('.') as conn:
@@ -44,7 +44,7 @@ with open_project('.') as conn:
 
 **If `--delete <id>`**: Remove specific learning:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 from scripts.db import open_project
 from scripts.learnings import delete_learning
 with open_project('.') as conn:
@@ -57,7 +57,7 @@ with open_project('.') as conn:
 
 Check for duplicates first:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.db import open_project
 from scripts.learnings import find_similar
@@ -74,7 +74,7 @@ If a similar learning exists (>70% match), show it and ask user whether to:
 
 If no duplicate, add the learning:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
 import json
 from scripts.db import open_project
 from scripts.learnings import add_learning
