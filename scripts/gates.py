@@ -7,6 +7,7 @@ Uses only the standard library (no external dependencies).
 """
 
 import re
+import shlex
 import subprocess
 from pathlib import Path
 
@@ -136,8 +137,7 @@ def run_regression_gate(
 
         try:
             result = subprocess.run(
-                cmd,
-                shell=True,
+                shlex.split(cmd),
                 capture_output=True,
                 text=True,
                 cwd=repo_path,

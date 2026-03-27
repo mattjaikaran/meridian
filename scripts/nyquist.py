@@ -7,6 +7,7 @@ the standard library (no PyYAML dependency).
 """
 
 import re
+import shlex
 import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
@@ -170,8 +171,7 @@ def run_wave_validation(
 
     try:
         result = subprocess.run(
-            cmd,
-            shell=True,
+            shlex.split(cmd),
             capture_output=True,
             text=True,
             cwd=repo_path,
