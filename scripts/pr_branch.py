@@ -25,6 +25,7 @@ def _run_git(args: list[str], cwd: str | Path | None = None) -> str:
         capture_output=True,
         text=True,
         cwd=cwd,
+        timeout=30,
     )
     if result.returncode != 0:
         raise MeridianError(f"git {' '.join(args)} failed: {result.stderr.strip()}")

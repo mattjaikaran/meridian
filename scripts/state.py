@@ -69,11 +69,16 @@ _PRIORITY_SQL = {
 }
 
 
+_ALLOWED_ID_COLUMNS = frozenset({"id", "version"})
+
+
 def safe_update(conn, table: str, row_id, updates: dict, id_column: str = "id") -> None:
     """Update a row with column allowlist validation.
 
     Raises ValueError for unknown tables or invalid columns.
     """
+    if id_column not in _ALLOWED_ID_COLUMNS:
+        raise ValueError(f"Invalid id_column: {id_column}")
     allowed = ALLOWED_COLUMNS.get(table)
     if allowed is None:
         raise ValueError(f"Unknown table: {table}")
@@ -1336,9 +1341,10 @@ def _run_git(args: list[str], cwd: str, default: str | None = None) -> str | Non
     try:
         result = subprocess.run(
             ["git", *args], capture_output=True, text=True, cwd=cwd,
+            timeout=30,
         )
         return result.stdout.strip() or default
-    except (OSError, subprocess.SubprocessError):
+    except (OSError, subprocess.SubprocessError, subprocess.TimeoutExpired):
         return default
 
 
