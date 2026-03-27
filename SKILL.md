@@ -39,6 +39,16 @@ fresh-context subagents, and engineering discipline protocols.
 - validate -- Git State Validation
 - verify-phase -- phase -- Nyquist Compliance Check
 
+## Environment
+
+Set `MERIDIAN_HOME` to the path where Meridian is cloned. All skill commands use this variable for `PYTHONPATH` and `--project` resolution.
+
+```bash
+export MERIDIAN_HOME=~/dev/meridian  # Add to ~/.zshrc or ~/.bashrc
+```
+
+If `MERIDIAN_HOME` is not set, commands will fail with a module import error.
+
 ## Architecture
 
 State is stored in `.meridian/state.db` (SQLite) in each

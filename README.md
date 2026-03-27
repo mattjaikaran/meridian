@@ -193,11 +193,14 @@ git clone https://github.com/material-endeavors/meridian.git ~/dev/meridian
 # 2. Create symlink to Claude Code skills directory
 ln -sfn ~/dev/meridian ~/.claude/skills/meridian
 
-# 3. Install dependencies (dev only — pytest)
+# 3. Set MERIDIAN_HOME (add to ~/.zshrc or ~/.bashrc)
+export MERIDIAN_HOME=~/dev/meridian
+
+# 4. Install dependencies (dev only — pytest)
 cd ~/dev/meridian
 uv sync
 
-# 4. Fix symlink if needed and generate command wrappers
+# 5. Fix symlink if needed and generate command wrappers
 uv run python scripts/generate_commands.py --fix-symlink
 uv run python scripts/generate_commands.py
 ```
@@ -441,8 +444,11 @@ lsof .meridian/state.db
 ```
 
 ### "Module not found" errors
+Ensure `MERIDIAN_HOME` is set:
 ```bash
-PYTHONPATH=~/dev/meridian uv run --project ~/dev/meridian python -c "from scripts.db import init; print('OK')"
+echo $MERIDIAN_HOME  # Should print your meridian clone path
+export MERIDIAN_HOME=~/dev/meridian  # If not set
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "from scripts.db import init; print('OK')"
 ```
 
 ### State seems corrupted

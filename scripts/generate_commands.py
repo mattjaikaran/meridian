@@ -226,6 +226,24 @@ pending -> executing -> complete
     (repo_root / "SKILL.md").write_text(content)
 
 
+def check_meridian_home() -> None:
+    """Warn if MERIDIAN_HOME is not set or doesn't match this repo."""
+    import os
+
+    env_home = os.environ.get("MERIDIAN_HOME")
+    if not env_home:
+        print(
+            f"NOTE: $MERIDIAN_HOME is not set. "
+            f"Skills expect it to point to {REPO_ROOT}.\n"
+            f"  Add to your shell profile:  export MERIDIAN_HOME={REPO_ROOT}\n"
+        )
+    elif Path(env_home).resolve() != REPO_ROOT:
+        print(
+            f"WARNING: $MERIDIAN_HOME={env_home} does not match repo root {REPO_ROOT}.\n"
+            f"  Update your shell profile:  export MERIDIAN_HOME={REPO_ROOT}\n"
+        )
+
+
 def main() -> None:
     """CLI entry point for the command generator."""
     parser = argparse.ArgumentParser(
@@ -262,6 +280,7 @@ def main() -> None:
         return
 
     # Default: install
+    check_meridian_home()
     skills = discover_skills(REPO_ROOT)
     if not skills:
         print("No skills found.")
