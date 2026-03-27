@@ -358,11 +358,17 @@ def _connect(db_path: str | Path | None = None) -> sqlite3.Connection:
         db_path = get_db_path()
     db_path = Path(db_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(db_path))
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    conn.execute("PRAGMA foreign_keys=ON")
-    conn.execute("PRAGMA busy_timeout=5000")
+    try:
+        conn = sqlite3.connect(str(db_path))
+        conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA foreign_keys=ON")
+        conn.execute("PRAGMA busy_timeout=5000")
+    except sqlite3.DatabaseError as exc:
+        raise MeridianError(
+            f"Database corrupted or unreadable at {db_path}: {exc}. "
+            "Try restoring from .meridian/backups/ or delete state.db to reinitialize."
+        ) from exc
     return conn
 
 
@@ -542,6 +548,25 @@ def _migrate_v4_to_v5(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_v5_to_v6(conn: sqlite3.Connection) -> None:
+    """Add indexes on foreign key and status columns for query performance."""
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_phase_milestone_id ON phase(milestone_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_plan_phase_id ON plan(phase_id)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_plan_status ON plan(status)")
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_state_event_entity "
+        "ON state_event(entity_type, entity_id)"
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_checkpoint_project_id ON checkpoint(project_id)")
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_decision_project_phase "
+        "ON decision(project_id, phase_id)"
+    )
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_learning_project_id ON learning(project_id)")
+    conn.execute("INSERT OR REPLACE INTO schema_version (version) VALUES (?)", (6,))
+    conn.commit()
+
+
 def get_db_path(project_dir: str | Path | None = None) -> Path:
     """Get the path to the Meridian database for a project directory."""
     if project_dir is None:
@@ -585,6 +610,11 @@ def init_schema(conn: sqlite3.Connection, db_path: str | Path | None = None) -> 
         if db_path is not None and str(db_path) != ":memory:":
             backup_database(Path(db_path), max_backups=5)
         _migrate_v4_to_v5(conn)
+    current_version = get_schema_version(conn)
+    if current_version < 6:
+        if db_path is not None and str(db_path) != ":memory:":
+            backup_database(Path(db_path), max_backups=5)
+        _migrate_v5_to_v6(conn)
 
 
 def get_schema_version(conn: sqlite3.Connection) -> int:
