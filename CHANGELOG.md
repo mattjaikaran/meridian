@@ -2,6 +2,65 @@
 
 All notable changes to Meridian.
 
+## v0.5.0 — 2026-03-27
+
+### Breaking Changes
+- All SKILL.md files now use `$MERIDIAN_HOME` instead of hardcoded `~/dev/meridian`. Set `export MERIDIAN_HOME=<path>` in your shell profile.
+
+### Fixed
+- Git commands (`_run_git`) now have 30s timeout — prevents indefinite hangs on network mounts
+- DB corruption detected at connect time with actionable error message and backup guidance
+- Shell injection vector removed — `shell=True` replaced with `shlex.split` in gates.py and nyquist.py
+- `safe_update()` now validates `id_column` against allowlist, closing theoretical SQL injection
+
+### Added
+- Schema v6 migration: indexes on FK and status columns for query performance
+- `generate_commands.py` warns if `$MERIDIAN_HOME` is unset or mismatched
+- MERIDIAN_HOME documented in README, SKILL.md, and install instructions
+
+### Updated
+- PROJECT.md and ROADMAP.md reflect current state (928 tests, 42 modules, 32 commands, v1.0-v1.5 shipped)
+
+### Stats
+- 928 tests passing across 45 test files
+- 42 Python modules, 32 slash commands
+- Schema v6
+
+---
+
+## v1.5.0 — 2026-03-20
+
+### Added
+- **Learnings auto-capture** — auto-suggest from failures and review rejections
+- **HTML dashboard** (`/meridian:dashboard --html`) — standalone dark-themed report
+- **Freeze integration** — check freeze state before subagent file edits
+- **Test coverage audit** — scripts vs tests coverage mapping
+- **Context bridge** — matt-stack and external context import
+- **Retro auto-scheduling** — prompt for retro every N completed phases
+
+### Stats
+- 928 tests passing (+88 new)
+- 6 new Python modules
+
+---
+
+## v1.4.0 — 2026-03-20
+
+### Added
+- **Execution learning** (`/meridian:learn`) — persistent rules from patterns, injected into subagent prompts
+- **Edit scope lock** (`/meridian:freeze`) — advisory directory lock via settings
+- **Structured retrospective** (`/meridian:retro`) — velocity trends, shipping streaks, action items
+- **Deep discovery** (`--deep` flag on `/meridian:plan`) — 5 forcing questions before brainstorming
+- **Session awareness** — PID-based concurrent session detection
+- **Cross-model review** (`--cross-model` on `/meridian:review`) — secondary AI CLI review pass
+- **Schema v5** — learning table, review.model column
+
+### Stats
+- 840 tests passing (+100 new)
+- 6 new Python modules, 3 new slash commands
+
+---
+
 ## v1.3.0 — 2026-03-20
 
 ### Added
