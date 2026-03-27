@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A SQLite-backed state machine for managing complex development workflows in Claude Code. Provides 13 slash commands (`/meridian:*`) for project initialization, planning, execution via fresh-context subagents, deterministic resume, code review, and autonomous dispatch to Nero. Built as a Claude Code skill with stdlib-only Python. Hardened with structured error handling, retry logic, SQL safety, and comprehensive test coverage.
+A SQLite-backed state machine for managing complex development workflows in Claude Code. Provides 32 slash commands (`/meridian:*`) for project initialization, planning, execution via fresh-context subagents, deterministic resume, code review, and autonomous dispatch to Nero. Built as a Claude Code skill with stdlib-only Python. Hardened with structured error handling, retry logic, SQL safety, and comprehensive test coverage.
 
 ## Core Value
 
@@ -31,32 +31,21 @@ Deterministic workflow state that survives context resets — every resume produ
 - ✓ Structured logging via stdlib `logging` to stderr — v1.0
 - ✓ HTTP retry with exponential backoff for Nero communication — v1.0
 - ✓ SQL injection elimination via `safe_update()` allowlists — v1.0
-- ✓ 13 `/meridian:*` slash commands discoverable in Claude Code autocomplete — v1.0
+- ✓ 32 `/meridian:*` slash commands discoverable in Claude Code autocomplete — v1.0–v1.5
 - ✓ Command generator script producing wrappers from SKILL.md definitions — v1.0
-- ✓ Test coverage for all modules (217 tests, 10 test files) — v1.0
+- ✓ Test coverage for all modules (928 tests, 45 test files) — v1.0–v1.5
 - ✓ N+1 query fixes in resume, metrics, and export — v1.0
 - ✓ Bug fixes: auto-advance false positive, nero dispatch truthiness, inline import — v1.0
 
-### Active
+### Shipped
 
-#### Current Milestone: v1.2 Feature Parity
-
-**Goal:** Catch up with GSD feature set — lightweight commands, quality gates, session intelligence, security hardening
-
-**Target features:**
-- Quick workflow commands: `/fast`, `/do`, `/note`, `/next`
-- Quality gates: cross-phase regression, requirements coverage, stub detection, UAT audit
-- Session intelligence: structured handoff, debug knowledge base, decision IDs
-- Security & PR hygiene: centralized security module, clean PR branches
-
-#### Completed: v1.1 Polish & Reliability
-
-**Shipped:** 2026-03-20
-
-**Delivered:**
-- Automated ROADMAP.md tracking (auto-sync from DB state)
-- Nyquist compliance fix (VALIDATION.md frontmatter updated post-execution, all phases backfilled)
-- E501 lint cleanup in SQL schema / generate_commands.py
+All milestones v1.0 through v1.5 shipped (2026-03-11 to 2026-03-20):
+- **v1.0** Meridian Hardening — DB foundation, error infrastructure, command routing, test coverage
+- **v1.1** Polish & Reliability — lint cleanup, Nyquist compliance, roadmap automation
+- **v1.2** Feature Parity — quick workflow, quality gates, session intelligence, security & PR hygiene
+- **v1.3** Advanced Capabilities — developer experience, execution resilience, agent intelligence
+- **v1.4** Feature Expansion — learnings, freeze, retro, deep discovery, sessions, cross-model review
+- **v1.5** Integration & Polish — auto-learn, HTML dashboard, freeze integration, test coverage audit, context bridge, retro auto-scheduling
 
 ### Out of Scope
 
@@ -69,9 +58,9 @@ Deterministic workflow state that survives context resets — every resume produ
 
 ## Context
 
-Shipped v1.0 Hardening (2026-03-11) and v1.1 Polish (2026-03-20).
+Shipped v1.0 through v1.5 (2026-03-11 to 2026-03-20). 26 phases across 6 milestones.
 Tech stack: Python 3.12+ (stdlib-only), SQLite (WAL mode), pytest, uv.
-378 tests passing across 16 test files. 20 slash commands planned (13 shipped + 7 new in v1.2).
+928 tests passing across 45 test files. 42 Python modules in scripts/. 32 slash commands shipped.
 Two-machine model: MacBook Pro (interactive) dispatches to Mac Mini (Nero) for autonomous execution.
 
 ## Constraints
@@ -96,4 +85,4 @@ Two-machine model: MacBook Pro (interactive) dispatches to Mac Mini (Nero) for a
 | Generated command wrappers | Thin .md files with @ references, regenerable from skills | ✓ Good |
 
 ---
-*Last updated: 2026-03-20 after v1.2 milestone start*
+*Last updated: 2026-03-27 after v1.5 completion*

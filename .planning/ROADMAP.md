@@ -4,8 +4,10 @@
 
 - ✅ **v1.0 Meridian Hardening** — Phases 1-4 (shipped 2026-03-11)
 - ✅ **v1.1 Polish & Reliability** — Phases 5-7 (shipped 2026-03-20)
-- 🚧 **v1.2 Feature Parity** — Phases 8-11 (in progress)
-- 📋 **v1.3 Advanced Capabilities** — Phases 12-14 (planned)
+- ✅ **v1.2 Feature Parity** — Phases 8-11 (shipped 2026-03-20)
+- ✅ **v1.3 Advanced Capabilities** — Phases 12-14 (shipped 2026-03-20)
+- ✅ **v1.4 Feature Expansion** — Phases 15-20 (shipped 2026-03-20)
+- ✅ **v1.5 Integration & Polish** — Phases 21-26 (shipped 2026-03-20)
 
 ## Phases
 
@@ -29,10 +31,34 @@ See: `.planning/milestones/v1.0-ROADMAP.md` for full details
 
 ### v1.2 Feature Parity
 
-- [ ] **Phase 8: Quick Workflow** — `/fast`, `/do`, `/note`, `/next` lightweight commands
-- [ ] **Phase 9: Quality Gates** — Regression gate, requirements coverage, stub detection, UAT audit
-- [ ] **Phase 10: Session Intelligence** — Structured handoff, debug knowledge base, decision IDs
-- [ ] **Phase 11: Security & PR Hygiene** — Centralized security module, `/pr-branch`
+- [x] **Phase 8: Quick Workflow** — `/fast`, `/do`, `/note`, `/next` lightweight commands
+- [x] **Phase 9: Quality Gates** — Regression gate, requirements coverage, stub detection, UAT audit
+- [x] **Phase 10: Session Intelligence** — Structured handoff, debug knowledge base, decision IDs
+- [x] **Phase 11: Security & PR Hygiene** — Centralized security module, `/pr-branch`
+
+### v1.3 Advanced Capabilities
+
+- [x] **Phase 12: Developer Experience** — `/profile`, `/seed`, discussion log
+- [x] **Phase 13: Execution Resilience** — Interactive executor, node repair
+- [x] **Phase 14: Agent Intelligence** — MCP discovery, context awareness
+
+### v1.4 Feature Expansion
+
+- [x] **Phase 15: Execution Learning** — `/meridian:learn` (learning table, auto-capture, prompt injection)
+- [x] **Phase 16: Edit Scope Lock** — `/meridian:freeze` (directory lock via settings, advisory safety)
+- [x] **Phase 17: Structured Retrospective** — `/meridian:retro` (velocity trends, shipping streaks, action items)
+- [x] **Phase 18: Deep Discovery Mode** — `--deep` flag on `/meridian:plan` (5 forcing questions)
+- [x] **Phase 19: Session Awareness** — PID-based concurrent session detection
+- [x] **Phase 20: Cross-Model Review** — `--cross-model` flag on `/meridian:review` (secondary AI CLI)
+
+### v1.5 Integration & Polish
+
+- [x] **Phase 21: Learnings Auto-Capture** — Auto-suggest from failures and review rejections
+- [x] **Phase 22: HTML Dashboard** — `/meridian:dashboard --html` standalone dark-themed report
+- [x] **Phase 23: Freeze Integration** — Check freeze state before subagent file edits
+- [x] **Phase 24: Test Coverage Audit** — Scripts vs tests coverage mapping
+- [x] **Phase 25: Context Bridge** — matt-stack + external context import
+- [x] **Phase 26: Retro Auto-Scheduling** — Prompt for retro every N completed phases
 
 ## Phase Details
 
@@ -142,9 +168,9 @@ Plans:
   3. Discussion decisions are logged in DISCUSSION-LOG.md with decision ID links
 **Plans:** 3 plans (wave 1: all parallel)
 Plans:
-- [ ] 12-01-PLAN.md — `/meridian:profile` developer preference profiling
-- [ ] 12-02-PLAN.md — `/meridian:seed` backlog parking lot with triggers
-- [ ] 12-03-PLAN.md — Discussion audit trail with decision ID linking
+- [x] 12-01-PLAN.md — `/meridian:profile` developer preference profiling
+- [x] 12-02-PLAN.md — `/meridian:seed` backlog parking lot with triggers
+- [x] 12-03-PLAN.md — Discussion audit trail with decision ID linking
 
 ### Phase 13: Execution Resilience
 **Goal**: Interactive execution mode and automatic recovery from plan failures
@@ -155,8 +181,8 @@ Plans:
   2. Failed plans trigger auto-recovery (RETRY/DECOMPOSE/PRUNE) within a configurable budget
 **Plans:** 2 plans (wave 1: both parallel)
 Plans:
-- [ ] 13-01-PLAN.md — Interactive executor mode for pair-programming
-- [ ] 13-02-PLAN.md — Node repair operators (RETRY/DECOMPOSE/PRUNE)
+- [x] 13-01-PLAN.md — Interactive executor mode for pair-programming
+- [x] 13-02-PLAN.md — Node repair operators (RETRY/DECOMPOSE/PRUNE)
 
 ### Phase 14: Agent Intelligence
 **Goal**: MCP tool awareness and context window optimization for subagents
@@ -167,21 +193,144 @@ Plans:
   2. Prompt sizing adapts to available context window (1M vs 200k)
 **Plans:** 2 plans (wave 1: both parallel)
 Plans:
-- [ ] 14-01-PLAN.md — MCP tool discovery and relevance scoring
-- [ ] 14-02-PLAN.md — Context window awareness and prompt sizing
+- [x] 14-01-PLAN.md — MCP tool discovery and relevance scoring
+- [x] 14-02-PLAN.md — Context window awareness and prompt sizing
+
+### Phase 15: Execution Learning
+**Goal**: Learning system that captures lessons from execution and injects them into future prompts
+**Depends on**: Nothing (independent)
+**Requirements**: LEARN-01
+**Success Criteria** (what must be TRUE):
+  1. `/meridian:learn` stores lessons in a learning table with tags and context
+  2. Relevant lessons are auto-injected into subagent prompts
+**Plans:** 1 plan
+Plans:
+- [x] 15-01-PLAN.md — `/meridian:learn` learning table, auto-capture, and prompt injection
+
+### Phase 16: Edit Scope Lock
+**Goal**: Directory-level freeze to prevent accidental edits outside scope
+**Depends on**: Nothing (independent)
+**Requirements**: FREEZE-01
+**Success Criteria** (what must be TRUE):
+  1. `/meridian:freeze` locks specified directories via settings with advisory safety checks
+**Plans:** 1 plan
+Plans:
+- [x] 16-01-PLAN.md — `/meridian:freeze` directory lock via settings, advisory safety
+
+### Phase 17: Structured Retrospective
+**Goal**: Team-style retrospectives with velocity trends and action items
+**Depends on**: Nothing (independent)
+**Requirements**: RETRO-01
+**Success Criteria** (what must be TRUE):
+  1. `/meridian:retro` generates velocity trends, shipping streaks, and action items
+**Plans:** 1 plan
+Plans:
+- [x] 17-01-PLAN.md — `/meridian:retro` velocity trends, shipping streaks, action items
+
+### Phase 18: Deep Discovery Mode
+**Goal**: Rigorous planning mode with forcing questions before plan generation
+**Depends on**: Nothing (independent)
+**Requirements**: DEEP-01
+**Success Criteria** (what must be TRUE):
+  1. `--deep` flag on `/meridian:plan` triggers 5 forcing questions before generating plans
+**Plans:** 1 plan
+Plans:
+- [x] 18-01-PLAN.md — `--deep` flag on `/meridian:plan` with 5 forcing questions
+
+### Phase 19: Session Awareness
+**Goal**: Detect and manage concurrent Meridian sessions
+**Depends on**: Nothing (independent)
+**Requirements**: SESS-04
+**Success Criteria** (what must be TRUE):
+  1. PID-based concurrent session detection warns on conflicts
+**Plans:** 1 plan
+Plans:
+- [x] 19-01-PLAN.md — PID-based concurrent session detection
+
+### Phase 20: Cross-Model Review
+**Goal**: Use secondary AI CLI for independent code review
+**Depends on**: Nothing (independent)
+**Requirements**: REVIEW-01
+**Success Criteria** (what must be TRUE):
+  1. `--cross-model` flag on `/meridian:review` invokes a secondary AI CLI for review
+**Plans:** 1 plan
+Plans:
+- [x] 20-01-PLAN.md — `--cross-model` flag on `/meridian:review` with secondary AI CLI
+
+### Phase 21: Learnings Auto-Capture
+**Goal**: Automatically suggest learnings from failures and review rejections
+**Depends on**: Phase 15 (uses learning table)
+**Requirements**: LEARN-02
+**Success Criteria** (what must be TRUE):
+  1. Failed executions and review rejections auto-suggest learnings for capture
+**Plans:** 1 plan
+Plans:
+- [x] 21-01-PLAN.md — Auto-suggest learnings from failures and review rejections
+
+### Phase 22: HTML Dashboard
+**Goal**: Standalone HTML dashboard for project status visualization
+**Depends on**: Nothing (independent)
+**Requirements**: DASH-01
+**Success Criteria** (what must be TRUE):
+  1. `/meridian:dashboard --html` generates a standalone dark-themed HTML report
+**Plans:** 1 plan
+Plans:
+- [x] 22-01-PLAN.md — `/meridian:dashboard --html` standalone dark-themed report
+
+### Phase 23: Freeze Integration
+**Goal**: Integrate freeze checks into subagent file edit workflow
+**Depends on**: Phase 16 (uses freeze settings)
+**Requirements**: FREEZE-02
+**Success Criteria** (what must be TRUE):
+  1. Subagent file edits check freeze state before proceeding
+**Plans:** 1 plan
+Plans:
+- [x] 23-01-PLAN.md — Check freeze state before subagent file edits
+
+### Phase 24: Test Coverage Audit
+**Goal**: Map scripts to their test files and identify coverage gaps
+**Depends on**: Nothing (independent)
+**Requirements**: TEST-01
+**Success Criteria** (what must be TRUE):
+  1. Scripts vs tests coverage mapping identifies untested modules
+**Plans:** 1 plan
+Plans:
+- [x] 24-01-PLAN.md — Scripts vs tests coverage mapping
+
+### Phase 25: Context Bridge
+**Goal**: Import external context from matt-stack and other sources
+**Depends on**: Nothing (independent)
+**Requirements**: CTX-01
+**Success Criteria** (what must be TRUE):
+  1. matt-stack and external context import into Meridian sessions
+**Plans:** 1 plan
+Plans:
+- [x] 25-01-PLAN.md — matt-stack + external context import
+
+### Phase 26: Retro Auto-Scheduling
+**Goal**: Automatically prompt for retrospectives at regular intervals
+**Depends on**: Phase 17 (uses retro system)
+**Requirements**: RETRO-02
+**Success Criteria** (what must be TRUE):
+  1. System prompts for retro every N completed phases
+**Plans:** 1 plan
+Plans:
+- [x] 26-01-PLAN.md — Prompt for retro every N completed phases
 
 ## Progress
 
 **Execution Order:**
 - v1.1: Phases 5, 6, 7 — independent. All complete.
 - v1.2: Phases 8-11 — independent. All complete.
-- v1.3: Phases 12-14 — independent. Within phases, waves enforce ordering.
+- v1.3: Phases 12-14 — independent. All complete.
+- v1.4: Phases 15-20 — independent. All complete.
+- v1.5: Phases 21-26 — mixed dependencies. All complete.
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 1. Database Foundation | v1.0 | 2/2 | Complete | 2026-03-20 |
-| 2. Error Infrastructure | v1.0 | 3/3 | Complete | 2026-03-20 |
-| 3. Command Routing | v1.0 | 2/2 | Complete | 2026-03-11 |
+| 1. Database Foundation | v1.0 | 2/2 | Complete | 2026-03-27 |
+| 2. Error Infrastructure | v1.0 | 3/3 | Complete | 2026-03-27 |
+| 3. Command Routing | v1.0 | 2/2 | Complete | 2026-03-27 |
 | 4. Test Coverage & Hardening | v1.0 | 4/4 | Complete | 2026-03-11 |
 | 5. Lint Cleanup | v1.1 | 1/1 | Complete | 2026-03-14 |
 | 6. Nyquist Compliance | v1.1 | 2/2 | Complete | 2026-03-20 |
@@ -190,6 +339,18 @@ Plans:
 | 9. Quality Gates | v1.2 | 4/4 | Complete | 2026-03-20 |
 | 10. Session Intelligence | v1.2 | 3/3 | Complete | 2026-03-20 |
 | 11. Security & PR Hygiene | v1.2 | 2/2 | Complete | 2026-03-20 |
-| 12. Developer Experience | v1.3 | 0/3 | Not started | - |
-| 13. Execution Resilience | v1.3 | 0/2 | Not started | - |
-| 14. Agent Intelligence | v1.3 | 0/2 | Not started | - |
+| 12. Developer Experience | v1.3 | 3/3 | Complete | 2026-03-20 |
+| 13. Execution Resilience | v1.3 | 2/2 | Complete | 2026-03-20 |
+| 14. Agent Intelligence | v1.3 | 2/2 | Complete | 2026-03-20 |
+| 15. Execution Learning | v1.4 | 1/1 | Complete | 2026-03-20 |
+| 16. Edit Scope Lock | v1.4 | 1/1 | Complete | 2026-03-20 |
+| 17. Structured Retrospective | v1.4 | 1/1 | Complete | 2026-03-20 |
+| 18. Deep Discovery Mode | v1.4 | 1/1 | Complete | 2026-03-20 |
+| 19. Session Awareness | v1.4 | 1/1 | Complete | 2026-03-20 |
+| 20. Cross-Model Review | v1.4 | 1/1 | Complete | 2026-03-20 |
+| 21. Learnings Auto-Capture | v1.5 | 1/1 | Complete | 2026-03-20 |
+| 22. HTML Dashboard | v1.5 | 1/1 | Complete | 2026-03-20 |
+| 23. Freeze Integration | v1.5 | 1/1 | Complete | 2026-03-20 |
+| 24. Test Coverage Audit | v1.5 | 1/1 | Complete | 2026-03-20 |
+| 25. Context Bridge | v1.5 | 1/1 | Complete | 2026-03-20 |
+| 26. Retro Auto-Scheduling | v1.5 | 1/1 | Complete | 2026-03-20 |
