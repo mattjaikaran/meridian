@@ -219,6 +219,15 @@ def _roadmap_sync_on_phase(phase: dict, conn: sqlite3.Connection) -> None:
             )
 
 
+def _board_sync_on_phase(conn: sqlite3.Connection, phase_id: int) -> None:
+    """Sync phase status to board provider. Non-blocking — errors are logged."""
+    try:
+        from scripts.board.sync import sync_phase
+        sync_phase(conn, phase_id)
+    except Exception as e:
+        logger.warning("Board sync skipped: %s", e)
+
+
 # ── Project CRUD ──────────────────────────────────────────────────────────────
 
 
@@ -392,6 +401,9 @@ def transition_phase(conn: sqlite3.Connection, phase_id: int, new_status: str) -
     # Roadmap sync (informational, non-blocking)
     if new_status == "complete" or old_status == "complete":
         _roadmap_sync_on_phase(get_phase(conn, phase_id), conn)
+
+    # Board sync (informational, non-blocking)
+    _board_sync_on_phase(conn, phase_id)
 
     return get_phase(conn, phase_id)
 
