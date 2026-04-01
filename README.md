@@ -354,7 +354,10 @@ meridian/
 │   ├── export.py                     # SQLite → JSON export
 │   ├── dispatch.py                   # Nero HTTP dispatch
 │   ├── sync.py                       # Bidirectional Nero sync
-│   ├── axis_sync.py                  # PM ticket sync
+│   ├── board/                        # Pluggable board sync (kanban integration)
+│   │   ├── provider.py               # BoardProvider protocol and registry
+│   │   ├── axis.py                   # Axis PM provider (pm.sh)
+│   │   └── sync.py                   # Sync bridge (called from phase transitions)
 │   ├── context_window.py             # Token estimation
 │   ├── generate_commands.py          # Command wrapper generator
 │   └── ...

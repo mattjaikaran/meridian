@@ -212,7 +212,10 @@ pending -> executing -> complete
 - `scripts/dispatch.py` -- Nero HTTP dispatch client (push only)
 - `scripts/sync.py` -- Bidirectional Nero sync (pull status + push state)
 - `scripts/metrics.py` -- PM metrics: velocity, cycle times, stalls, forecasts, progress
-- `scripts/axis_sync.py` -- Axis PM ticket sync
+- `scripts/board/`          -- Pluggable board sync (kanban integration)
+  - `provider.py`           -- BoardProvider protocol and registry
+  - `axis.py`               -- Axis PM provider (pm.sh)
+  - `sync.py`               -- Sync bridge (called from phase transitions)
 - `scripts/context_window.py` -- Token estimation + checkpoint triggers
 - `scripts/generate_commands.py` -- Generate Claude Code command wrappers from skills
 
