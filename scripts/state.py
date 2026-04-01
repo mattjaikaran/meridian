@@ -50,10 +50,10 @@ MILESTONE_TRANSITIONS = {
 
 ALLOWED_COLUMNS = {
     "project": {"name", "repo_path", "repo_url", "tech_stack", "nero_endpoint",
-                "axis_project_id", "updated_at"},
+                "board_project_id", "updated_at"},
     "milestone": {"status", "completed_at"},
     "phase": {"name", "description", "context_doc", "acceptance_criteria",
-              "axis_ticket_id", "status", "started_at", "completed_at", "priority"},
+              "board_ticket_id", "status", "started_at", "completed_at", "priority"},
     "plan": {"name", "description", "wave", "tdd_required", "files_to_create",
              "files_to_modify", "test_command", "executor_type", "status",
              "started_at", "completed_at", "commit_sha", "error_message", "priority",
@@ -231,11 +231,11 @@ def create_project(
     repo_url: str | None = None,
     tech_stack: list[str] | None = None,
     nero_endpoint: str | None = None,
-    axis_project_id: str | None = None,
+    board_project_id: str | None = None,
 ) -> dict:
     conn.execute(
         """INSERT INTO project
-        (id, name, repo_path, repo_url, tech_stack, nero_endpoint, axis_project_id)
+        (id, name, repo_path, repo_url, tech_stack, nero_endpoint, board_project_id)
         VALUES (?, ?, ?, ?, ?, ?, ?)""",
         (
             project_id,
@@ -244,7 +244,7 @@ def create_project(
             repo_url,
             _json_list(tech_stack),
             nero_endpoint,
-            axis_project_id,
+            board_project_id,
         ),
     )
     conn.commit()
@@ -258,7 +258,7 @@ def get_project(conn: sqlite3.Connection, project_id: str = "default") -> dict |
 
 @retry_on_busy()
 def update_project(conn: sqlite3.Connection, project_id: str, **kwargs) -> dict | None:
-    allowed = {"name", "repo_path", "repo_url", "tech_stack", "nero_endpoint", "axis_project_id"}
+    allowed = {"name", "repo_path", "repo_url", "tech_stack", "nero_endpoint", "board_project_id"}
     updates = {k: v for k, v in kwargs.items() if k in allowed}
     if not updates:
         return get_project(conn, project_id)
@@ -331,7 +331,7 @@ def create_phase(
     name: str,
     description: str | None = None,
     acceptance_criteria: list[str] | None = None,
-    axis_ticket_id: str | None = None,
+    board_ticket_id: str | None = None,
     sequence: int | None = None,
 ) -> dict:
     if sequence is None:
@@ -342,7 +342,7 @@ def create_phase(
         sequence = row["next_seq"]
     conn.execute(
         """INSERT INTO phase
-        (milestone_id, sequence, name, description, acceptance_criteria, axis_ticket_id)
+        (milestone_id, sequence, name, description, acceptance_criteria, board_ticket_id)
         VALUES (?, ?, ?, ?, ?, ?)""",
         (
             milestone_id,
@@ -350,7 +350,7 @@ def create_phase(
             name,
             description,
             _json_list(acceptance_criteria),
-            axis_ticket_id,
+            board_ticket_id,
         ),
     )
     conn.commit()
@@ -398,7 +398,7 @@ def transition_phase(conn: sqlite3.Connection, phase_id: int, new_status: str) -
 
 @retry_on_busy()
 def update_phase(conn: sqlite3.Connection, phase_id: int, **kwargs) -> dict | None:
-    allowed = {"name", "description", "context_doc", "acceptance_criteria", "axis_ticket_id"}
+    allowed = {"name", "description", "context_doc", "acceptance_criteria", "board_ticket_id"}
     updates = {k: v for k, v in kwargs.items() if k in allowed}
     if not updates:
         return get_phase(conn, phase_id)

@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 _logging_configured = False
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 7
 
 SCHEMA_SQL = """
 -- Schema version tracking
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS project (
     repo_url TEXT,
     tech_stack TEXT,
     nero_endpoint TEXT,
-    axis_project_id TEXT,
+    board_project_id TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     updated_at TEXT DEFAULT (datetime('now'))
 );
@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS phase (
     )),
     context_doc TEXT,
     acceptance_criteria TEXT,
-    axis_ticket_id TEXT,
+    board_ticket_id TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     started_at TEXT,
     completed_at TEXT,
@@ -567,6 +567,20 @@ def _migrate_v5_to_v6(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_v6_to_v7(conn: sqlite3.Connection) -> None:
+    """Rename axis_project_id → board_project_id, axis_ticket_id → board_ticket_id."""
+    proj_cols = {row[1] for row in conn.execute("PRAGMA table_info(project)").fetchall()}
+    if "axis_project_id" in proj_cols and "board_project_id" not in proj_cols:
+        conn.execute("ALTER TABLE project RENAME COLUMN axis_project_id TO board_project_id")
+
+    phase_cols = {row[1] for row in conn.execute("PRAGMA table_info(phase)").fetchall()}
+    if "axis_ticket_id" in phase_cols and "board_ticket_id" not in phase_cols:
+        conn.execute("ALTER TABLE phase RENAME COLUMN axis_ticket_id TO board_ticket_id")
+
+    conn.execute("INSERT OR REPLACE INTO schema_version (version) VALUES (?)", (7,))
+    conn.commit()
+
+
 def get_db_path(project_dir: str | Path | None = None) -> Path:
     """Get the path to the Meridian database for a project directory."""
     if project_dir is None:
@@ -615,6 +629,11 @@ def init_schema(conn: sqlite3.Connection, db_path: str | Path | None = None) -> 
         if db_path is not None and str(db_path) != ":memory:":
             backup_database(Path(db_path), max_backups=5)
         _migrate_v5_to_v6(conn)
+    current_version = get_schema_version(conn)
+    if current_version < 7:
+        if db_path is not None and str(db_path) != ":memory:":
+            backup_database(Path(db_path), max_backups=5)
+        _migrate_v6_to_v7(conn)
 
 
 def get_schema_version(conn: sqlite3.Connection) -> int:
