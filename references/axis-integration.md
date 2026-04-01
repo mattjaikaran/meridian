@@ -35,11 +35,18 @@ Axis is the PM kanban board (https://axis.mattjaikaran.com). Meridian syncs phas
 - Respects Meridian's stricter state transition rules
 
 ## Configuration
-- `axis_project_id` set on project record during `/meridian:init`
+- Set `board_provider` setting to `"axis"` via `/meridian:init` or manually
+- `board_project_id` set on project record
+- Provider code at `scripts/board/axis.py`
 - PM script at `~/zeroclaw/skills/kanban/pm.sh`
 - Axis auth handled by existing sync infrastructure
 
+## Plugin System
+- Axis is one of many possible board providers
+- See `scripts/board/provider.py` for the `BoardProvider` protocol
+- Custom providers: implement `create_ticket()` and `move_ticket()`, call `register_provider()`
+
 ## Notes
-- Axis sync is optional — Meridian works fine without it
+- Board sync is optional — Meridian works fine without any provider
 - Sync failures are logged but don't block workflow
-- Phase changes are the source of truth; Axis is a view
+- Phase changes are the source of truth; board is a view
