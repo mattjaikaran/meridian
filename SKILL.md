@@ -7,16 +7,21 @@ fresh-context subagents, and engineering discipline protocols.
 ## Available Skills
 
 - audit-uat -- uat — Cross-Phase Verification Debt Audit
+- autonomous -- Hands-Free Execution
 - checkpoint -- Manual Save Point
+- complete-milestone -- milestone — Complete Milestone
+- config -- Workflow Configuration
 - dashboard -- Project Dashboard
 - debug -- Systematic Debugging
+- discuss -- Phase Discussion
 - dispatch -- Nero Dispatch
 - do -- Freeform Command Router
 - execute -- Execution Engine
 - fast -- Inline Fast Task
-- history -- Event Timeline
 - freeze -- Edit Scope Lock
+- history -- Event Timeline
 - init -- Initialize Meridian in Current Project
+- insert-phase -- phase — Insert Phase Mid-Milestone
 - learn -- Execution Learning System
 - migrate -- Cross-Project Migration
 - next -- Advance to Next Workflow Step
@@ -26,6 +31,8 @@ fresh-context subagents, and engineering discipline protocols.
 - pr-branch -- branch — Create Clean PR Branch
 - profile -- Developer Preference Profiling
 - quick -- Lightweight Quick Task
+- remove-phase -- phase — Remove Phase
+- report -- Session Report
 - resume -- Deterministic Resume
 - retro -- Structured Retrospective
 - revert -- Revert Completed Plan
@@ -38,16 +45,6 @@ fresh-context subagents, and engineering discipline protocols.
 - template -- Workflow Templates
 - validate -- Git State Validation
 - verify-phase -- phase -- Nyquist Compliance Check
-
-## Environment
-
-Set `MERIDIAN_HOME` to the path where Meridian is cloned. All skill commands use this variable for `PYTHONPATH` and `--project` resolution.
-
-```bash
-export MERIDIAN_HOME=~/dev/meridian  # Add to ~/.zshrc or ~/.bashrc
-```
-
-If `MERIDIAN_HOME` is not set, commands will fail with a module import error.
 
 ## Architecture
 
@@ -75,17 +72,8 @@ pending -> executing -> complete
 ```
 
 ## Scripts (Python, stdlib only)
-- `scripts/db.py` -- Schema init + migrations (v5: learning table, review.model column)
+- `scripts/db.py` -- Schema init + migrations (v2: priority column)
 - `scripts/state.py` -- CRUD + transitions + next-action + auto-advancement + priority
-- `scripts/learnings.py` -- Execution learning system (capture, dedup, prompt injection)
-- `scripts/freeze.py` -- Edit scope lock (directory-based advisory safety)
-- `scripts/retro.py` -- Structured retrospective (streaks, failures, velocity)
-- `scripts/sessions.py` -- Session awareness (PID-based concurrent detection)
-- `scripts/cross_review.py` -- Cross-model review (Codex, Gemini, Aider integration)
-- `scripts/auto_learn.py` -- Auto-capture learnings from failures and reviews
-- `scripts/html_dashboard.py` -- Standalone HTML dashboard with inline CSS
-- `scripts/coverage_audit.py` -- Test coverage audit (scripts vs tests mapping)
-- `scripts/context_bridge.py` -- Import external context (matt-stack, CLAUDE.md, package.json)
 - `scripts/resume.py` -- Deterministic resume prompt generator
 - `scripts/export.py` -- SQLite -> JSON export for Nero
 - `scripts/dispatch.py` -- Nero HTTP dispatch client (push only)
