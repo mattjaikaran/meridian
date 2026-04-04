@@ -39,13 +39,17 @@ Deterministic workflow state that survives context resets — every resume produ
 
 ### Shipped
 
-All milestones v1.0 through v1.5 shipped (2026-03-11 to 2026-03-20):
-- **v1.0** Meridian Hardening — DB foundation, error infrastructure, command routing, test coverage
-- **v1.1** Polish & Reliability — lint cleanup, Nyquist compliance, roadmap automation
-- **v1.2** Feature Parity — quick workflow, quality gates, session intelligence, security & PR hygiene
-- **v1.3** Advanced Capabilities — developer experience, execution resilience, agent intelligence
-- **v1.4** Feature Expansion — learnings, freeze, retro, deep discovery, sessions, cross-model review
-- **v1.5** Integration & Polish — auto-learn, HTML dashboard, freeze integration, test coverage audit, context bridge, retro auto-scheduling
+Milestones M1–M6 shipped (2026-03-11 to 2026-03-20):
+- **M1** Foundation — DB foundation, error infrastructure, command routing, test coverage
+- **M2** Polish & Reliability — lint cleanup, Nyquist compliance, roadmap automation
+- **M3** Feature Parity — quick workflow, quality gates, session intelligence, security & PR hygiene
+- **M4** Advanced Capabilities — developer experience, execution resilience, agent intelligence
+- **M5** Feature Expansion — learnings, freeze, retro, deep discovery, sessions, cross-model review
+- **M6** Integration & Polish — auto-learn, HTML dashboard, freeze integration, test coverage audit, context bridge, retro auto-scheduling
+
+### In Progress
+
+- **M7** GSD Parity & Workflow Maturity — discuss phase, model profiles, config system, autonomous mode, gap closure, phase manipulation, milestone lifecycle, session reports, codebase mapping
 
 ### Out of Scope
 
@@ -58,7 +62,7 @@ All milestones v1.0 through v1.5 shipped (2026-03-11 to 2026-03-20):
 
 ## Context
 
-Shipped v1.0 through v1.5 (2026-03-11 to 2026-03-20). 26 phases across 6 milestones.
+Shipped M1 through M6 (2026-03-11 to 2026-03-20). 26 phases across 6 milestones. M7 in progress.
 Tech stack: Python 3.12+ (stdlib-only), SQLite (WAL mode), pytest, uv.
 928 tests passing across 45 test files. 42 Python modules in scripts/. 32 slash commands shipped.
 Two-machine model: MacBook Pro (interactive) dispatches to Mac Mini (Nero) for autonomous execution.
@@ -85,4 +89,4 @@ Two-machine model: MacBook Pro (interactive) dispatches to Mac Mini (Nero) for a
 | Generated command wrappers | Thin .md files with @ references, regenerable from skills | ✓ Good |
 
 ---
-*Last updated: 2026-03-27 after v1.5 completion*
+*Last updated: 2026-04-04 — M7 milestone added*
