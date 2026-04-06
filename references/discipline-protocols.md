@@ -113,5 +113,5 @@ If the fix doesn't work after 2 attempts, the subagent should:
 
 - Track estimated token usage via `scripts/context_window.py`
 - At 150k estimated tokens, trigger auto-checkpoint
-- Subagents get 200k fresh context each — never share context between them
+- Subagents get scoped context (only what the plan needs) — never share context between them
 - Resume prompt is always generated from SQLite, never from conversation history

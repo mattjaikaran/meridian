@@ -5,7 +5,7 @@ How Meridian works under the hood.
 ## Design Principles
 
 1. **Deterministic state** — All state lives in SQLite. Same DB = same behavior.
-2. **Fresh context per task** — Each plan gets a 200k-token subagent. No context rot.
+2. **Context efficiency** — Each plan gets a scoped subagent with only the context it needs. Minimizes token usage to stay within weekly limits.
 3. **Stdlib only** — Zero external dependencies. Works everywhere Python does.
 4. **Quality by default** — Gates, detection, and review are automatic, not opt-in.
 5. **Graceful degradation** — Every integration (Nero, board sync, MCP) fails silently.
@@ -17,7 +17,7 @@ graph TB
     User[User in Claude Code] -->|/meridian:*| Skills[SKILL.md Routing]
     Skills -->|calls| Scripts[scripts/*.py]
     Scripts -->|reads/writes| DB[(state.db<br>SQLite WAL)]
-    Scripts -->|spawns| Agents[Subagents<br>200k fresh tokens]
+    Scripts -->|spawns| Agents[Subagents<br>scoped context]
     Scripts -->|syncs| Nero[Nero Daemon<br>optional]
     Scripts -->|syncs| Board[Board Provider<br>optional]
     Agents -->|commit| Git[Git Repository]
@@ -158,7 +158,7 @@ sequenceDiagram
 
     loop For each plan in wave 1
         M->>DB: transition_plan(executing)
-        M->>A: Spawn with 200k tokens + plan context
+        M->>A: Spawn with scoped context (plan + codebase)
         A->>A: TDD: red → green → refactor
         A->>A: git commit
         A-->>M: Complete (commit SHA)

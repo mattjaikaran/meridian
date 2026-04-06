@@ -89,7 +89,7 @@ Run the plans with fresh-context subagents:
 ```
 
 For each plan, Meridian:
-1. Spawns a subagent with 200k fresh tokens
+1. Spawns a scoped subagent with only the context it needs
 2. Enforces TDD (red -> green -> refactor)
 3. Commits atomically after each plan
 4. Runs regression tests from prior phases

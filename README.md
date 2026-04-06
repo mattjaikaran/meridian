@@ -25,8 +25,8 @@ prompt2 = generate_resume_prompt("/path/to/project")
 assert prompt1 == prompt2  # Always identical
 ```
 
-### Fresh-Context Subagents
-Each plan executes in a fresh 200k-token subagent. No context rot. No degraded output from long conversations. Plans within the same wave run in parallel.
+### Context-Efficient Subagents
+Each plan executes in a fresh, scoped subagent — only the context it needs, nothing more. This is a deliberate design choice: instead of burning through a 1M-token conversation on a single task, Meridian breaks work into focused units that use a fraction of the context window. Less token usage means fewer weekly limit hits and more consistent output quality. Plans within the same wave run in parallel.
 
 ### Quality Gates
 Automated enforcement at every stage:
@@ -87,7 +87,7 @@ graph TB
     User["/meridian:* commands"] --> Skills["SKILL.md routing"]
     Skills --> Scripts["scripts/*.py<br/>(state machine, gates, security)"]
     Scripts --> DB[(".meridian/state.db<br/>SQLite, WAL mode")]
-    Scripts --> Agents["Subagent Dispatch<br/>200k fresh tokens per plan"]
+    Scripts --> Agents["Subagent Dispatch<br/>Scoped context per plan"]
 
     Agents --> W1["Wave 1: Plan 1 + Plan 2 + Plan 3<br/>(parallel)"]
     W1 --> W2["Wave 2: Plan 4 + Plan 5<br/>(after wave 1 completes)"]
@@ -250,7 +250,7 @@ stateDiagram-v2
 
 # 3. Execute with quality gates
 /meridian:execute
-# --> Spawns fresh 200k-token subagents per plan
+# --> Spawns scoped subagents per plan (context-efficient)
 # --> TDD enforced: red -> green -> refactor
 # --> Regression gate blocks if prior phases break
 # --> Auto-advances state machine on completion

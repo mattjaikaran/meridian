@@ -129,7 +129,7 @@ All notable changes to Meridian.
 - **Core state machine** — Project > Milestone > Phase > Plan hierarchy with enforced transitions
 - **13 slash commands** — init, plan, execute, resume, status, dashboard, roadmap, dispatch, review, ship, debug, quick, checkpoint
 - **Deterministic resume** — SQLite-backed prompt generation (same state = same prompt)
-- **Fresh-context subagents** — 200k tokens per plan, no context rot
+- **Context-efficient subagents** — scoped context per plan, minimizes token usage
 - **Wave-based execution** — parallel plans within waves, sequential waves
 - **Two-stage code review** — spec compliance then code quality
 - **TDD enforcement** — embedded in subagent prompts

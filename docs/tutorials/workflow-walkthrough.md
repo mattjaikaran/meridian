@@ -103,7 +103,7 @@ For each plan, Meridian:
 
 1. **Runs regression gate** — executes prior phases' tests (skipped for Phase 1)
 2. **Checks requirements coverage** — every requirement maps to a plan
-3. **Spawns a fresh subagent** (200k tokens) with:
+3. **Spawns a scoped subagent** (only the context it needs) with:
    - Plan details and acceptance criteria
    - Codebase context gathered in Step 2
    - Engineering discipline protocols (TDD enforced)
