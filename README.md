@@ -2,13 +2,13 @@
 
 Unified workflow engine for Claude Code. SQLite-backed state machine with deterministic resume, fresh-context subagents, and engineering discipline protocols.
 
-**740 tests | 29 commands | Python stdlib only | Schema v4**
+**1053 tests | 39 commands | Python stdlib only | Schema v7**
 
 ## Quick Start
 
 ```bash
 # 1. Clone
-git clone https://github.com/material-endeavors/meridian.git ~/dev/meridian
+git clone https://github.com/mattjaikaran/meridian.git ~/dev/meridian
 
 # 2. Install as Claude Code skill
 ln -sfn ~/dev/meridian ~/.claude/skills/meridian
@@ -188,7 +188,7 @@ Plan:    pending → executing → complete
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/material-endeavors/meridian.git ~/dev/meridian
+git clone https://github.com/mattjaikaran/meridian.git ~/dev/meridian
 
 # 2. Create symlink to Claude Code skills directory
 ln -sfn ~/dev/meridian ~/.claude/skills/meridian

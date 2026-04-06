@@ -1,13 +1,13 @@
-"""Tests for Axis board provider — backward compat with pm.sh."""
+"""Tests for CLI-based board provider internals."""
 
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from scripts.board.axis import (
-    MERIDIAN_TO_AXIS,
-    AxisProvider,
+from scripts.board.cli import (
+    MERIDIAN_TO_BOARD,
+    CliProvider,
     _run_pm_command,
     _parse_ticket_id,
 )
@@ -20,11 +20,12 @@ class TestRunPmCommand:
     def test_builds_correct_subprocess_args(self):
         mock_result = MagicMock()
         mock_result.stdout = "OK\n"
-        pm_path = Path.home() / "zeroclaw" / "skills" / "kanban" / "pm.sh"
+        pm_path = Path.home() / "bin" / "pm.sh"
 
         with (
-            patch("scripts.board.axis.subprocess.run", return_value=mock_result) as mock_run,
+            patch("scripts.board.cli.subprocess.run", return_value=mock_result) as mock_run,
             patch.object(Path, "exists", return_value=True),
+            patch("scripts.board.cli.PM_SCRIPT", pm_path),
         ):
             result = _run_pm_command(["ticket", "move", "PROJ-1", "done"])
 
@@ -50,15 +51,19 @@ class TestParseTicketId:
         assert _parse_ticket_id("Something unexpected") is None
 
 
-class TestAxisProviderProtocol:
-    """Axis provider satisfies BoardProvider."""
+class TestCliProviderProtocol:
+    """CLI provider satisfies BoardProvider."""
 
     def test_satisfies_protocol(self):
-        assert isinstance(AxisProvider(), BoardProvider)
+        assert isinstance(CliProvider(), BoardProvider)
 
-    def test_registered_as_axis(self):
+    def test_registered_as_cli(self):
+        provider = get_provider("cli")
+        assert isinstance(provider, CliProvider)
+
+    def test_registered_as_axis_alias(self):
         provider = get_provider("axis")
-        assert isinstance(provider, AxisProvider)
+        assert isinstance(provider, CliProvider)
 
 
 class TestStatusMapping:
@@ -67,4 +72,4 @@ class TestStatusMapping:
     def test_all_meridian_statuses_mapped(self):
         expected = {"planned", "context_gathered", "planned_out", "executing",
                     "verifying", "reviewing", "complete", "blocked"}
-        assert set(MERIDIAN_TO_AXIS.keys()) == expected
+        assert set(MERIDIAN_TO_BOARD.keys()) == expected

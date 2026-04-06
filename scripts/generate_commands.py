@@ -214,7 +214,7 @@ pending -> executing -> complete
 - `scripts/metrics.py` -- PM metrics: velocity, cycle times, stalls, forecasts, progress
 - `scripts/board/`          -- Pluggable board sync (kanban integration)
   - `provider.py`           -- BoardProvider protocol and registry
-  - `axis.py`               -- Axis PM provider (pm.sh)
+  - `cli.py`                -- CLI-based board provider (env-var configurable)
   - `sync.py`               -- Sync bridge (called from phase transitions)
 - `scripts/context_window.py` -- Token estimation + checkpoint triggers
 - `scripts/generate_commands.py` -- Generate Claude Code command wrappers from skills
@@ -223,7 +223,7 @@ pending -> executing -> complete
 - `references/state-machine.md` -- State transitions + rules + auto-advancement + priority
 - `references/discipline-protocols.md` -- TDD, debugging, verification, review
 - `references/nero-integration.md` -- Dispatch + bidirectional sync protocol
-- `references/axis-integration.md` -- PM sync protocol
+- `references/board-integration.md` -- Pluggable board sync protocol
 """
 
     (repo_root / "SKILL.md").write_text(content)

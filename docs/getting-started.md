@@ -14,7 +14,7 @@ This guide walks you through installing Meridian and using it on your first proj
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/material-endeavors/meridian.git ~/dev/meridian
+git clone https://github.com/mattjaikaran/meridian.git ~/dev/meridian
 cd ~/dev/meridian
 ```
 

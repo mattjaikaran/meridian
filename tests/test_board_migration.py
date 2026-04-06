@@ -4,7 +4,7 @@ from scripts.db import get_schema_version, open_project
 
 
 class TestBoardMigration:
-    """Migration v7 renames axis_* columns to board_*."""
+    """Migration v7 renames legacy columns to generic board_*."""
 
     def test_fresh_db_has_board_columns(self):
         """New databases get board_* columns directly."""

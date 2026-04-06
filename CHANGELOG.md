@@ -135,7 +135,7 @@ All notable changes to Meridian.
 - **TDD enforcement** — embedded in subagent prompts
 - **PM metrics** — velocity, cycle times, stalls, forecasts, progress
 - **Nero dispatch** — bidirectional sync with autonomous executor
-- **Axis PM sync** — ticket creation and status sync
+- **Board sync** — pluggable kanban ticket creation and status sync
 - **Auto-advancement** — plans completing auto-transitions phases
 - **Priority system** — critical/high/medium/low on phases and plans
 - **Context window monitoring** — token estimation with checkpoint triggers

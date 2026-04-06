@@ -7,8 +7,8 @@ import sqlite3
 
 from scripts.board.provider import get_provider
 
-# Import axis to trigger its register_provider call
-import scripts.board.axis  # noqa: F401
+# Import built-in providers to trigger register_provider calls
+import scripts.board.cli  # noqa: F401
 
 logger = logging.getLogger(__name__)
 

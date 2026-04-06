@@ -195,7 +195,7 @@ class TestAxisProvider:
     def test_create_ticket_calls_pm_sh(self):
         mock_result = MagicMock()
         mock_result.stdout = "Created ticket PROJ-42\n"
-        pm_path = Path.home() / "zeroclaw" / "skills" / "kanban" / "pm.sh"
+        pm_path = Path(os.environ.get("BOARD_PM_SCRIPT", str(Path.home() / "bin" / "pm.sh")))
 
         with (
             patch("scripts.board.axis.subprocess.run", return_value=mock_result) as mock_run,
@@ -214,7 +214,7 @@ class TestAxisProvider:
     def test_move_ticket_calls_pm_sh(self):
         mock_result = MagicMock()
         mock_result.stdout = "OK\n"
-        pm_path = Path.home() / "zeroclaw" / "skills" / "kanban" / "pm.sh"
+        pm_path = Path(os.environ.get("BOARD_PM_SCRIPT", str(Path.home() / "bin" / "pm.sh")))
 
         with (
             patch("scripts.board.axis.subprocess.run", return_value=mock_result) as mock_run,
@@ -290,7 +290,7 @@ AXIS_TO_MERIDIAN = {
     "blocked": "blocked",
 }
 
-PM_SCRIPT = Path.home() / "zeroclaw" / "skills" / "kanban" / "pm.sh"
+PM_SCRIPT = Path(os.environ.get("BOARD_PM_SCRIPT", str(Path.home() / "bin" / "pm.sh")))
 
 
 def _run_pm_command(args: list[str]) -> str | None:
@@ -781,7 +781,7 @@ class TestRunPmCommand:
     def test_builds_correct_subprocess_args(self):
         mock_result = MagicMock()
         mock_result.stdout = "OK\n"
-        pm_path = Path.home() / "zeroclaw" / "skills" / "kanban" / "pm.sh"
+        pm_path = Path(os.environ.get("BOARD_PM_SCRIPT", str(Path.home() / "bin" / "pm.sh")))
 
         with (
             patch("scripts.board.axis.subprocess.run", return_value=mock_result) as mock_run,
@@ -851,7 +851,7 @@ Replace the Configuration section to reference the new paths:
 - Set `board_provider` setting to `"axis"` via `/meridian:init` or manually
 - `board_project_id` set on project record
 - Provider code at `scripts/board/axis.py`
-- PM script at `~/zeroclaw/skills/kanban/pm.sh`
+- PM script at `$BOARD_PM_SCRIPT (or ~/bin/pm.sh default)`
 - Axis auth handled by existing sync infrastructure
 
 ## Plugin System

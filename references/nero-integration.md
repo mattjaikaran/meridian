@@ -2,7 +2,7 @@
 
 ## Overview
 
-Nero is an autonomous coding daemon running on a secondary machine. Meridian dispatches tasks to Nero, which uses Crush (its coding agent) to implement and create PRs.
+Nero is an autonomous coding daemon running on a secondary machine. Meridian dispatches tasks to Nero, which executes plans autonomously and creates PRs.
 
 ## Communication
 

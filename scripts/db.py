@@ -568,7 +568,7 @@ def _migrate_v5_to_v6(conn: sqlite3.Connection) -> None:
 
 
 def _migrate_v6_to_v7(conn: sqlite3.Connection) -> None:
-    """Rename axis_project_id → board_project_id, axis_ticket_id → board_ticket_id."""
+    """Rename legacy axis_* columns to generic board_* columns."""
     proj_cols = {row[1] for row in conn.execute("PRAGMA table_info(project)").fetchall()}
     if "axis_project_id" in proj_cols and "board_project_id" not in proj_cols:
         conn.execute("ALTER TABLE project RENAME COLUMN axis_project_id TO board_project_id")

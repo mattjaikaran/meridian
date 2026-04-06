@@ -1,6 +1,6 @@
 # /meridian:dispatch — Nero Dispatch
 
-Send plans to Nero (Mac Mini) for autonomous execution. Nero's Dev agent picks up the task, Crush executes, and a PR is created.
+Send plans to a remote Nero agent for autonomous execution. Nero picks up the task, implements it, and creates a PR.
 
 ## Arguments
 - `--plan <id>` — Dispatch specific plan
@@ -11,7 +11,7 @@ Send plans to Nero (Mac Mini) for autonomous execution. Nero's Dev agent picks u
 
 ## Prerequisites
 - Project must have `nero_endpoint` configured (set during `/meridian:init`)
-- Nero must be running on Mac Mini
+- Nero must be running and reachable
 - Plans must be in `pending` status
 
 ## Procedure

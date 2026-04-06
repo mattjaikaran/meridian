@@ -21,5 +21,12 @@ __pycache__/
 # Claude Code local state
 .claude/
 
+# Environment files
+.env
+.env.*
+
+# Planning artifacts (internal project management)
+.planning/
+
 # Linting cache
 .ruff_cache/

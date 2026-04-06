@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Nero HTTP dispatch client — sends plans to Mac Mini for autonomous execution."""
+"""Nero HTTP dispatch client — sends plans to a remote agent for autonomous execution."""
 
 import json
 import urllib.error
