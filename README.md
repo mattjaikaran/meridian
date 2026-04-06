@@ -82,56 +82,73 @@ See the [Getting Started Guide](docs/getting-started.md) for a full walkthrough.
 
 ## Architecture
 
-```
-                    +-------------------------------------------+
-                    |         Claude Code + Meridian              |
-                    |                                            |
-  /meridian:*  ---> |  SKILL.md -----> scripts/*.py              |
-  commands          |  routing         (state machine,           |
-                    |                   gates, security)          |
-                    |                      |                      |
-                    |              .meridian/state.db             |
-                    |              (SQLite, WAL mode)             |
-                    |                      |                      |
-                    |    Subagent Dispatch  |                     |
-                    |    (200k fresh ctx)   |                     |
-                    |    Plan 1 --> Agent 1 | Wave 1              |
-                    |    Plan 2 --> Agent 2 |                     |
-                    |    Plan 3 --> Agent 3-+                     |
-                    +--------------------|-----------------------+
-                                         | optional HTTP dispatch
-                    +--------------------v-----------------------+
-                    |  Nero (remote autonomous executor)          |
-                    |  Returns commit SHAs + PR URLs              |
-                    +--------------------|-----------------------+
-                                         | optional board sync
-                    +--------------------v-----------------------+
-                    |  Board Provider (Linear, Jira, custom CLI)  |
-                    |  Auto-syncs phase status to tickets          |
-                    +--------------------------------------------+
+```mermaid
+graph TB
+    User["/meridian:* commands"] --> Skills["SKILL.md routing"]
+    Skills --> Scripts["scripts/*.py<br/>(state machine, gates, security)"]
+    Scripts --> DB[(".meridian/state.db<br/>SQLite, WAL mode")]
+    Scripts --> Agents["Subagent Dispatch<br/>200k fresh tokens per plan"]
+
+    Agents --> W1["Wave 1: Plan 1 + Plan 2 + Plan 3<br/>(parallel)"]
+    W1 --> W2["Wave 2: Plan 4 + Plan 5<br/>(after wave 1 completes)"]
+
+    Scripts -.->|"optional"| Nero["Nero<br/>Remote autonomous executor"]
+    Scripts -.->|"optional"| Board["Board Provider<br/>Linear / Jira / Custom CLI"]
+
+    Nero -.->|"commit SHAs + PR URLs"| Scripts
+    Board -.->|"ticket sync"| Scripts
 ```
 
 ### Data Model
 
+```mermaid
+graph LR
+    P[Project] --> M[Milestone]
+    M --> Ph[Phase]
+    Ph --> Pl[Plan]
+    Pl --> W[Wave]
+
+    style P fill:#4a9eff,color:#fff
+    style M fill:#6b7280,color:#fff
+    style Ph fill:#8b5cf6,color:#fff
+    style Pl fill:#10b981,color:#fff
+    style W fill:#f59e0b,color:#fff
 ```
-Project
-  +-- Milestone (v1.0, v2.0, ...)
-        +-- Phase (major work unit with acceptance criteria)
-              +-- Plan (one subagent's work, assigned to a wave)
-                    +-- Wave (parallel execution group)
-```
+
+**Project** > **Milestone** (v1.0, v2.0) > **Phase** (work unit with acceptance criteria) > **Plan** (one subagent's task) > **Wave** (parallel execution group)
 
 ### State Machines
 
-```
-Phase:   planned --> context_gathered --> planned_out --> executing --> verifying --> reviewing --> complete
-                                                                                         |
-                                                                                      blocked
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> planned
+    planned --> context_gathered
+    context_gathered --> planned_out
+    planned_out --> executing
+    executing --> verifying
+    verifying --> reviewing
+    reviewing --> complete
+    complete --> [*]
 
-Plan:    pending --> executing --> complete
-                              --> failed --> pending (retry via node repair)
-                              --> paused --> executing
-         pending --> skipped (pruned)
+    planned --> blocked
+    executing --> blocked
+    blocked --> planned
+    blocked --> executing
+```
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> pending
+    pending --> executing
+    executing --> complete
+    executing --> failed
+    failed --> pending: retry (node repair)
+    executing --> paused
+    paused --> executing
+    pending --> skipped: pruned
+    complete --> [*]
 ```
 
 ---
@@ -429,62 +446,62 @@ Centralized validation in `scripts/security.py`:
 
 ```
 meridian/
-|-- README.md
-|-- LICENSE                          # Apache 2.0
-|-- CHANGELOG.md
-|-- CONTRIBUTING.md
-|-- SKILL.md                         # Skill entry point (39 commands)
-|-- pyproject.toml                   # uv-managed, stdlib only
-|
-|-- scripts/                         # Python modules (stdlib only)
-|   |-- db.py                        # Schema v7, migrations, WAL mode
-|   |-- state.py                     # CRUD, transitions, auto-advance
-|   |-- resume.py                    # Deterministic resume
-|   |-- security.py                  # Path, JSON, field, shell validation
-|   |-- gates.py                     # Regression, coverage, stub detection
-|   |-- node_repair.py               # RETRY / DECOMPOSE / PRUNE
-|   |-- metrics.py                   # Velocity, stalls, forecasts
-|   |-- board/                       # Pluggable board sync
-|   |   |-- provider.py              # BoardProvider protocol + registry
-|   |   |-- cli.py                   # CLI-based provider (env var config)
-|   |   +-- sync.py                  # Phase transition sync bridge
-|   |-- dispatch.py                  # Nero HTTP dispatch
-|   |-- sync.py                      # Bidirectional Nero sync
-|   +-- ... (30+ modules)
-|
-|-- skills/                          # 39 slash command definitions
-|   |-- init/SKILL.md
-|   |-- plan/SKILL.md
-|   |-- execute/SKILL.md
-|   +-- ... (39 total)
-|
-|-- tests/                           # 1055 tests
-|   |-- test_state.py
-|   |-- test_security.py
-|   |-- test_gates.py
-|   +-- ... (55 test files)
-|
-|-- prompts/                         # Subagent prompt templates
-|   |-- implementer.md
-|   |-- spec-reviewer.md
-|   |-- code-quality-reviewer.md
-|   |-- context-gatherer.md
-|   +-- resume-template.md
-|
-|-- references/                      # Architecture documentation
-|   |-- state-machine.md             # State transitions + rules
-|   |-- discipline-protocols.md      # TDD, debugging, review protocols
-|   |-- nero-integration.md          # Remote agent dispatch protocol
-|   +-- board-integration.md         # Pluggable board sync protocol
-|
-+-- docs/                            # User guides and tutorials
-    |-- getting-started.md           # Installation + first project
-    |-- command-reference.md         # All 39 commands
-    |-- architecture.md              # System design + diagrams
-    +-- tutorials/
-        |-- workflow-walkthrough.md   # End-to-end project tutorial
-        |-- board-integration.md      # Setting up board sync
-        +-- remote-dispatch.md        # Nero setup guide
+├── README.md
+├── LICENSE                            # Apache 2.0
+├── CHANGELOG.md
+├── CONTRIBUTING.md
+├── SKILL.md                           # Skill entry point (39 commands)
+├── pyproject.toml                     # uv-managed, stdlib only
+│
+├── scripts/                           # Python modules (stdlib only)
+│   ├── db.py                          # Schema v7, migrations, WAL mode
+│   ├── state.py                       # CRUD, transitions, auto-advance
+│   ├── resume.py                      # Deterministic resume
+│   ├── security.py                    # Path, JSON, field, shell validation
+│   ├── gates.py                       # Regression, coverage, stub detection
+│   ├── node_repair.py                 # RETRY / DECOMPOSE / PRUNE
+│   ├── metrics.py                     # Velocity, stalls, forecasts
+│   ├── board/                         # Pluggable board sync
+│   │   ├── provider.py                # BoardProvider protocol + registry
+│   │   ├── cli.py                     # CLI-based provider (env var config)
+│   │   └── sync.py                    # Phase transition sync bridge
+│   ├── dispatch.py                    # Nero HTTP dispatch
+│   ├── sync.py                        # Bidirectional Nero sync
+│   └── ...                            # 30+ modules total
+│
+├── skills/                            # 39 slash command definitions
+│   ├── init/SKILL.md
+│   ├── plan/SKILL.md
+│   ├── execute/SKILL.md
+│   └── ...                            # 39 total
+│
+├── tests/                             # 1055 tests across 55 files
+│   ├── test_state.py
+│   ├── test_security.py
+│   ├── test_gates.py
+│   └── ...
+│
+├── prompts/                           # Subagent prompt templates
+│   ├── implementer.md
+│   ├── spec-reviewer.md
+│   ├── code-quality-reviewer.md
+│   ├── context-gatherer.md
+│   └── resume-template.md
+│
+├── references/                        # Architecture documentation
+│   ├── state-machine.md               # State transitions + rules
+│   ├── discipline-protocols.md        # TDD, debugging, review protocols
+│   ├── nero-integration.md            # Remote agent dispatch protocol
+│   └── board-integration.md           # Pluggable board sync protocol
+│
+└── docs/                              # User guides and tutorials
+    ├── getting-started.md             # Installation + first project
+    ├── command-reference.md           # All 39 commands
+    ├── architecture.md                # System design + diagrams
+    └── tutorials/
+        ├── workflow-walkthrough.md     # End-to-end project tutorial
+        ├── board-integration.md        # Setting up board sync
+        └── remote-dispatch.md         # Nero setup guide
 ```
 
 ---
