@@ -2,7 +2,7 @@
 
 Development workflow engine that gives AI coding agents persistent memory, structured execution, and quality enforcement. Built on SQLite with zero external dependencies.
 
-**1055 tests | 39 commands | Python stdlib only**
+**1058 tests | 39 commands | Python stdlib only**
 
 ---
 
@@ -27,6 +27,18 @@ assert prompt1 == prompt2  # Always identical
 
 ### Context-Efficient Subagents
 Each plan executes in a fresh, scoped subagent — only the context it needs, nothing more. This is a deliberate design choice: instead of burning through a 1M-token conversation on a single task, Meridian breaks work into focused units that use a fraction of the context window. Less token usage means fewer weekly limit hits and more consistent output quality. Plans within the same wave run in parallel.
+
+Context budget is fully configurable to match your plan's limits:
+
+```bash
+# Option 1: Per-project setting (persisted in DB)
+/meridian:config set context_size 150000
+
+# Option 2: Environment variable
+export MERIDIAN_CONTEXT_SIZE=150000
+```
+
+Priority: project setting > env var > model auto-detect > default (200k).
 
 ### Quality Gates
 Automated enforcement at every stage:
@@ -475,7 +487,7 @@ meridian/
 │   ├── execute/SKILL.md
 │   └── ...                            # 39 total
 │
-├── tests/                             # 1055 tests across 55 files
+├── tests/                             # 1058 tests across 55 files
 │   ├── test_state.py
 │   ├── test_security.py
 │   ├── test_gates.py

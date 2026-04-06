@@ -56,6 +56,36 @@ class TestDetectContextSize:
         for model, size in MODEL_CONTEXT_SIZES.items():
             assert size > 0, f"{model} has non-positive context size"
 
+    def test_db_setting_takes_priority_over_env(self, monkeypatch):
+        monkeypatch.setenv("MERIDIAN_CONTEXT_SIZE", "500000")
+        from scripts.db import open_project
+        from scripts.state import create_project, set_setting
+
+        with open_project(":memory:") as conn:
+            create_project(conn, name="Test", repo_path="/tmp")
+            set_setting(conn, "context_size", "100000")
+            result = detect_context_size(conn=conn)
+        assert result == 100_000
+
+    def test_db_setting_overridden_by_explicit(self):
+        from scripts.db import open_project
+        from scripts.state import create_project, set_setting
+
+        with open_project(":memory:") as conn:
+            create_project(conn, name="Test", repo_path="/tmp")
+            set_setting(conn, "context_size", "100000")
+            result = detect_context_size(override=50_000, conn=conn)
+        assert result == 50_000
+
+    def test_no_db_setting_falls_through(self):
+        from scripts.db import open_project
+        from scripts.state import create_project
+
+        with open_project(":memory:") as conn:
+            create_project(conn, name="Test", repo_path="/tmp")
+            result = detect_context_size(conn=conn, model="claude-opus-4-6")
+        assert result == 1_000_000
+
 
 class TestAllocateContextBudget:
     def test_allocates_correct_fractions(self):

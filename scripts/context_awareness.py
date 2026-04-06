@@ -62,24 +62,39 @@ class ContextBudget:
 def detect_context_size(
     model: str | None = None,
     override: int | None = None,
+    conn: "sqlite3.Connection | None" = None,
+    project_id: str = "default",
 ) -> int:
     """Detect context window size for the current model.
 
     Priority:
     1. Explicit override parameter
-    2. MERIDIAN_CONTEXT_SIZE environment variable
-    3. Known model lookup
-    4. Default (200k)
+    2. Project setting (context_size in DB)
+    3. MERIDIAN_CONTEXT_SIZE environment variable
+    4. Known model lookup
+    5. Default (200k)
 
     Args:
         model: Model identifier (e.g. "claude-opus-4-6").
         override: Explicit context size override.
+        conn: Optional DB connection for project setting lookup.
+        project_id: Project ID for setting lookup.
 
     Returns:
         Context window size in tokens.
     """
     if override is not None:
         return override
+
+    # Check project-level setting
+    if conn is not None:
+        try:
+            from scripts.state import get_setting
+            db_size = get_setting(conn, "context_size", project_id=project_id)
+            if db_size is not None:
+                return int(db_size)
+        except (ValueError, Exception):
+            logger.warning("Invalid context_size setting in DB, falling through")
 
     env_size = os.environ.get("MERIDIAN_CONTEXT_SIZE")
     if env_size is not None:
