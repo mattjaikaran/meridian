@@ -208,9 +208,9 @@ pending -> executing -> complete
 - `scripts/db.py` -- Schema init + migrations (v2: priority column)
 - `scripts/state.py` -- CRUD + transitions + next-action + auto-advancement + priority
 - `scripts/resume.py` -- Deterministic resume prompt generator
-- `scripts/export.py` -- SQLite -> JSON export for Nero
-- `scripts/dispatch.py` -- Nero HTTP dispatch client (push only)
-- `scripts/sync.py` -- Bidirectional Nero sync (pull status + push state)
+- `scripts/export.py` -- SQLite -> JSON export for remote agents
+- `scripts/dispatch.py` -- Remote agent HTTP dispatch client
+- `scripts/sync.py` -- Bidirectional remote agent sync (pull status + push state)
 - `scripts/metrics.py` -- PM metrics: velocity, cycle times, stalls, forecasts, progress
 - `scripts/board/`          -- Pluggable board sync (kanban integration)
   - `provider.py`           -- BoardProvider protocol and registry
@@ -222,7 +222,7 @@ pending -> executing -> complete
 ## References
 - `references/state-machine.md` -- State transitions + rules + auto-advancement + priority
 - `references/discipline-protocols.md` -- TDD, debugging, verification, review
-- `references/nero-integration.md` -- Dispatch + bidirectional sync protocol
+- `references/remote-agent.md` -- Remote agent dispatch protocol
 - `references/board-integration.md` -- Pluggable board sync protocol
 """
 

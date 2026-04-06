@@ -3,7 +3,7 @@
 Display state transition history for Meridian entities.
 
 ## Arguments
-- `--type <entity_type>` — Filter by entity type (milestone, phase, plan, quick_task, nero_dispatch, review)
+- `--type <entity_type>` — Filter by entity type (milestone, phase, plan, quick_task, dispatch, review)
 - `--id <entity_id>` — Filter by entity ID
 - `--limit <n>` — Max events to show (default: 50)
 

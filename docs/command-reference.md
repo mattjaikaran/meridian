@@ -398,7 +398,7 @@ View and modify workflow configuration.
 ## Integration
 
 ### `/meridian:dispatch`
-Send plans to Nero for remote autonomous execution.
+Send plans to a self-hosted AI agent for remote autonomous execution.
 
 ```
 /meridian:dispatch --plan 5            # Dispatch specific plan

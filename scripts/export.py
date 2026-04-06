@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export Meridian SQLite state to JSON for git tracking and Nero consumption."""
+"""Export Meridian SQLite state to JSON for git tracking and remote agent consumption."""
 
 import json
 import sqlite3

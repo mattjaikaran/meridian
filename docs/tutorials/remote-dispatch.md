@@ -1,13 +1,15 @@
-# Tutorial: Remote Agent Dispatch (Nero)
+# Tutorial: Remote Agent Dispatch
 
-This tutorial covers setting up Nero ��� Meridian's remote autonomous execution agent. Nero runs on a secondary machine, picks up dispatched plans, implements them, and creates PRs.
+This tutorial covers dispatching plans to a self-hosted AI agent running on a secondary machine. The agent picks up tasks, implements them autonomously, and creates PRs.
 
 ## Overview
 
-The standard Meridian workflow executes plans locally via Claude Code subagents. Nero adds an alternative: dispatch plans to a remote machine for fully autonomous execution.
+The standard Meridian workflow executes plans locally via Claude Code subagents. Remote dispatch adds an alternative: send plans to an agent running elsewhere for fully autonomous execution.
+
+This works with any agent that implements the dispatch protocol — Nero, OpenClaw, Hermes, or your own custom agent.
 
 ```
-Meridian (your machine)  --->  HTTP POST  --->  Nero (remote machine)
+Meridian (your machine)  --->  HTTP POST  --->  Agent (remote machine)
          |                                            |
          | dispatches plan                            | implements plan
          | tracks status                              | creates branch + PR
@@ -15,25 +17,25 @@ Meridian (your machine)  --->  HTTP POST  --->  Nero (remote machine)
          +--- pull status <--- HTTP GET <---  returns commit SHA + PR URL
 ```
 
-### When to Use Nero
+### When to Use Remote Dispatch
 
 - **Parallel development** — dispatch multiple plans while you continue working
-- **Long-running tasks** — let Nero work overnight on large implementations
+- **Long-running tasks** — let the agent work overnight on large implementations
 - **Dedicated build machine** — offload heavy work to more powerful hardware
 
 ## Step 1: Configure the Endpoint
 
-During `/meridian:init`, set the Nero endpoint for your project:
+During `/meridian:init`, set the agent endpoint for your project:
 
 ```python
 from scripts.state import update_project
 from scripts.db import open_project
 
 with open_project(".") as conn:
-    update_project(conn, "default", nero_endpoint="http://nero-host:7655")
+    update_project(conn, "default", nero_endpoint="http://agent-host:7655")
 ```
 
-Or configure it later via the database.
+The field is called `nero_endpoint` for historical reasons — it works with any agent.
 
 ## Step 2: Dispatch a Plan
 
@@ -56,7 +58,7 @@ Plans are dispatched in wave order — wave 1 plans go first, then wave 2 after 
 /meridian:dispatch --phase 2 --swarm
 ```
 
-All plans dispatch simultaneously. Nero creates separate branches for each. You review and merge PRs in order.
+All plans dispatch simultaneously. The agent creates separate branches for each. You review and merge PRs in order.
 
 ## Step 3: Check Status
 
@@ -79,7 +81,7 @@ dispatched --> accepted --> running --> completed (with PR URL)
 
 ## Step 4: Pull Updates
 
-Meridian can pull status updates from Nero to sync local state:
+Meridian can pull status updates from the remote agent to sync local state:
 
 ```python
 from scripts.sync import pull_dispatch_status
@@ -91,14 +93,14 @@ with open_project(".") as conn:
     #   "pr_url": "https://github.com/.../pull/42"}]
 ```
 
-When Nero reports a plan as `completed`:
+When the agent reports a plan as `completed`:
 - Local plan transitions to `complete`
 - Commit SHA is recorded
 - Phase auto-advances if all plans are done
 
-## Step 5: Push State to Nero
+## Step 5: Push State
 
-Export pending plans as tickets so Nero can schedule work:
+Export pending plans so the agent can schedule work:
 
 ```python
 from scripts.sync import push_state_to_nero
@@ -120,41 +122,40 @@ with open_project(".") as conn:
     # {"pull_results": [...], "push_result": {...}}
 ```
 
-## Dispatch Payload Format
+## Implementing Your Own Agent
 
-What Meridian sends to Nero:
+Your agent needs to expose two JSON-RPC methods over HTTP:
+
+### `dispatch_task`
+
+Receives a plan and starts implementation:
 
 ```json
 {
     "method": "dispatch_task",
     "params": {
         "type": "implement",
-        "project": {
-            "name": "MyApp",
-            "repo_path": "/path/to/repo",
-            "repo_url": "https://github.com/user/repo",
-            "tech_stack": ["python", "fastapi"]
-        },
-        "phase": {
-            "name": "API Routes",
-            "description": "Implement REST endpoints"
-        },
-        "plan": {
-            "name": "Add auth endpoints",
-            "description": "Full implementation instructions...",
-            "files_to_create": ["src/routes/auth.py"],
-            "files_to_modify": ["src/app.py"],
-            "test_command": "uv run pytest tests/",
-            "tdd_required": true
-        },
-        "context": "Gathered context document..."
+        "project": { "name": "MyApp", "repo_url": "https://github.com/..." },
+        "plan": { "name": "Add auth", "description": "...", "tdd_required": true }
     }
 }
 ```
 
-## Webhooks (Optional)
+Returns: `{"task_id": "your-task-uuid"}`
 
-Instead of polling, Nero can push events to Meridian:
+### `get_task_status`
+
+Returns current status of a dispatched task:
+
+```json
+{"method": "get_task_status", "params": {"task_id": "your-task-uuid"}}
+```
+
+Returns: `{"status": "completed", "pr_url": "...", "commit_sha": "..."}`
+
+### Optional: Webhooks
+
+Instead of polling, your agent can push events to Meridian:
 
 ```python
 from scripts.sync import handle_webhook
@@ -163,63 +164,22 @@ from scripts.db import open_project
 with open_project(".") as conn:
     result = handle_webhook(conn, {
         "event_type": "task.completed",
-        "task_id": "nero-task-uuid",
+        "task_id": "your-task-uuid",
         "commit_sha": "abc123",
         "pr_url": "https://github.com/user/repo/pull/42",
     })
 ```
 
-Event types:
-| Event | Effect |
-|-------|--------|
-| `task.completed` | Plan -> complete, dispatch -> completed |
-| `task.failed` | Plan -> failed, dispatch -> failed |
-| `task.progress` | Dispatch status updated (running, etc.) |
-
-## State Export
-
-Meridian exports its full state to JSON for Nero to read:
-
-```python
-from scripts.export import export_state
-export_state(".")  # Creates .meridian/meridian-state.json
-```
-
-This runs automatically after every state change (plan complete, phase transition, etc.).
-
 ## Error Handling
 
-- **Nero unreachable**: Dispatch fails gracefully, status cached locally
-- **Task fails on Nero**: Plan transitions to `failed`, eligible for node repair
+- **Agent unreachable**: Dispatch fails gracefully, status cached locally
+- **Task fails on agent**: Plan transitions to `failed`, eligible for node repair
 - **Network timeout**: 30s timeout on all HTTP calls, logged but non-blocking
-
-## Architecture Diagram
-
-```
-                Meridian                         Nero
-                ---------                       ------
-1. /dispatch    ---- dispatch_plan() -------->  Accept task
-                     creates nero_dispatch       nero_task_id returned
-                     plan -> executing
-
-2. (later)      ---- pull_dispatch_status() -->  get_task_status
-                     checks nero_dispatch         returns completed/failed
-                     plan -> complete/failed <--
-
-3. Auto-advance      check_auto_advance()
-                     phase -> verifying (if all plans done)
-
-4. /dashboard        get_dispatch_summary()
-                     renders dispatch status
-
-5. push_state() ---- push_state_to_nero() ---->  sync_tickets
-                      sends pending plans         Nero schedules work
-```
 
 ---
 
 ## Next Steps
 
-- [Nero Protocol Reference](../../references/nero-integration.md) — full HTTP/webhook spec
+- [Remote Agent Protocol](../../references/remote-agent.md) — full HTTP/webhook spec
 - [Workflow Tutorial](workflow-walkthrough.md) — end-to-end project walkthrough
 - [Board Integration Tutorial](board-integration.md) — kanban sync setup

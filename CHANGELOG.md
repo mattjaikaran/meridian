@@ -134,7 +134,7 @@ All notable changes to Meridian.
 - **Two-stage code review** — spec compliance then code quality
 - **TDD enforcement** — embedded in subagent prompts
 - **PM metrics** — velocity, cycle times, stalls, forecasts, progress
-- **Nero dispatch** — bidirectional sync with autonomous executor
+- **Remote agent dispatch** — bidirectional sync with self-hosted AI agents
 - **Board sync** — pluggable kanban ticket creation and status sync
 - **Auto-advancement** — plans completing auto-transitions phases
 - **Priority system** — critical/high/medium/low on phases and plans

@@ -1,6 +1,6 @@
 # /meridian:dashboard — Project Dashboard
 
-Single-view status + metrics: health, progress, velocity, stalls, Nero dispatches, and next action.
+Single-view status + metrics: health, progress, velocity, stalls, remote dispatches, and next action.
 
 ## Procedure
 

@@ -8,7 +8,7 @@ How Meridian works under the hood.
 2. **Context efficiency** — Each plan gets a scoped subagent with only the context it needs. Minimizes token usage to stay within weekly limits.
 3. **Stdlib only** — Zero external dependencies. Works everywhere Python does.
 4. **Quality by default** — Gates, detection, and review are automatic, not opt-in.
-5. **Graceful degradation** — Every integration (Nero, board sync, MCP) fails silently.
+5. **Graceful degradation** — Every integration (remote agents, board sync, MCP) fails silently.
 
 ## System Overview
 
@@ -18,11 +18,11 @@ graph TB
     Skills -->|calls| Scripts[scripts/*.py]
     Scripts -->|reads/writes| DB[(state.db<br>SQLite WAL)]
     Scripts -->|spawns| Agents[Subagents<br>scoped context]
-    Scripts -->|syncs| Nero[Nero Daemon<br>optional]
+    Scripts -->|syncs| Nero[Remote Agent<br>optional]
     Scripts -->|syncs| Board[Board Provider<br>optional]
     Agents -->|commit| Git[Git Repository]
     DB -->|export| JSON[meridian-state.json]
-    JSON -->|reads| Nero
+    JSON -->|reads| Agent
 ```
 
 ## Command Routing
@@ -281,8 +281,8 @@ graph TB
     end
 
     subgraph "Integration"
-        dispatch[dispatch.py<br>Nero Push]
-        sync[sync.py<br>Nero Bidirectional]
+        dispatch[dispatch.py<br>Remote Dispatch]
+        sync[sync.py<br>Remote Sync]
         board[board/cli.py<br>Board Sync]
         export[export.py<br>JSON Export]
         roadmap[roadmap_sync.py<br>Markdown Sync]

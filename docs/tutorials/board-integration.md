@@ -251,4 +251,4 @@ Make sure your module is imported in `scripts/board/sync.py`. The `register_prov
 
 - [Board Protocol Reference](../../references/board-integration.md) — full API contract
 - [Workflow Tutorial](workflow-walkthrough.md) — end-to-end project walkthrough
-- [Remote Dispatch Tutorial](remote-dispatch.md) — Nero autonomous execution
+- [Remote Dispatch Tutorial](remote-dispatch.md) — self-hosted agent setup

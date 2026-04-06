@@ -230,5 +230,5 @@ Review what went well, what didn't, and capture learnings as persistent rules vi
 
 - [Command Reference](../command-reference.md) — all 39 commands
 - [Board Integration Tutorial](board-integration.md) — sync with your kanban board
-- [Remote Dispatch Tutorial](remote-dispatch.md) — set up Nero for autonomous execution
+- [Remote Dispatch Tutorial](remote-dispatch.md) — set up remote agent dispatch
 - [Architecture Guide](../architecture.md) — how it all works under the hood

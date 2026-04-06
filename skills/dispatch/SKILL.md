@@ -1,6 +1,8 @@
-# /meridian:dispatch — Nero Dispatch
+# /meridian:dispatch — Remote Agent Dispatch
 
-Send plans to a remote Nero agent for autonomous execution. Nero picks up the task, implements it, and creates a PR.
+Send plans to a self-hosted AI agent for autonomous execution. The agent picks up the task, implements it, and creates a PR.
+
+Compatible with any agent that implements the dispatch protocol (Nero, OpenClaw, Hermes, or custom).
 
 ## Arguments
 - `--plan <id>` — Dispatch specific plan
@@ -11,7 +13,7 @@ Send plans to a remote Nero agent for autonomous execution. Nero picks up the ta
 
 ## Prerequisites
 - Project must have `nero_endpoint` configured (set during `/meridian:init`)
-- Nero must be running and reachable
+- Remote agent must be running and reachable
 - Plans must be in `pending` status
 
 ## Procedure
@@ -56,9 +58,10 @@ print(json.dumps(result, indent=2, default=str))
 "
 ```
 
-## Nero Integration Notes
-- Nero endpoint: configured per-project (e.g. `http://<nero-host>:7655`)
-- Dispatches tracked in `nero_dispatch` table
-- Nero returns a `task_id` for tracking
+## Integration Notes
+- Agent endpoint: configured per-project (e.g. `http://<agent-host>:7655`)
+- Dispatches tracked in `nero_dispatch` table (name is historical)
+- Agent returns a `task_id` for tracking
 - Completed dispatches include `pr_url`
-- Export state after dispatch so Nero can read `meridian-state.json`
+- Export state after dispatch so the agent can read `meridian-state.json`
+- See `references/remote-agent.md` for the full protocol spec

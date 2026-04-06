@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bidirectional Nero sync — pull dispatch status and push state for scheduling."""
+"""Bidirectional remote agent sync — pull dispatch status and push state for scheduling."""
 
 import json
 import sqlite3

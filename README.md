@@ -64,7 +64,7 @@ See [Board Integration Guide](references/board-integration.md) for details.
 - **Notes & Seeds** — capture ideas with trigger conditions that surface at the right time
 
 ### Remote Agent Dispatch
-Optionally dispatch plans to a remote Nero agent for autonomous execution. Nero implements plans, creates branches and PRs, and reports back via HTTP or webhooks.
+Optionally dispatch plans to any self-hosted AI agent (Nero, OpenClaw, Hermes, or your own) for autonomous execution on a secondary machine. The agent implements plans, creates branches and PRs, and reports back via HTTP or webhooks.
 
 ---
 
@@ -104,10 +104,11 @@ graph TB
     Agents --> W1["Wave 1: Plan 1 + Plan 2 + Plan 3<br/>(parallel)"]
     W1 --> W2["Wave 2: Plan 4 + Plan 5<br/>(after wave 1 completes)"]
 
-    Scripts -.->|"optional"| Nero["Nero<br/>Remote autonomous executor"]
+    Scripts -.->|"optional"| Nero["Remote Agent<br/>Self-hosted AI executor"]
     Scripts -.->|"optional"| Board["Board Provider<br/>Linear / Jira / Custom CLI"]
 
     Nero -.->|"commit SHAs + PR URLs"| Scripts
+
     Board -.->|"ticket sync"| Scripts
 ```
 
@@ -241,7 +242,7 @@ stateDiagram-v2
 
 | Command | Description |
 |---------|-------------|
-| `/meridian:dispatch` | Send plans to Nero for remote autonomous execution |
+| `/meridian:dispatch` | Send plans to a remote AI agent for autonomous execution |
 | `/meridian:scan` | Codebase audit and work discovery |
 | `/meridian:template` | Apply pre-built workflow templates |
 | `/meridian:migrate` | Move Meridian state between projects |
@@ -477,8 +478,8 @@ meridian/
 │   │   ├── provider.py                # BoardProvider protocol + registry
 │   │   ├── cli.py                     # CLI-based provider (env var config)
 │   │   └── sync.py                    # Phase transition sync bridge
-│   ├── dispatch.py                    # Nero HTTP dispatch
-│   ├── sync.py                        # Bidirectional Nero sync
+│   ├── dispatch.py                    # Remote agent HTTP dispatch
+│   ├── sync.py                        # Bidirectional remote agent sync
 │   └── ...                            # 30+ modules total
 │
 ├── skills/                            # 39 slash command definitions
@@ -503,7 +504,7 @@ meridian/
 ├── references/                        # Architecture documentation
 │   ├── state-machine.md               # State transitions + rules
 │   ├── discipline-protocols.md        # TDD, debugging, review protocols
-│   ├── nero-integration.md            # Remote agent dispatch protocol
+│   └── remote-agent.md                # Remote agent dispatch protocol
 │   └── board-integration.md           # Pluggable board sync protocol
 │
 └── docs/                              # User guides and tutorials
@@ -513,7 +514,7 @@ meridian/
     └── tutorials/
         ├── workflow-walkthrough.md     # End-to-end project tutorial
         ├── board-integration.md        # Setting up board sync
-        └── remote-dispatch.md         # Nero setup guide
+        └── remote-dispatch.md         # Remote agent setup guide
 ```
 
 ---
@@ -558,11 +559,11 @@ Current version: **v7** (with automatic migrations from any prior version)
 | [Architecture Guide](docs/architecture.md) | System design, data model, state machines |
 | [Workflow Tutorial](docs/tutorials/workflow-walkthrough.md) | End-to-end project from init to ship |
 | [Board Integration](docs/tutorials/board-integration.md) | Setting up kanban board sync |
-| [Remote Dispatch](docs/tutorials/remote-dispatch.md) | Nero autonomous agent setup |
+| [Remote Dispatch](docs/tutorials/remote-dispatch.md) | Self-hosted agent setup |
 | [State Machine Reference](references/state-machine.md) | Phase and plan lifecycle rules |
 | [Discipline Protocols](references/discipline-protocols.md) | TDD, debugging, review enforcement |
 | [Board Protocol](references/board-integration.md) | BoardProvider API and custom providers |
-| [Nero Protocol](references/nero-integration.md) | HTTP dispatch and webhook integration |
+| [Remote Agent Protocol](references/remote-agent.md) | HTTP dispatch and webhook integration |
 
 ---
 

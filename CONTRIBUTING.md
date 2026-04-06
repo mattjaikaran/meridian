@@ -143,7 +143,7 @@ Open a pull request against `main`. Include:
 1. **Stdlib only** — No external dependencies in production code
 2. **SQLite as source of truth** — All state in the database, never in files
 3. **Deterministic behavior** — Same state = same output, always
-4. **Graceful degradation** — Every integration fails silently (Nero, board sync, MCP)
+4. **Graceful degradation** — Every integration fails silently (remote agents, board sync, MCP)
 5. **Quality by default** — Gates and review are automatic, not opt-in
 
 ## Questions?
