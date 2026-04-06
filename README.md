@@ -1,16 +1,18 @@
 # Meridian
 
-**A unified workflow engine for AI-assisted development.** SQLite-backed state machine with deterministic resume, fresh-context subagents, pluggable board sync, and built-in engineering discipline.
+Development workflow engine that gives AI coding agents persistent memory, structured execution, and quality enforcement. Built on SQLite with zero external dependencies.
 
-**1055 tests | 39 commands | Zero external dependencies | Python stdlib only**
+**1055 tests | 39 commands | Python stdlib only**
 
 ---
 
-## The Problem
+## Why This Exists
 
-AI coding assistants lose context. Long conversations degrade output quality. Sessions reset and progress vanishes. There's no persistent state, no quality enforcement, and no way to resume exactly where you left off.
+If you've used Claude Code (or similar AI coding tools) on anything beyond a single-file change, you've hit the wall: context windows fill up, sessions reset, and you're back to explaining everything from scratch. There's no way to track what was done, what failed, or what comes next.
 
-Meridian solves this by treating your development workflow as a **state machine** — every phase, plan, decision, and checkpoint is persisted in SQLite. When context resets, you get back to the exact same position with the exact same prompt. Every time.
+Meridian treats your development workflow as a state machine. Every phase, plan, decision, and checkpoint lives in a local SQLite database. When your session resets — and it will — you resume from the exact same position with the exact same prompt. No re-explaining. No lost progress.
+
+It was built out of frustration with the gap between what AI coding assistants *can* do and what they *actually* deliver on real projects with multiple phases, parallel work streams, and quality requirements.
 
 ## Key Features
 
@@ -460,12 +462,14 @@ meridian/
 |   |-- test_state.py
 |   |-- test_security.py
 |   |-- test_gates.py
-|   +-- ... (24 test files)
+|   +-- ... (55 test files)
 |
 |-- prompts/                         # Subagent prompt templates
 |   |-- implementer.md
 |   |-- spec-reviewer.md
-|   +-- code-quality-reviewer.md
+|   |-- code-quality-reviewer.md
+|   |-- context-gatherer.md
+|   +-- resume-template.md
 |
 |-- references/                      # Architecture documentation
 |   |-- state-machine.md             # State transitions + rules
@@ -561,6 +565,16 @@ cp .meridian/backups/state-<timestamp>.db .meridian/state.db
 ```
 
 ---
+
+## Inspiration & Credits
+
+Meridian grew out of working with several AI workflow tools — specifically [GSD (Get Shit Done)](https://github.com/get-shit-done), [BMAD](https://github.com/bmadcode/BMAD-METHOD), and various "superpowers" skill collections for Claude Code. Each of these contributed ideas worth keeping:
+
+- **GSD** — the concept of a SQLite-backed state machine for tracking AI agent work across sessions
+- **BMAD** — structured phase-based planning with context gathering before execution
+- **Superpowers** — engineering discipline protocols (TDD enforcement, systematic debugging, two-stage review)
+
+Meridian combines and extends these ideas into a single, cohesive system with a cleaner architecture, pluggable integrations, and comprehensive test coverage. If you're using any of those tools and they work for you — great, keep using them. Meridian is what I built when I wanted something that fit my workflow more precisely.
 
 ## Contributing
 

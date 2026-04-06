@@ -50,7 +50,7 @@ All 1055 tests should pass. If any fail on a fresh clone, please open an issue.
 
 ## Code Style
 
-- **Linter:** ruff (line-length 88, target py313)
+- **Linter:** ruff (line-length 100, target py311)
 - **Type hints** on all function signatures
 - **Imports:** stdlib, then third-party, then local (sorted by ruff)
 - **No external dependencies** in `scripts/` — stdlib only. This is a hard rule.

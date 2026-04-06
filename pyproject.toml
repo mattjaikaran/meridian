@@ -1,9 +1,28 @@
 [project]
 name = "meridian"
-version = "0.5.0"
-description = "Unified workflow engine for Claude Code — SQLite-backed state machine with deterministic resume"
+version = "0.6.0"
+description = "Workflow engine for AI-assisted development — persistent state, deterministic resume, quality gates"
 requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [{ name = "Matt Jaikaran" }]
+keywords = ["workflow", "state-machine", "claude", "ai", "development", "automation", "sqlite"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: Software Development :: Quality Assurance",
+]
 # stdlib only: sqlite3, json, pathlib, datetime, textwrap, subprocess, urllib
+
+[project.urls]
+Repository = "https://github.com/mattjaikaran/meridian"
+Documentation = "https://github.com/mattjaikaran/meridian/tree/main/docs"
+Issues = "https://github.com/mattjaikaran/meridian/issues"
 
 [dependency-groups]
 dev = ["pytest"]

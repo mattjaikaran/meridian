@@ -1,6 +1,6 @@
 # Pluggable Board Sync Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **For Claude:** Implement this plan task-by-task using the executing-plans workflow.
 
 **Goal:** Replace the hardcoded Axis kanban integration with a provider-based plugin system so users can plug in their own board tools (Linear, Jira, GitHub Projects, etc.) or use Meridian standalone with no board at all.
 
