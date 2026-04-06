@@ -32,6 +32,9 @@ This installs pytest (the only dependency — everything else is stdlib).
 # Create symlink so Claude Code can find the skill
 ln -sfn ~/dev/meridian ~/.claude/skills/meridian
 
+# Set MERIDIAN_HOME (add to ~/.zshrc or ~/.bashrc)
+export MERIDIAN_HOME=~/dev/meridian
+
 # Generate slash command wrappers
 uv run python scripts/generate_commands.py --fix-symlink
 uv run python scripts/generate_commands.py
@@ -40,14 +43,14 @@ uv run python scripts/generate_commands.py
 ### 4. Verify
 
 ```bash
-# Should list 29 .md files
+# Should list 39 .md files
 ls ~/.claude/commands/meridian/
 
-# Should show 740 passed
+# Should show 1055 passed
 uv run pytest tests/ -q
 ```
 
-Open Claude Code and type `/meridian:` — you should see all 29 commands in autocomplete.
+Open Claude Code and type `/meridian:` — you should see all 39 commands in autocomplete.
 
 ## Your First Project
 
@@ -87,7 +90,7 @@ Run the plans with fresh-context subagents:
 
 For each plan, Meridian:
 1. Spawns a subagent with 200k fresh tokens
-2. Enforces TDD (red → green → refactor)
+2. Enforces TDD (red -> green -> refactor)
 3. Commits atomically after each plan
 4. Runs regression tests from prior phases
 5. Auto-advances the state machine
@@ -110,13 +113,19 @@ When your Claude Code session resets (context limit, new window):
 
 This generates a deterministic prompt from SQLite — you're back exactly where you left off.
 
+For planned stops, save context first:
+
+```
+/meridian:pause --notes "Was working on the auth middleware"
+```
+
 ### Step 6: Ship
 
 ```
 /meridian:ship         # Commit + push + PR
 ```
 
-Or create a clean branch without planning artifacts:
+Or create a clean branch without internal commits:
 
 ```
 /meridian:pr-branch    # Filters out .planning/ and .meridian/ commits
@@ -129,6 +138,7 @@ Not everything needs full planning. Use these for lightweight work:
 ```
 /meridian:fast "fix typo in login.py"     # Inline, no DB records
 /meridian:quick "add error handling"       # Tracked but no phase
+/meridian:do "what's next"                 # Natural language routing
 ```
 
 ## Capturing Ideas
@@ -140,27 +150,15 @@ Don't lose ideas between sessions:
 /meridian:note list                        # See all notes
 /meridian:note promote N001               # Convert to task
 
-/meridian:seed plant "rate limiting" --trigger "after phase Auth"
+/meridian:seed plant "rate limiting" --trigger "after_phase:Auth"
 ```
 
 Seeds automatically surface when their trigger condition is met.
 
-## Pausing and Resuming
-
-Before stepping away:
-
-```
-/meridian:pause        # Creates HANDOFF.json with full context
-```
-
-Next session:
-
-```
-/meridian:resume       # Reads HANDOFF.json + DB for rich restoration
-```
-
 ## What's Next
 
-- Read the [Command Reference](command-reference.md) for all 29 commands
-- Read the [Architecture Guide](architecture.md) for how it all fits together
-- Check `/meridian:dashboard` for project health metrics
+- [Workflow Tutorial](tutorials/workflow-walkthrough.md) — full end-to-end walkthrough
+- [Command Reference](command-reference.md) — all 39 commands with usage
+- [Architecture Guide](architecture.md) — how it all works under the hood
+- [Board Integration](tutorials/board-integration.md) — sync with your kanban board
+- [Remote Dispatch](tutorials/remote-dispatch.md) — set up autonomous execution

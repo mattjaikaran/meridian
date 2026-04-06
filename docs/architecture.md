@@ -8,7 +8,7 @@ How Meridian works under the hood.
 2. **Fresh context per task** — Each plan gets a 200k-token subagent. No context rot.
 3. **Stdlib only** — Zero external dependencies. Works everywhere Python does.
 4. **Quality by default** — Gates, detection, and review are automatic, not opt-in.
-5. **Graceful degradation** — Every integration (Nero, MCP, Axis) fails silently.
+5. **Graceful degradation** — Every integration (Nero, board sync, MCP) fails silently.
 
 ## System Overview
 
@@ -19,7 +19,7 @@ graph TB
     Scripts -->|reads/writes| DB[(state.db<br>SQLite WAL)]
     Scripts -->|spawns| Agents[Subagents<br>200k fresh tokens]
     Scripts -->|syncs| Nero[Nero Daemon<br>optional]
-    Scripts -->|syncs| Axis[Axis PM<br>optional]
+    Scripts -->|syncs| Board[Board Provider<br>optional]
     Agents -->|commit| Git[Git Repository]
     DB -->|export| JSON[meridian-state.json]
     JSON -->|reads| Nero
@@ -283,7 +283,7 @@ graph TB
     subgraph "Integration"
         dispatch[dispatch.py<br>Nero Push]
         sync[sync.py<br>Nero Bidirectional]
-        axis[axis_sync.py<br>PM Tickets]
+        board[board/cli.py<br>Board Sync]
         export[export.py<br>JSON Export]
         roadmap[roadmap_sync.py<br>Markdown Sync]
     end
