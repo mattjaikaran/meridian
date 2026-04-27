@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 _logging_configured = False
 
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 9
 
 SCHEMA_SQL = """
 -- Schema version tracking
@@ -213,6 +213,21 @@ CREATE TABLE IF NOT EXISTS learning (
     source TEXT CHECK (source IN ('manual','execution','review','debug')),
     created_at TEXT DEFAULT (datetime('now')),
     applied_count INTEGER DEFAULT 0
+);
+
+-- Spikes: pre-commitment exploration units
+CREATE TABLE IF NOT EXISTS spike (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id TEXT DEFAULT 'default' REFERENCES project(id),
+    slug TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    question TEXT NOT NULL,
+    status TEXT DEFAULT 'open' CHECK (status IN ('open','closed')),
+    phase_id INTEGER REFERENCES phase(id),
+    outcome TEXT,
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    closed_at TEXT
 );
 """
 
@@ -613,6 +628,31 @@ def _migrate_v7_to_v8(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_v8_to_v9(conn: sqlite3.Connection) -> None:
+    """Add spike table for pre-commitment exploration units."""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS spike (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id TEXT DEFAULT 'default' REFERENCES project(id),
+            slug TEXT NOT NULL UNIQUE,
+            title TEXT NOT NULL,
+            question TEXT NOT NULL,
+            status TEXT DEFAULT 'open' CHECK (status IN ('open','closed')),
+            phase_id INTEGER REFERENCES phase(id),
+            outcome TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            closed_at TEXT
+        )
+    """)
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_spike_project_status"
+        " ON spike(project_id, status)"
+    )
+    conn.execute("INSERT OR REPLACE INTO schema_version (version) VALUES (?)", (9,))
+    conn.commit()
+
+
 def get_db_path(project_dir: str | Path | None = None) -> Path:
     """Get the path to the Meridian database for a project directory."""
     if project_dir is None:
@@ -671,6 +711,11 @@ def init_schema(conn: sqlite3.Connection, db_path: str | Path | None = None) -> 
         if db_path is not None and str(db_path) != ":memory:":
             backup_database(Path(db_path), max_backups=5)
         _migrate_v7_to_v8(conn)
+    current_version = get_schema_version(conn)
+    if current_version < 9:
+        if db_path is not None and str(db_path) != ":memory:":
+            backup_database(Path(db_path), max_backups=5)
+        _migrate_v8_to_v9(conn)
 
 
 def get_schema_version(conn: sqlite3.Connection) -> int:
