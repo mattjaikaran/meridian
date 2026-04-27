@@ -43,6 +43,7 @@ fresh-context subagents, and engineering discipline protocols.
 - ship -- Commit + Push + PR
 - status -- Show Project Status
 - template -- Workflow Templates
+- thread -- Persistent Discussion Threads
 - validate -- Git State Validation
 - verify-phase -- phase -- Nyquist Compliance Check
 

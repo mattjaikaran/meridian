@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 _logging_configured = False
 
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 
 SCHEMA_SQL = """
 -- Schema version tracking
@@ -190,6 +190,17 @@ CREATE TABLE IF NOT EXISTS review (
     feedback TEXT,
     model TEXT DEFAULT 'claude',
     created_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Threads
+CREATE TABLE IF NOT EXISTS thread (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id TEXT DEFAULT 'default' REFERENCES project(id),
+    slug TEXT NOT NULL UNIQUE,
+    body TEXT NOT NULL,
+    status TEXT DEFAULT 'open' CHECK (status IN ('open','resolved')),
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now'))
 );
 
 -- Learnings
@@ -581,6 +592,27 @@ def _migrate_v6_to_v7(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_v7_to_v8(conn: sqlite3.Connection) -> None:
+    """Add thread table for lightweight conversation threads."""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS thread (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id TEXT DEFAULT 'default' REFERENCES project(id),
+            slug TEXT NOT NULL UNIQUE,
+            body TEXT NOT NULL,
+            status TEXT DEFAULT 'open' CHECK (status IN ('open','resolved')),
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now'))
+        )
+    """)
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_thread_project_status"
+        " ON thread(project_id, status)"
+    )
+    conn.execute("INSERT OR REPLACE INTO schema_version (version) VALUES (?)", (8,))
+    conn.commit()
+
+
 def get_db_path(project_dir: str | Path | None = None) -> Path:
     """Get the path to the Meridian database for a project directory."""
     if project_dir is None:
@@ -634,6 +666,11 @@ def init_schema(conn: sqlite3.Connection, db_path: str | Path | None = None) -> 
         if db_path is not None and str(db_path) != ":memory:":
             backup_database(Path(db_path), max_backups=5)
         _migrate_v6_to_v7(conn)
+    current_version = get_schema_version(conn)
+    if current_version < 8:
+        if db_path is not None and str(db_path) != ":memory:":
+            backup_database(Path(db_path), max_backups=5)
+        _migrate_v7_to_v8(conn)
 
 
 def get_schema_version(conn: sqlite3.Connection) -> int:
