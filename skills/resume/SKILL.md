@@ -2,7 +2,33 @@
 
 Generate and load a resume prompt from SQLite state. Start exactly where you left off.
 
+## Arguments
+- (no args) — run pre-flight health check then generate resume prompt
+- `--skip-health` — skip the pre-flight health check
+
 ## Procedure
+
+### Step 0: Pre-flight Health Check (skip if --skip-health)
+```bash
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+import json
+from pathlib import Path
+from scripts.health import run_health_check
+result = run_health_check(Path('.'), do_repair=False)
+print(json.dumps(result, indent=2))
+"
+```
+
+If `status` is `"warning"` or `"error"`, surface the findings to the user before
+continuing. Example output:
+
+> ⚠ Health check found 2 warnings:
+> - Phase 'Build API' (id=3) has been executing for 7.2h — may be stuck
+> - Artifact dir '04-old-feature' has no DB phase record
+>
+> Run `/meridian:health --repair` to auto-fix, or continue with `--skip-health`.
+
+If `status` is `"ok"`, proceed silently.
 
 ### Step 1: Generate Resume Prompt
 ```bash
