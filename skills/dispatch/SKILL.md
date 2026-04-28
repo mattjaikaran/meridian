@@ -10,11 +10,36 @@ Compatible with any agent that implements the dispatch protocol (Nero, OpenClaw,
 - `--swarm` — Dispatch all pending plans at once (parallel PRs)
 - `--status <dispatch_id>` — Check dispatch status
 - `--check-all` — Check status of all active dispatches
+- `--persona <name>` — Apply role-typed agent persona (pm, architect, ux, qa, security)
 
 ## Prerequisites
 - Project must have `nero_endpoint` configured (set during `/meridian:init`)
 - Remote agent must be running and reachable
 - Plans must be in `pending` status
+
+## Persona Support
+
+If `--persona <name>` is passed, load the persona prompt and inject it into the
+dispatch payload so the remote agent operates through that role's lens.
+
+```bash
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+import json
+from scripts.personas import load_persona
+persona = load_persona('<persona_name>')
+print(json.dumps(persona, indent=2))
+"
+```
+
+Available personas: `pm`, `architect`, `ux`, `qa`, `security`
+
+Include the persona `content` as a `persona_prompt` field in the dispatch payload.
+Display the active persona in the dispatch banner:
+
+```
+## Dispatch — <plan_name>
+Persona: <Persona Label> (<persona_name>)
+```
 
 ## Procedure
 

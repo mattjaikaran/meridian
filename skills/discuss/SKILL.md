@@ -8,10 +8,37 @@ Structured context gathering and decision-making before planning. Identifies gra
 - `--auto` — Skip interactive questions, apply recommended defaults.
 - `--chain` — Run discuss then automatically advance to plan.
 - `--batch` — Dump all questions to output for offline answering.
+- `--persona <name>` — Frame context-gathering through a role lens (pm, architect, ux, qa, security)
 
 ## Keywords
 
 discuss, context, gray areas, questions, decisions, scope, approach, before planning
+
+## Persona Support
+
+If `--persona <name>` is passed, load the persona and use it to frame the
+context-gathering questions. The persona shapes which gray areas are surfaced and
+how questions are phrased.
+
+```bash
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+import json
+from scripts.personas import load_persona
+persona = load_persona('<persona_name>')
+print(json.dumps({'label': persona['label'], 'content': persona['content']}, indent=2))
+"
+```
+
+Inject the persona content into the context-gatherer prompt before calling `run_discuss`.
+Show the active persona in the discuss banner:
+
+```
+## Discuss — <Phase Name>
+Persona: <Persona Label>
+Gray areas will be framed from the <label> perspective.
+```
+
+Available personas: `pm`, `architect`, `ux`, `qa`, `security`
 
 ## Procedure
 

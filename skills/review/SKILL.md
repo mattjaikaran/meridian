@@ -7,8 +7,33 @@ Run spec compliance + code quality review on completed work.
 - `--stage <1|2>` — Run only one stage
 - `--files <paths>` — Review specific files instead of full phase
 - `--cross-model` — Run independent review from a secondary AI model after Stage 2
+- `--persona <name>` — Apply role-typed review lens (pm, architect, ux, qa, security)
 
 ## Procedure
+
+### Step 0: Load Persona (if --persona)
+
+If `--persona <name>` is passed, load the persona prompt and prepend it to both
+Stage 1 and Stage 2 reviewer agent prompts.
+
+```bash
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+import json
+from scripts.personas import load_persona
+persona = load_persona('<persona_name>')
+print(json.dumps({'label': persona['label'], 'content': persona['content']}, indent=2))
+"
+```
+
+Display the active persona at the top of the review output:
+```
+## Review — <Phase Name>
+Persona: <Persona Label>
+```
+
+Use `apply_persona(base_prompt, persona_name)` from `scripts/personas.py` to
+combine the persona instructions with the existing spec-reviewer.md / code-quality-reviewer.md
+templates when populating each reviewer agent.
 
 ### Step 1: Gather Review Context
 ```bash
