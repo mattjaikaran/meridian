@@ -8,8 +8,97 @@ Run spec compliance + code quality review on completed work.
 - `--files <paths>` — Review specific files instead of full phase
 - `--cross-model` — Run independent review from a secondary AI model after Stage 2
 - `--persona <name>` — Apply role-typed review lens (pm, architect, ux, qa, security)
+- `--party` — Concurrent multi-perspective review: code quality, security, and UX in parallel
 
 ## Procedure
+
+### Step 0A: Party Mode (if --party)
+
+If `--party` is passed, skip the normal Stage 1/2 pipeline and run this instead.
+
+#### 0A-1: Build reviewer prompts for all 3 perspectives
+```bash
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+import json
+from scripts.party_review import build_reviewer_prompt, list_perspectives
+perspectives = list_perspectives()
+print(json.dumps(perspectives, indent=2))
+"
+```
+
+Get changed files (same as Step 2 below), then build one prompt per perspective:
+```bash
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+from scripts.party_review import build_reviewer_prompt
+prompt = build_reviewer_prompt(
+    '<perspective_key>',
+    changed_files=['<file1>', '<file2>'],
+    phase_name='<name>',
+    phase_description='<desc>',
+)
+print(prompt)
+"
+```
+
+#### 0A-2: Launch 3 reviewers in parallel
+
+Spawn 3 independent Agents (subagent_type: general-purpose) simultaneously — one per perspective.
+Each agent receives ONLY its own prompt and is NOT aware of the other reviewers.
+
+Perspectives: `code-quality`, `security`, `ux`
+
+Each agent must return a JSON object matching:
+```json
+{
+  "perspective": "<key>",
+  "verdict": "PASS" | "PASS_WITH_NOTES" | "REQUEST_CHANGES",
+  "findings": [...],
+  "summary": "<assessment>"
+}
+```
+
+Use `parse_json_from_output` to extract JSON from each agent response:
+```bash
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+from scripts.party_review import parse_json_from_output
+result = parse_json_from_output('''<agent_output>''')
+import json; print(json.dumps(result, indent=2))
+"
+```
+
+#### 0A-3: Synthesize findings
+```bash
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+import json
+from scripts.party_review import synthesize_findings
+outputs = <list_of_three_parsed_dicts>
+synthesis = synthesize_findings(outputs)
+print(json.dumps(synthesis, indent=2))
+"
+```
+
+#### 0A-4: Write unified REVIEW.md
+```bash
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+from scripts.party_review import synthesize_findings, format_review_md
+outputs = <list_of_three_parsed_dicts>
+synthesis = synthesize_findings(outputs)
+md = format_review_md('<phase_name>', synthesis, outputs)
+print(md)
+" > .planning/phases/<phase_id>/REVIEW.md
+```
+
+Display the party review banner:
+```
+## Party Review — <Phase Name>
+Reviewers: Code Quality [CODE] | Security [SEC] | UX [UX]
+Overall: <verdict>
+Findings: <total> total, <critical> critical/high
+```
+
+#### 0A-5: Log and store result
+Store the overall verdict as a review record, then log a decision. Use `result` = overall_verdict
+mapped to `pass`/`pass_with_notes`/`fail`. Then **exit** — do not run Steps 1-7.
 
 ### Step 0: Load Persona (if --persona)
 

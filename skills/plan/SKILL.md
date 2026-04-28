@@ -7,6 +7,7 @@ Brainstorm → Context Gather → Generate Plans with Wave Assignments.
 - `--milestone <id>` — Target milestone (default: active milestone)
 - `--phase <id>` — Plan a specific phase (skip brainstorming)
 - `--deep` — Office hours mode: force 5 strategic questions before brainstorming
+- `--scale <small|medium|large>` — Override auto-detected scale (stored in DB)
 
 ## Procedure
 
@@ -23,6 +24,58 @@ conn = connect(get_db_path('.'))
 status = get_status(conn)
 action = compute_next_action(conn)
 print(json.dumps({'status': status, 'action': action}, indent=2, default=str))
+conn.close()
+"
+```
+
+### Step 2.5: Scale Detection
+
+Detect project scale to auto-tune planning depth.
+
+```bash
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+import json
+from scripts.db import connect, get_db_path
+from scripts.state import list_phases
+from scripts.scale import detect_scale, get_scale_override
+conn = connect(get_db_path('.'))
+override = get_scale_override(conn)
+conn.close()
+# Count phases in active milestone if known
+scale = detect_scale('.', override=override)
+print(json.dumps(scale, indent=2))
+"
+```
+
+If `--scale <value>` was passed, persist the override first:
+```bash
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+from scripts.db import connect, get_db_path
+from scripts.scale import set_scale_override
+conn = connect(get_db_path('.'))
+set_scale_override(conn, '<scale_value>')
+conn.close()
+"
+```
+
+**Scale rules:**
+- `small` (<5k LOC, ≤3 phases): skip context-gathering subagent, use fast planning. No --deep.
+- `medium` (default): standard pipeline (Steps 4–6 as written).
+- `large` (≥50k LOC or ≥10 phases): force --deep discovery (Step 3.5), run parallel research subagents before Step 5.
+
+Display scale decision banner before proceeding:
+```
+## Scale: <SMALL|MEDIUM|LARGE> (<source>)
+<rationale>
+```
+
+Log the scale decision:
+```bash
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+from scripts.db import connect, get_db_path
+from scripts.state import create_decision
+conn = connect(get_db_path('.'))
+create_decision(conn, 'Scale: <scale> — <rationale>', category='approach')
 conn.close()
 "
 ```
@@ -91,12 +144,19 @@ conn.close()
 ```
 
 ### Step 5: Context Gathering (per phase)
-For the current phase, dispatch a context-gatherer subagent:
+
+**Small scale**: skip this step — proceed directly to Step 6 with a brief inline context summary.
+
+**Medium/Large scale**: dispatch a context-gatherer subagent.
 
 Launch an Agent (subagent_type: Explore) with the prompt from `prompts/context-gatherer.md`, customized with:
 - Phase name and description
 - Project tech stack
 - Acceptance criteria
+
+**Large scale only**: also launch a second parallel Agent (subagent_type: general-purpose) focused on
+cross-phase risk analysis — what dependencies, shared state, or integration points could break when
+this phase is executed. Merge both agents' outputs before storing.
 
 The subagent returns a context document. Store it:
 ```bash
