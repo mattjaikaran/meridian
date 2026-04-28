@@ -1,35 +1,13 @@
 #!/usr/bin/env python3
 """Meridian workflow forensics — post-mortem analysis of failed/stuck workflow states."""
 
-import re
 import sqlite3
 import subprocess
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 
 from scripts.db import get_db_path, open_project
-
-
-def _now() -> datetime:
-    return datetime.now(UTC)
-
-
-def _parse_dt(ts: str | None) -> datetime | None:
-    if not ts:
-        return None
-    try:
-        dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=UTC)
-        return dt
-    except (ValueError, AttributeError):
-        return None
-
-
-def _phase_slug(phase: dict) -> str:
-    name = phase["name"].lower()
-    slug = re.sub(r"[^a-z0-9]+", "-", name).strip("-")
-    return f"{phase['sequence']:02d}-{slug}"
+from scripts.utils import now_dt as _now, now_iso as _now_iso, parse_dt as _parse_dt, phase_slug as _phase_slug
 
 
 def _run_git(project_dir: Path, *args: str) -> str:
@@ -347,7 +325,7 @@ def write_report(report: dict, project_dir: Path) -> Path:
 
     Returns the path of the written file.
     """
-    ts = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    ts = _now_iso().replace(":", "").replace("-", "")
     forensics_dir = project_dir / ".planning" / "forensics"
     forensics_dir.mkdir(parents=True, exist_ok=True)
     report_path = forensics_dir / f"report-{ts}.md"

@@ -1,33 +1,10 @@
 #!/usr/bin/env python3
 """Meridian thread system — lightweight persistent discussion threads."""
 
-import re
 import sqlite3
-from datetime import UTC, datetime
 from pathlib import Path
 
-
-def _now() -> str:
-    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def _sanitize_slug(text: str) -> str:
-    """Convert freeform text to a lowercase hyphenated slug.
-
-    Strips non-alphanumeric characters, collapses spaces/hyphens, truncates
-    to 60 chars. Raises ValueError if the result is empty.
-    """
-    slug = text.lower()
-    slug = re.sub(r"[^a-z0-9\s-]", "", slug)
-    slug = re.sub(r"[\s-]+", "-", slug).strip("-")
-    slug = slug[:60].rstrip("-")
-    if not slug:
-        raise ValueError(f"Cannot derive a valid slug from: {text!r}")
-    return slug
-
-
-def _row_to_dict(row: sqlite3.Row) -> dict:
-    return dict(row)
+from scripts.utils import now_iso as _now, row_to_dict as _row_to_dict, sanitize_slug as _sanitize_slug
 
 
 # ── CRUD ─────────────────────────────────────────────────────────────────────

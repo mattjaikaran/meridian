@@ -1,34 +1,12 @@
 #!/usr/bin/env python3
 """Meridian health check — DB integrity, artifact consistency, stuck phase detection."""
 
-import re
 import sqlite3
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 
 from scripts.db import SCHEMA_VERSION, get_db_path, open_project
-
-
-def _now() -> datetime:
-    return datetime.now(UTC)
-
-
-def _parse_dt(ts: str | None) -> datetime | None:
-    if not ts:
-        return None
-    try:
-        dt = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-        if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=UTC)
-        return dt
-    except (ValueError, AttributeError):
-        return None
-
-
-def _phase_slug(phase: dict) -> str:
-    name = phase["name"].lower()
-    slug = re.sub(r"[^a-z0-9]+", "-", name).strip("-")
-    return f"{phase['sequence']:02d}-{slug}"
+from scripts.utils import now_dt as _now, parse_dt as _parse_dt, phase_slug as _phase_slug
 
 
 # ── DB integrity ──────────────────────────────────────────────────────────────

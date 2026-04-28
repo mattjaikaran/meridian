@@ -4,14 +4,10 @@
 import json
 import re
 import sqlite3
-from datetime import UTC, datetime
 from pathlib import Path
 
 from scripts.db import get_db_path, open_project
-
-
-def _now() -> datetime:
-    return datetime.now(UTC)
+from scripts.utils import now_dt as _now, now_iso as _now_iso
 
 
 def _parse_file_list(raw: str | None) -> list[str]:
@@ -342,7 +338,7 @@ _TYPE_LABELS: dict[str, str] = {
 
 def write_report(report: dict, project_dir: Path) -> Path:
     """Write analysis report to .planning/deps/report-{timestamp}.md."""
-    ts = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    ts = _now_iso().replace(":", "").replace("-", "")
     deps_dir = project_dir / ".planning" / "deps"
     deps_dir.mkdir(parents=True, exist_ok=True)
     report_path = deps_dir / f"report-{ts}.md"
