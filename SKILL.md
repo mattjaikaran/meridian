@@ -46,6 +46,7 @@ fresh-context subagents, and engineering discipline protocols.
 - thread -- Persistent Discussion Threads
 - validate -- Git State Validation
 - verify-phase -- phase -- Nyquist Compliance Check
+- workstream -- Multi-Track Parallel Work Management
 
 ## Architecture
 
@@ -55,7 +56,8 @@ and computes the next action deterministically.
 
 ### Hierarchy
 ```
-Project -> Milestone -> Phase -> Plan
+Project -> Workstream -> Milestone -> Phase -> Plan
+                      (optional; milestones not in a workstream are ungrouped)
 ```
 
 ### Phase Lifecycle
