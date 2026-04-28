@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 _logging_configured = False
 
-SCHEMA_VERSION = 13
+SCHEMA_VERSION = 14
 
 SCHEMA_SQL = """
 -- Schema version tracking
@@ -40,10 +40,24 @@ CREATE TABLE IF NOT EXISTS project (
     updated_at TEXT DEFAULT (datetime('now'))
 );
 
+-- Workstreams: parallel tracks of work (each owns a set of milestones)
+CREATE TABLE IF NOT EXISTS workstream (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id TEXT DEFAULT 'default' REFERENCES project(id),
+    slug TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    description TEXT,
+    status TEXT DEFAULT 'active' CHECK (status IN ('active','paused','complete','archived')),
+    created_at TEXT DEFAULT (datetime('now')),
+    updated_at TEXT DEFAULT (datetime('now')),
+    completed_at TEXT
+);
+
 -- Milestones
 CREATE TABLE IF NOT EXISTS milestone (
     id TEXT PRIMARY KEY,
     project_id TEXT DEFAULT 'default' REFERENCES project(id),
+    workstream_id INTEGER REFERENCES workstream(id),
     name TEXT NOT NULL,
     description TEXT,
     status TEXT DEFAULT 'planned' CHECK (status IN ('planned','active','complete','archived')),
@@ -708,6 +722,33 @@ def _migrate_v12_to_v13(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_v13_to_v14(conn: sqlite3.Connection) -> None:
+    """Add workstream table and workstream_id FK on milestone (Phase 43)."""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS workstream (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id TEXT DEFAULT 'default' REFERENCES project(id),
+            slug TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            description TEXT,
+            status TEXT DEFAULT 'active' CHECK (status IN ('active','paused','complete','archived')),
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            completed_at TEXT
+        )
+    """)
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_workstream_project_status"
+        " ON workstream(project_id, status)"
+    )
+    # Add workstream_id FK column to milestone if absent
+    ms_cols = {row[1] for row in conn.execute("PRAGMA table_info(milestone)").fetchall()}
+    if "workstream_id" not in ms_cols:
+        conn.execute("ALTER TABLE milestone ADD COLUMN workstream_id INTEGER REFERENCES workstream(id)")
+    conn.execute("INSERT OR REPLACE INTO schema_version (version) VALUES (?)", (14,))
+    conn.commit()
+
+
 def get_db_path(project_dir: str | Path | None = None) -> Path:
     """Get the path to the Meridian database for a project directory."""
     if project_dir is None:
@@ -791,6 +832,11 @@ def init_schema(conn: sqlite3.Connection, db_path: str | Path | None = None) -> 
         if db_path is not None and str(db_path) != ":memory:":
             backup_database(Path(db_path), max_backups=5)
         _migrate_v12_to_v13(conn)
+    current_version = get_schema_version(conn)
+    if current_version < 14:
+        if db_path is not None and str(db_path) != ":memory:":
+            backup_database(Path(db_path), max_backups=5)
+        _migrate_v13_to_v14(conn)
 
 
 def get_schema_version(conn: sqlite3.Connection) -> int:
