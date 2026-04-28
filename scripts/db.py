@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 _logging_configured = False
 
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 
 SCHEMA_SQL = """
 -- Schema version tracking
@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS phase (
     context_doc TEXT,
     acceptance_criteria TEXT,
     board_ticket_id TEXT,
+    notes TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     started_at TEXT,
     completed_at TEXT,
@@ -671,6 +672,15 @@ def _migrate_v10_to_v11(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_v11_to_v12(conn: sqlite3.Connection) -> None:
+    """Add notes column to phase table for spec/research completion metadata."""
+    phase_cols = {row[1] for row in conn.execute("PRAGMA table_info(phase)").fetchall()}
+    if "notes" not in phase_cols:
+        conn.execute("ALTER TABLE phase ADD COLUMN notes TEXT")
+    conn.execute("INSERT OR REPLACE INTO schema_version (version) VALUES (?)", (12,))
+    conn.commit()
+
+
 def get_db_path(project_dir: str | Path | None = None) -> Path:
     """Get the path to the Meridian database for a project directory."""
     if project_dir is None:
@@ -744,6 +754,11 @@ def init_schema(conn: sqlite3.Connection, db_path: str | Path | None = None) -> 
         if db_path is not None and str(db_path) != ":memory:":
             backup_database(Path(db_path), max_backups=5)
         _migrate_v10_to_v11(conn)
+    current_version = get_schema_version(conn)
+    if current_version < 12:
+        if db_path is not None and str(db_path) != ":memory:":
+            backup_database(Path(db_path), max_backups=5)
+        _migrate_v11_to_v12(conn)
 
 
 def get_schema_version(conn: sqlite3.Connection) -> int:

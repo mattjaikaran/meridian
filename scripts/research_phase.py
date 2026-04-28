@@ -36,7 +36,7 @@ def get_research_context(conn: sqlite3.Connection, phase_id: int | None = None) 
         for milestone in search_order:
             phases = list_phases(conn, milestone["id"])
             for p in phases:
-                if p.get("status") in ("pending", "planned_out"):
+                if p.get("status") in ("planned", "planned_out"):
                     phase = p
                     break
             if phase:
