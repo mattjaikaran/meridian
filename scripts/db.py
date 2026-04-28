@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 _logging_configured = False
 
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 
 SCHEMA_SQL = """
 -- Schema version tracking
@@ -653,6 +653,15 @@ def _migrate_v8_to_v9(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_v9_to_v10(conn: sqlite3.Connection) -> None:
+    """Add depends_on column to phase table for dependency analysis."""
+    phase_cols = {row[1] for row in conn.execute("PRAGMA table_info(phase)").fetchall()}
+    if "depends_on" not in phase_cols:
+        conn.execute("ALTER TABLE phase ADD COLUMN depends_on TEXT")
+    conn.execute("INSERT OR REPLACE INTO schema_version (version) VALUES (?)", (10,))
+    conn.commit()
+
+
 def get_db_path(project_dir: str | Path | None = None) -> Path:
     """Get the path to the Meridian database for a project directory."""
     if project_dir is None:
@@ -716,6 +725,11 @@ def init_schema(conn: sqlite3.Connection, db_path: str | Path | None = None) -> 
         if db_path is not None and str(db_path) != ":memory:":
             backup_database(Path(db_path), max_backups=5)
         _migrate_v8_to_v9(conn)
+    current_version = get_schema_version(conn)
+    if current_version < 10:
+        if db_path is not None and str(db_path) != ":memory:":
+            backup_database(Path(db_path), max_backups=5)
+        _migrate_v9_to_v10(conn)
 
 
 def get_schema_version(conn: sqlite3.Connection) -> int:
