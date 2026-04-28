@@ -20,11 +20,13 @@ def add_learning(
     source: str = "manual",
     phase_id: int | None = None,
     project_id: str = "default",
+    category: str | None = None,
 ) -> dict:
     """Store a new learning rule after dedup check.
 
     Returns the created learning as a dict.
     Raises ValueError if scope/source is invalid or rule is empty.
+    category: optional tag — decision | pattern | surprise | failure (for extracted learnings)
     """
     rule = rule.strip()
     if not rule:
@@ -35,9 +37,9 @@ def add_learning(
         raise ValueError(f"Invalid source: {source}")
 
     cur = conn.execute(
-        """INSERT INTO learning (project_id, scope, phase_id, rule, source, created_at)
-           VALUES (?, ?, ?, ?, ?, ?)""",
-        (project_id, scope, phase_id, rule, source, _now_iso()),
+        """INSERT INTO learning (project_id, scope, phase_id, rule, source, category, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)""",
+        (project_id, scope, phase_id, rule, source, category, _now_iso()),
     )
     conn.commit()
     row = conn.execute("SELECT * FROM learning WHERE id = ?", (cur.lastrowid,)).fetchone()
@@ -169,7 +171,9 @@ def get_learnings_for_prompt(
         learning = dict(row)
         scope_tag = f"[{learning['scope']}]"
         source_tag = f"({learning['source']})"
-        lines.append(f"- {scope_tag} {source_tag} {learning['rule']}")
+        category = learning.get("category")
+        cat_tag = f" [{category}]" if category else ""
+        lines.append(f"- {scope_tag} {source_tag}{cat_tag} {learning['rule']}")
         increment_applied(conn, learning["id"])
 
     lines.append("")

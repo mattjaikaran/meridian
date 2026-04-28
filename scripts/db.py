@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 _logging_configured = False
 
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 11
 
 SCHEMA_SQL = """
 -- Schema version tracking
@@ -662,6 +662,15 @@ def _migrate_v9_to_v10(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_v10_to_v11(conn: sqlite3.Connection) -> None:
+    """Add category column to learning table for structured extraction."""
+    learning_cols = {row[1] for row in conn.execute("PRAGMA table_info(learning)").fetchall()}
+    if "category" not in learning_cols:
+        conn.execute("ALTER TABLE learning ADD COLUMN category TEXT")
+    conn.execute("INSERT OR REPLACE INTO schema_version (version) VALUES (?)", (11,))
+    conn.commit()
+
+
 def get_db_path(project_dir: str | Path | None = None) -> Path:
     """Get the path to the Meridian database for a project directory."""
     if project_dir is None:
@@ -730,6 +739,11 @@ def init_schema(conn: sqlite3.Connection, db_path: str | Path | None = None) -> 
         if db_path is not None and str(db_path) != ":memory:":
             backup_database(Path(db_path), max_backups=5)
         _migrate_v9_to_v10(conn)
+    current_version = get_schema_version(conn)
+    if current_version < 11:
+        if db_path is not None and str(db_path) != ":memory:":
+            backup_database(Path(db_path), max_backups=5)
+        _migrate_v10_to_v11(conn)
 
 
 def get_schema_version(conn: sqlite3.Connection) -> int:
