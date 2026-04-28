@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 _logging_configured = False
 
-SCHEMA_VERSION = 12
+SCHEMA_VERSION = 13
 
 SCHEMA_SQL = """
 -- Schema version tracking
@@ -681,6 +681,33 @@ def _migrate_v11_to_v12(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _migrate_v12_to_v13(conn: sqlite3.Connection) -> None:
+    """Add sketch table for sketch workflow (Phase 33)."""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS sketch (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id TEXT DEFAULT 'default' REFERENCES project(id),
+            slug TEXT NOT NULL UNIQUE,
+            title TEXT NOT NULL,
+            description TEXT,
+            status TEXT DEFAULT 'open' CHECK (status IN ('open','closed')),
+            phase_id INTEGER REFERENCES phase(id),
+            variants TEXT,
+            winner_variant TEXT,
+            ui_phase_id INTEGER REFERENCES phase(id),
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            closed_at TEXT
+        )
+    """)
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_sketch_project_status"
+        " ON sketch(project_id, status)"
+    )
+    conn.execute("INSERT OR REPLACE INTO schema_version (version) VALUES (?)", (13,))
+    conn.commit()
+
+
 def get_db_path(project_dir: str | Path | None = None) -> Path:
     """Get the path to the Meridian database for a project directory."""
     if project_dir is None:
@@ -759,6 +786,11 @@ def init_schema(conn: sqlite3.Connection, db_path: str | Path | None = None) -> 
         if db_path is not None and str(db_path) != ":memory:":
             backup_database(Path(db_path), max_backups=5)
         _migrate_v11_to_v12(conn)
+    current_version = get_schema_version(conn)
+    if current_version < 13:
+        if db_path is not None and str(db_path) != ":memory:":
+            backup_database(Path(db_path), max_backups=5)
+        _migrate_v12_to_v13(conn)
 
 
 def get_schema_version(conn: sqlite3.Connection) -> int:
