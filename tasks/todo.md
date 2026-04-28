@@ -32,8 +32,14 @@
 - [x] Phase 25: Context Bridge
 - [x] Phase 26: Retro Auto-Scheduling
 
+## v2.0 GSD Parity — Discovery & Recovery Layer
+- [x] Phase 27: Thread System — /meridian:thread
+- [x] Phase 28: Health Check — /meridian:health
+- [x] Phase 29: Spike Workflow — /meridian:spike + /meridian:spike-wrap-up
+- [x] Phase 30: Workflow Forensics — /meridian:forensics
+
 ## Stats
-- Tests: 1058 passing
-- Python modules: 50+ in scripts/
-- Slash commands: 39
+- Tests: 1104 passing
+- Python modules: 51+ in scripts/
+- Slash commands: 40
 - Milestones shipped: v1.0, v1.1, v1.2, v1.3, v1.4, v1.5
