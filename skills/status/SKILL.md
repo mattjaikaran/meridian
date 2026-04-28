@@ -62,3 +62,30 @@ Include current branch, last commit, and dirty status.
 ## Options
 - `--full` — Show all milestones, all phases, all decisions
 - `--json` — Output raw JSON instead of formatted table
+- `--all-workstreams` — Show progress across every workstream (portfolio view)
+
+## Step 4 (if --all-workstreams): Show Workstream Portfolio
+```bash
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+import json
+from scripts.db import open_project
+from scripts.workstreams import get_all_workstreams_progress, get_active_workstream
+with open_project('.') as conn:
+    active = get_active_workstream(conn)
+    all_prog = get_all_workstreams_progress(conn)
+    print(json.dumps({'active': active, 'workstreams': all_prog}, indent=2))
+"
+```
+
+Format as:
+
+```
+## Workstream Portfolio
+
+Active: <slug> (or none)
+
+| Workstream | Status | Milestones | Phases Done | Progress |
+|------------|--------|------------|-------------|----------|
+| backend-rewrite | active | 2 | 5/12 | 42% |
+| mobile-app | paused | 1 | 3/4 | 75% |
+```

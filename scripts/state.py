@@ -1131,6 +1131,9 @@ def get_status(conn: sqlite3.Connection, project_id: str = "default") -> dict:
     latest_checkpoint = get_latest_checkpoint(conn, project_id)
     recent_decisions = list_decisions(conn, project_id, limit=5)
 
+    from scripts.workstreams import get_active_workstream
+    active_workstream = get_active_workstream(conn, project_id)
+
     return {
         "project": project,
         "milestones": milestones,
@@ -1141,6 +1144,7 @@ def get_status(conn: sqlite3.Connection, project_id: str = "default") -> dict:
         "next_action": next_action,
         "latest_checkpoint": latest_checkpoint,
         "recent_decisions": recent_decisions,
+        "active_workstream": active_workstream,
     }
 
 

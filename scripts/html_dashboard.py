@@ -41,6 +41,11 @@ def generate_dashboard_data(conn: sqlite3.Connection, project_id: str = "default
         (project_id,),
     ).fetchone()["cnt"]
 
+    # Workstream portfolio panel
+    from scripts.workstreams import get_all_workstreams_progress, get_active_workstream
+    workstreams = get_all_workstreams_progress(conn, project_id)
+    active_workstream = get_active_workstream(conn, project_id)
+
     return {
         "generated_at": datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC"),
         "project": status.get("project", {}),
@@ -55,6 +60,8 @@ def generate_dashboard_data(conn: sqlite3.Connection, project_id: str = "default
         "next_action": next_action,
         "learnings_count": learnings_count,
         "decisions_count": decisions_count,
+        "workstreams": workstreams,
+        "active_workstream": active_workstream,
     }
 
 
@@ -84,6 +91,35 @@ def render_html(data: dict) -> str:
         health_color = "#ef4444"
 
     # Build phase rows
+    # Build workstream rows
+    workstreams = data.get("workstreams", [])
+    active_ws = data.get("active_workstream")
+    active_ws_slug = active_ws["slug"] if active_ws else None
+    ws_rows = ""
+    for entry in workstreams:
+        ws = entry["workstream"]
+        marker = " ★" if ws["slug"] == active_ws_slug else ""
+        ws_status_colors = {
+            "active": "#22c55e", "paused": "#f59e0b",
+            "complete": "#94a3b8", "archived": "#475569",
+        }
+        wcolor = ws_status_colors.get(ws["status"], "#6b7280")
+        ms_count = len(entry["milestones"])
+        pct = entry["overall_pct"]
+        ws_rows += f"""
+        <tr>
+            <td><b>{ws['name']}{marker}</b><br><small style="color:#94a3b8">{ws['slug']}</small></td>
+            <td><span style="color:{wcolor};font-weight:600">{ws['status']}</span></td>
+            <td>{ms_count}</td>
+            <td>{entry['complete_phases']}/{entry['total_phases']}</td>
+            <td>
+                <div style="background:#e5e7eb;border-radius:4px;height:8px;width:80px;display:inline-block;vertical-align:middle">
+                    <div style="background:{wcolor};border-radius:4px;height:8px;width:{min(pct, 100) * 0.8:.0f}px"></div>
+                </div>
+                {pct}%
+            </td>
+        </tr>"""
+
     phase_rows = ""
     for p in phases:
         status_colors = {
@@ -205,6 +241,8 @@ def render_html(data: dict) -> str:
     <h2>Stalls</h2>
     <ul>{stall_rows}</ul>
   </div>
+
+  {'<div class="section"><h2>Workstreams ★ = active session track</h2><table><thead><tr><th>Workstream</th><th>Status</th><th>Milestones</th><th>Phases Done</th><th>Progress</th></tr></thead><tbody>' + ws_rows + '</tbody></table></div>' if workstreams else ''}
 
   <div class="next-action">
     <strong>Next Action:</strong> {next_action_text}
