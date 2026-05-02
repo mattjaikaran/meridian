@@ -352,7 +352,7 @@ Meridian ships a standalone CLI for inspecting and advancing project state direc
 
 ```bash
 # Run directly (no install needed)
-PYTHONPATH=/Users/mattjaikaran/dev/meridian uv run --project /Users/mattjaikaran/dev/meridian -- python scripts/cli.py --help
+PYTHONPATH=/path/to/meridian uv run --project /path/to/meridian -- python scripts/cli.py --help
 
 # Install into current environment with uv (recommended)
 uv pip install -e /path/to/meridian
