@@ -464,6 +464,193 @@ def cmd_pause(args: argparse.Namespace) -> None:
         sys.exit(1)
 
 
+# ── Review / Validate / Config / Workstream handlers ─────────────────────────
+
+
+def cmd_review(args: argparse.Namespace) -> None:
+    project_dir = Path(args.project_dir).resolve()
+    _check_db(project_dir)
+    from scripts.cross_review import detect_models
+
+    try:
+        available_models = detect_models()
+    except Exception as exc:
+        print(f"Error detecting review models: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    result = {
+        "project_dir": str(project_dir),
+        "available_models": available_models,
+        "model_count": len(available_models),
+    }
+
+    if args.json:
+        print(json.dumps(result, default=str, indent=2))
+    else:
+        if not available_models:
+            print("No external review models found.")
+            print("Install one of: codex, gemini, aider — then re-run `meridian review`.")
+        else:
+            print(f"Available review models ({len(available_models)}):")
+            for m in available_models:
+                print(f"  • {m['name']} ({m['id']})  binary: {m['binary']}")
+
+
+def cmd_validate(args: argparse.Namespace) -> None:
+    project_dir = Path(args.project_dir).resolve()
+    _check_db(project_dir)
+    from scripts.validate import validate_state
+
+    try:
+        with _load_conn(project_dir) as conn:
+            result = validate_state(conn, repo_path=str(project_dir))
+    except Exception as exc:
+        print(f"Error validating state: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    if args.json:
+        print(json.dumps(result, default=str, indent=2))
+    else:
+        valid = result.get("valid", [])
+        drift = result.get("drift", [])
+        missing = result.get("missing", [])
+        print("Validation results:")
+        print(f"  Valid   : {len(valid)} plans (commit SHA found in git)")
+        if drift:
+            print(f"  Drift   : {len(drift)} plans (content differs)")
+        print(f"  Missing : {len(missing)} plans (commit SHA not in git)")
+        if missing:
+            print(f"  Missing plan IDs: {', '.join(str(i) for i in missing)}")
+        if not missing and not drift:
+            print("All tracked plans are consistent with git.")
+
+
+def cmd_config(args: argparse.Namespace) -> None:
+    project_dir = Path(args.project_dir).resolve()
+    _check_db(project_dir)
+    from scripts.model_profiles import (
+        PROFILES,
+        VALID_PROFILES,
+        format_profile_display,
+        get_profile_table,
+        set_active_profile,
+    )
+
+    subcmd = args.config_command
+
+    if subcmd == "list":
+        try:
+            with _load_conn(project_dir) as conn:
+                data = get_profile_table(conn)
+        except Exception as exc:
+            print(f"Error listing config: {exc}", file=sys.stderr)
+            sys.exit(1)
+        if args.json:
+            payload = {
+                "active_profile": data["profile"],
+                "profiles": {k: dict(v) for k, v in PROFILES.items()},
+                "valid_profiles": sorted(VALID_PROFILES),
+            }
+            print(json.dumps(payload, default=str, indent=2))
+        else:
+            print(format_profile_display(data))
+            print()
+            print(f"Available profiles: {', '.join(sorted(PROFILES.keys()))}")
+
+    elif subcmd == "set":
+        key = args.key
+        value = args.value
+        if key == "model_profile":
+            try:
+                with _load_conn(project_dir) as conn:
+                    result = set_active_profile(conn, value)
+            except ValueError as exc:
+                print(f"Error: {exc}", file=sys.stderr)
+                sys.exit(1)
+            except Exception as exc:
+                print(f"Error setting config: {exc}", file=sys.stderr)
+                sys.exit(1)
+            if args.json:
+                print(json.dumps(result, default=str, indent=2))
+            else:
+                print(f"Set model_profile → {result['profile']}")
+        else:
+            print(
+                f"Unknown config key: {key!r}\nSupported keys: model_profile",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+    else:
+        print(f"Unknown config subcommand: {subcmd}", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_workstream(args: argparse.Namespace) -> None:
+    project_dir = Path(args.project_dir).resolve()
+    _check_db(project_dir)
+    from scripts.workstreams import (
+        create_workstream,
+        list_workstreams,
+        switch_workstream,
+    )
+
+    subcmd = args.workstream_command
+
+    if subcmd == "list":
+        status_filter = getattr(args, "status", None)
+        try:
+            with _load_conn(project_dir) as conn:
+                workstreams = list_workstreams(conn, status=status_filter)
+        except Exception as exc:
+            print(f"Error listing workstreams: {exc}", file=sys.stderr)
+            sys.exit(1)
+        if args.json:
+            print(json.dumps(workstreams, default=str, indent=2))
+        else:
+            if not workstreams:
+                print("No workstreams found.")
+            else:
+                print(f"Workstreams ({len(workstreams)}):")
+                for ws in workstreams:
+                    desc = f"  {ws.get('description', '')[:60]}" if ws.get("description") else ""
+                    print(f"  [{ws['status']}] {ws['name']}  (slug: {ws['slug']}, id: {ws['id']}){desc}")
+
+    elif subcmd == "create":
+        name = args.name
+        description = getattr(args, "description", "") or ""
+        try:
+            with _load_conn(project_dir) as conn:
+                ws = create_workstream(conn, name=name, description=description)
+        except Exception as exc:
+            print(f"Error creating workstream: {exc}", file=sys.stderr)
+            sys.exit(1)
+        if args.json:
+            print(json.dumps(ws, default=str, indent=2))
+        else:
+            print(f"Created workstream: [{ws['status']}] {ws['name']}  (slug: {ws['slug']}, id: {ws['id']})")
+
+    elif subcmd == "activate":
+        slug = args.slug
+        try:
+            with _load_conn(project_dir) as conn:
+                ws = switch_workstream(conn, slug=slug)
+        except ValueError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            sys.exit(1)
+        except Exception as exc:
+            print(f"Error activating workstream: {exc}", file=sys.stderr)
+            sys.exit(1)
+        if args.json:
+            print(json.dumps(ws, default=str, indent=2))
+        else:
+            print(f"Activated workstream: [{ws['status']}] {ws['name']}  (slug: {ws['slug']})")
+
+    else:
+        print(f"Unknown workstream subcommand: {subcmd}", file=sys.stderr)
+        sys.exit(1)
+
+
 # ── Argument parser ───────────────────────────────────────────────────────────
 
 
@@ -618,6 +805,66 @@ def build_parser() -> argparse.ArgumentParser:
         help="Remove the active edit-scope lock",
     )
     pause_p.set_defaults(func=cmd_pause)
+
+    # review
+    review_p = subparsers.add_parser(
+        "review",
+        help="Show available cross-model review tools (codex, gemini, aider)",
+    )
+    review_p.set_defaults(func=cmd_review)
+
+    # validate
+    validate_p = subparsers.add_parser(
+        "validate",
+        help="Validate DB state against git (check plan commit SHAs)",
+    )
+    validate_p.set_defaults(func=cmd_validate)
+
+    # config
+    config_p = subparsers.add_parser(
+        "config",
+        help="View or update project configuration (model profiles, settings)",
+    )
+    config_subs = config_p.add_subparsers(dest="config_command", metavar="SUBCOMMAND")
+    config_subs.required = True
+
+    config_subs.add_parser("list", help="List current config / active model profile")
+
+    config_set_p = config_subs.add_parser("set", help="Set a config key (e.g. model_profile)")
+    config_set_p.add_argument("key", help="Config key (e.g. model_profile)")
+    config_set_p.add_argument("value", help="Config value (e.g. balanced, quality, budget)")
+
+    config_p.set_defaults(func=cmd_config)
+
+    # workstream
+    ws_p = subparsers.add_parser(
+        "workstream",
+        help="Manage workstreams (multi-track parallel milestone management)",
+    )
+    ws_subs = ws_p.add_subparsers(dest="workstream_command", metavar="SUBCOMMAND")
+    ws_subs.required = True
+
+    ws_list_p = ws_subs.add_parser("list", help="List workstreams")
+    ws_list_p.add_argument(
+        "--status",
+        default=None,
+        metavar="STATUS",
+        help="Filter by status: active, paused, complete, archived",
+    )
+
+    ws_create_p = ws_subs.add_parser("create", help="Create a new workstream")
+    ws_create_p.add_argument("name", help="Workstream name")
+    ws_create_p.add_argument(
+        "--description",
+        default="",
+        metavar="TEXT",
+        help="Optional description",
+    )
+
+    ws_activate_p = ws_subs.add_parser("activate", help="Activate (switch to) a workstream")
+    ws_activate_p.add_argument("slug", help="Workstream slug to activate")
+
+    ws_p.set_defaults(func=cmd_workstream)
 
     return parser
 
