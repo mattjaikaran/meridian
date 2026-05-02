@@ -193,7 +193,7 @@ def cmd_note(args: argparse.Namespace) -> None:
         if args.json:
             print(json.dumps(result, default=str, indent=2))
         else:
-            print(f"[{result['id']}] {result['timestamp']} — {result['text']}")
+            print(f"[{result.get('id', '?')}] {result.get('timestamp', '')} — {result.get('text', '')}")
 
     elif subcmd == "list":
         try:
@@ -283,7 +283,9 @@ def cmd_dashboard(args: argparse.Namespace) -> None:
         print(json.dumps({"path": str(dashboard_path)}, indent=2))
     else:
         print(f"Dashboard written to {dashboard_path}")
-        webbrowser.open(dashboard_path.as_uri())
+        opened = webbrowser.open(dashboard_path.as_uri())
+        if not opened:
+            print(f"Could not open browser — view file at: {dashboard_path}", file=sys.stderr)
 
 
 def cmd_execute(args: argparse.Namespace) -> None:
@@ -434,6 +436,14 @@ def cmd_pause(args: argparse.Namespace) -> None:
     from scripts.freeze import clear_freeze, set_freeze
 
     clear: bool = getattr(args, "clear", False)
+    directory: str | None = getattr(args, "directory", None)
+
+    if not clear and not directory:
+        print("Error: provide a DIRECTORY to lock or --clear to remove the lock.", file=sys.stderr)
+        sys.exit(1)
+    if clear and directory:
+        print("Error: DIRECTORY and --clear are mutually exclusive.", file=sys.stderr)
+        sys.exit(1)
 
     try:
         with _load_conn(project_dir) as conn:
@@ -447,7 +457,6 @@ def cmd_pause(args: argparse.Namespace) -> None:
                     else:
                         print("No active edit lock to clear.")
             else:
-                directory: str = args.directory
                 result = set_freeze(conn, directory)
                 if args.json:
                     print(json.dumps(result, default=str, indent=2))
@@ -791,15 +800,14 @@ def build_parser() -> argparse.ArgumentParser:
         "pause",
         help="Set or clear an edit-scope lock (freeze) on a directory",
     )
-    pause_mutex = pause_p.add_mutually_exclusive_group(required=True)
-    pause_mutex.add_argument(
+    pause_p.add_argument(
         "directory",
         nargs="?",
         default=None,
         metavar="DIRECTORY",
         help="Directory path to lock edits to",
     )
-    pause_mutex.add_argument(
+    pause_p.add_argument(
         "--clear",
         action="store_true",
         help="Remove the active edit-scope lock",
@@ -831,7 +839,7 @@ def build_parser() -> argparse.ArgumentParser:
     config_subs.add_parser("list", help="List current config / active model profile")
 
     config_set_p = config_subs.add_parser("set", help="Set a config key (e.g. model_profile)")
-    config_set_p.add_argument("key", help="Config key (e.g. model_profile)")
+    config_set_p.add_argument("key", choices=["model_profile"], help="Config key to set")
     config_set_p.add_argument("value", help="Config value (e.g. balanced, quality, budget)")
 
     config_p.set_defaults(func=cmd_config)
@@ -876,6 +884,10 @@ def main() -> None:
     if not args.command:
         parser.print_help()
         sys.exit(0)
+
+    if not hasattr(args, "func"):
+        parser.print_help()
+        sys.exit(1)
 
     args.func(args)
 
