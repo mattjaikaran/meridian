@@ -1,6 +1,7 @@
 """Meridian CLI — top-level entry point for the `meridian` command.
 
-Provides status, next, init, note, fast, and dashboard subcommands.
+Provides status, next, init, note, fast, dashboard, execute, plan,
+resume, ship, checkpoint, and pause subcommands.
 
 Usage:
     meridian [--project-dir DIR] [--json] status
@@ -11,6 +12,20 @@ Usage:
     meridian [--project-dir DIR] [--json] note promote <id>
     meridian [--project-dir DIR] [--json] fast "implement X"
     meridian [--project-dir DIR] [--json] dashboard
+    meridian [--project-dir DIR] [--json] execute [--plan-id N]
+    meridian [--project-dir DIR] [--json] plan
+    meridian [--project-dir DIR] [--json] resume
+    meridian [--project-dir DIR] [--json] ship --milestone-id ID
+    meridian [--project-dir DIR] [--json] checkpoint [--trigger TEXT]
+    meridian [--project-dir DIR] [--json] pause <directory>
+    meridian [--project-dir DIR] [--json] pause --clear
+    meridian [--project-dir DIR] [--json] review
+    meridian [--project-dir DIR] [--json] validate
+    meridian [--project-dir DIR] [--json] config list
+    meridian [--project-dir DIR] [--json] config set <key> <value>
+    meridian [--project-dir DIR] [--json] workstream list [--status STATUS]
+    meridian [--project-dir DIR] [--json] workstream create <name> [--description TEXT]
+    meridian [--project-dir DIR] [--json] workstream activate <slug>
 """
 
 from __future__ import annotations
@@ -271,6 +286,184 @@ def cmd_dashboard(args: argparse.Namespace) -> None:
         webbrowser.open(dashboard_path.as_uri())
 
 
+def cmd_execute(args: argparse.Namespace) -> None:
+    project_dir = Path(args.project_dir).resolve()
+    _check_db(project_dir)
+    from scripts.dispatch import dispatch_plan
+
+    plan_id: int | None = getattr(args, "plan_id", None)
+
+    if plan_id is None:
+        msg = (
+            "execute dispatches the next pending plan to Nero for autonomous execution.\n"
+            "Provide --plan-id N to dispatch a specific plan, or run `meridian next` to\n"
+            "see which plan is up next."
+        )
+        if args.json:
+            print(json.dumps({"message": msg}, indent=2))
+        else:
+            print(msg)
+        return
+
+    try:
+        result = dispatch_plan(project_dir=project_dir, plan_id=plan_id)
+    except ValueError as exc:
+        if args.json:
+            print(json.dumps({"error": str(exc)}, indent=2))
+        else:
+            print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Error dispatching plan: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    if args.json:
+        print(json.dumps(result, default=str, indent=2))
+    else:
+        status = result.get("status", "unknown")
+        print(f"Plan {plan_id} dispatched — status: {status}")
+        if result.get("nero_response"):
+            print(f"  Nero: {result['nero_response']}")
+
+
+def cmd_plan(args: argparse.Namespace) -> None:
+    project_dir = Path(args.project_dir).resolve()
+    _check_db(project_dir)
+    from scripts.state import compute_next_action
+
+    try:
+        with _load_conn(project_dir) as conn:
+            data = compute_next_action(conn)
+    except Exception as exc:
+        print(f"Error reading plan state: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    hint = (
+        "Tip: use the /meridian:plan skill in Claude Code to create or update plans "
+        "with AI assistance."
+    )
+
+    if args.json:
+        data["_hint"] = hint
+        print(json.dumps(data, default=str, indent=2))
+    else:
+        print(_fmt_next(data))
+        print()
+        print(hint)
+
+
+def cmd_resume(args: argparse.Namespace) -> None:
+    project_dir = Path(args.project_dir).resolve()
+    _check_db(project_dir)
+    from scripts.resume import generate_resume_prompt
+
+    try:
+        prompt_text = generate_resume_prompt(project_dir=project_dir)
+    except Exception as exc:
+        print(f"Error generating resume prompt: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    if args.json:
+        print(json.dumps({"resume_prompt": prompt_text}, indent=2))
+    else:
+        print(prompt_text)
+
+
+def cmd_ship(args: argparse.Namespace) -> None:
+    project_dir = Path(args.project_dir).resolve()
+    _check_db(project_dir)
+    from scripts.milestone_lifecycle import complete_milestone
+
+    milestone_id: str = args.milestone_id
+
+    try:
+        with _load_conn(project_dir) as conn:
+            result = complete_milestone(
+                conn,
+                milestone_id,
+                repo_path=project_dir,
+                planning_dir=project_dir / ".meridian",
+            )
+    except ValueError as exc:
+        if args.json:
+            print(json.dumps({"error": str(exc), "milestone_id": milestone_id}, indent=2))
+        else:
+            print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Error completing milestone: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    if args.json:
+        print(json.dumps(result, default=str, indent=2))
+    else:
+        status = result.get("status", "unknown")
+        tag = result.get("git_tag", "")
+        print(f"Milestone {milestone_id} shipped — status: {status}")
+        if tag:
+            print(f"  Git tag: {tag}")
+        if result.get("summary_path"):
+            print(f"  Summary: {result['summary_path']}")
+
+
+def cmd_checkpoint(args: argparse.Namespace) -> None:
+    project_dir = Path(args.project_dir).resolve()
+    _check_db(project_dir)
+    from scripts.state import create_checkpoint
+
+    trigger: str = getattr(args, "trigger", None) or "manual"
+
+    try:
+        with _load_conn(project_dir) as conn:
+            result = create_checkpoint(conn, trigger=trigger, repo_path=str(project_dir))
+    except Exception as exc:
+        print(f"Error creating checkpoint: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    if args.json:
+        print(json.dumps(result, default=str, indent=2))
+    else:
+        ckpt_id = result.get("id", "?")
+        created_at = result.get("created_at", "")
+        print(f"Checkpoint created: [{ckpt_id}] trigger={trigger}  {created_at}")
+
+
+def cmd_pause(args: argparse.Namespace) -> None:
+    project_dir = Path(args.project_dir).resolve()
+    _check_db(project_dir)
+    from scripts.freeze import clear_freeze, set_freeze
+
+    clear: bool = getattr(args, "clear", False)
+
+    try:
+        with _load_conn(project_dir) as conn:
+            if clear:
+                cleared = clear_freeze(conn)
+                if args.json:
+                    print(json.dumps({"cleared": cleared}, indent=2))
+                else:
+                    if cleared:
+                        print("Edit lock cleared.")
+                    else:
+                        print("No active edit lock to clear.")
+            else:
+                directory: str = args.directory
+                result = set_freeze(conn, directory)
+                if args.json:
+                    print(json.dumps(result, default=str, indent=2))
+                else:
+                    print(f"Edit lock set: {result['frozen_directory']}")
+    except ValueError as exc:
+        if args.json:
+            print(json.dumps({"error": str(exc)}, indent=2))
+        else:
+            print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Error setting pause/freeze: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+
 # ── Argument parser ───────────────────────────────────────────────────────────
 
 
@@ -351,6 +544,80 @@ def build_parser() -> argparse.ArgumentParser:
         help="Generate an HTML dashboard and open it in the browser",
     )
     dashboard_p.set_defaults(func=cmd_dashboard)
+
+    # execute
+    execute_p = subparsers.add_parser(
+        "execute",
+        help="Dispatch a plan to Nero for autonomous execution",
+    )
+    execute_p.add_argument(
+        "--plan-id",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Plan ID to dispatch (omit to see dispatch instructions)",
+    )
+    execute_p.set_defaults(func=cmd_execute)
+
+    # plan
+    plan_p = subparsers.add_parser(
+        "plan",
+        help="Show current plan status (use /meridian:plan skill for AI-assisted creation)",
+    )
+    plan_p.set_defaults(func=cmd_plan)
+
+    # resume
+    resume_p = subparsers.add_parser(
+        "resume",
+        help="Generate a deterministic resume prompt from current project state",
+    )
+    resume_p.set_defaults(func=cmd_resume)
+
+    # ship
+    ship_p = subparsers.add_parser(
+        "ship",
+        help="Complete (ship) a milestone after all phases pass validation",
+    )
+    ship_p.add_argument(
+        "--milestone-id",
+        required=True,
+        metavar="ID",
+        help="Milestone ID to ship (e.g. M001)",
+    )
+    ship_p.set_defaults(func=cmd_ship)
+
+    # checkpoint
+    checkpoint_p = subparsers.add_parser(
+        "checkpoint",
+        help="Create a manual checkpoint capturing current project state",
+    )
+    checkpoint_p.add_argument(
+        "--trigger",
+        default="manual",
+        metavar="TEXT",
+        help="Checkpoint trigger label (default: manual)",
+    )
+    checkpoint_p.set_defaults(func=cmd_checkpoint)
+
+    # pause
+    pause_p = subparsers.add_parser(
+        "pause",
+        help="Set or clear an edit-scope lock (freeze) on a directory",
+    )
+    pause_mutex = pause_p.add_mutually_exclusive_group(required=True)
+    pause_mutex.add_argument(
+        "directory",
+        nargs="?",
+        default=None,
+        metavar="DIRECTORY",
+        help="Directory path to lock edits to",
+    )
+    pause_mutex.add_argument(
+        "--clear",
+        action="store_true",
+        help="Remove the active edit-scope lock",
+    )
+    pause_p.set_defaults(func=cmd_pause)
 
     return parser
 
