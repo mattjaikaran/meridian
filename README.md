@@ -344,6 +344,54 @@ uv run pytest tests/ -q
 # In Claude Code, type /meridian: — autocomplete shows all commands
 ```
 
+### CLI (scripts/cli.py)
+
+Meridian ships a standalone CLI for inspecting and advancing project state directly from the terminal — no Claude Code session required.
+
+**Install options**
+
+```bash
+# Run directly (no install needed)
+PYTHONPATH=/Users/mattjaikaran/dev/meridian uv run --project /Users/mattjaikaran/dev/meridian -- python scripts/cli.py --help
+
+# Install into current environment with uv (recommended)
+uv pip install -e /path/to/meridian
+
+# Or with pip
+pip install -e /path/to/meridian
+```
+
+After installing, the `meridian` binary is available on your PATH:
+
+```bash
+meridian --help                          # show all subcommands
+meridian init                            # initialize in current project
+meridian status                          # show project status
+meridian next                            # show next recommended action
+meridian --json status                   # machine-readable JSON output
+```
+
+**Available subcommands**
+
+| Subcommand | Description |
+|---|---|
+| `status` | Show project status |
+| `next` | Show next recommended action |
+| `init` | Initialize Meridian in current project |
+| `note` | Capture notes (add/list/promote) |
+| `fast` | Execute a fast inline task |
+| `dashboard` | Open HTML dashboard |
+| `execute` | Dispatch a plan for execution |
+| `plan` | Show current plan status |
+| `resume` | Generate a deterministic resume prompt |
+| `ship` | Complete a milestone |
+| `checkpoint` | Create a checkpoint |
+| `pause` | Freeze/unfreeze a directory |
+| `review` | Show cross-review status |
+| `validate` | Validate project state against git |
+| `config` | Manage configuration profiles |
+| `workstream` | Manage workstreams (list/create/activate) |
+
 ### Uninstall
 
 ```bash
