@@ -1,10 +1,16 @@
 """Meridian CLI — top-level entry point for the `meridian` command.
 
-Provides status and next subcommands backed by scripts/state.py.
+Provides status, next, init, note, fast, and dashboard subcommands.
 
 Usage:
     meridian [--project-dir DIR] [--json] status
     meridian [--project-dir DIR] [--json] next
+    meridian [--project-dir DIR] [--json] init
+    meridian [--project-dir DIR] [--json] note add "text"
+    meridian [--project-dir DIR] [--json] note list
+    meridian [--project-dir DIR] [--json] note promote <id>
+    meridian [--project-dir DIR] [--json] fast "implement X"
+    meridian [--project-dir DIR] [--json] dashboard
 """
 
 from __future__ import annotations
@@ -12,6 +18,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import webbrowser
 from pathlib import Path
 
 
@@ -140,6 +147,130 @@ def cmd_next(args: argparse.Namespace) -> None:
         print(_fmt_next(data))
 
 
+def cmd_init(args: argparse.Namespace) -> None:
+    project_dir = Path(args.project_dir).resolve()
+    from scripts.db import init as db_init
+
+    try:
+        db_path = db_init(project_dir)
+    except Exception as exc:
+        print(f"Error initializing Meridian: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    if args.json:
+        print(json.dumps({"status": "ok", "db_path": str(db_path)}, indent=2))
+    else:
+        print(f"Meridian initialized at {db_path}")
+
+
+def cmd_note(args: argparse.Namespace) -> None:
+    project_dir = Path(args.project_dir).resolve()
+    from scripts.notes import append_note, list_notes, promote_note
+
+    subcmd = args.note_command
+
+    if subcmd == "add":
+        try:
+            result = append_note(project_dir, args.text)
+        except Exception as exc:
+            print(f"Error adding note: {exc}", file=sys.stderr)
+            sys.exit(1)
+        if args.json:
+            print(json.dumps(result, default=str, indent=2))
+        else:
+            print(f"[{result['id']}] {result['timestamp']} — {result['text']}")
+
+    elif subcmd == "list":
+        try:
+            notes = list_notes(project_dir)
+        except Exception as exc:
+            print(f"Error listing notes: {exc}", file=sys.stderr)
+            sys.exit(1)
+        if args.json:
+            print(json.dumps(notes, default=str, indent=2))
+        else:
+            if not notes:
+                print("No notes found.")
+            else:
+                for n in notes:
+                    promoted = " [PROMOTED]" if n.get("promoted") else ""
+                    print(f"[{n['id']}] {n['timestamp']} — {n['text']}{promoted}")
+
+    elif subcmd == "promote":
+        _check_db(project_dir)
+        try:
+            with _load_conn(project_dir) as conn:
+                result = promote_note(project_dir, args.note_id, conn)
+        except Exception as exc:
+            print(f"Error promoting note: {exc}", file=sys.stderr)
+            sys.exit(1)
+        if args.json:
+            print(json.dumps(result, default=str, indent=2))
+        else:
+            task = result.get("task", {})
+            print(f"Note {args.note_id} promoted to task {task.get('id', '?')}: {task.get('description', '')}")
+
+    else:
+        print(f"Unknown note subcommand: {subcmd}", file=sys.stderr)
+        sys.exit(1)
+
+
+def cmd_fast(args: argparse.Namespace) -> None:
+    project_dir = Path(args.project_dir).resolve()
+    _check_db(project_dir)
+    from scripts.fast import execute_fast_task
+
+    try:
+        with _load_conn(project_dir) as conn:
+            result = execute_fast_task(
+                conn,
+                description=args.description,
+                force=args.force,
+            )
+    except Exception as exc:
+        print(f"Error executing fast task: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    if args.json:
+        print(json.dumps(result, default=str, indent=2))
+    else:
+        status = result.get("status", "unknown")
+        if status == "too_complex":
+            print(f"Task too complex (score: {result['complexity']['score']})")
+            print(f"  {result['message']}")
+            print(f"  Suggested: {result.get('suggested_command', '')}")
+        else:
+            task = result.get("task", {})
+            print(f"Fast task created: [{task.get('id', '?')}] {args.description}")
+            complexity = result.get("complexity", {})
+            if complexity:
+                print(f"  Complexity score: {complexity.get('score', '?')}")
+
+
+def cmd_dashboard(args: argparse.Namespace) -> None:
+    project_dir = Path(args.project_dir).resolve()
+    _check_db(project_dir)
+    from scripts.html_dashboard import generate_dashboard_data, render_html
+
+    try:
+        with _load_conn(project_dir) as conn:
+            data = generate_dashboard_data(conn)
+        html = render_html(data)
+    except Exception as exc:
+        print(f"Error generating dashboard: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    dashboard_path = project_dir / ".meridian" / "dashboard.html"
+    dashboard_path.parent.mkdir(parents=True, exist_ok=True)
+    dashboard_path.write_text(html, encoding="utf-8")
+
+    if args.json:
+        print(json.dumps({"path": str(dashboard_path)}, indent=2))
+    else:
+        print(f"Dashboard written to {dashboard_path}")
+        webbrowser.open(dashboard_path.as_uri())
+
+
 # ── Argument parser ───────────────────────────────────────────────────────────
 
 
@@ -175,6 +306,51 @@ def build_parser() -> argparse.ArgumentParser:
         help="Show the next recommended action for the current project state",
     )
     next_p.set_defaults(func=cmd_next)
+
+    # init
+    init_p = subparsers.add_parser(
+        "init",
+        help="Initialize Meridian in a project directory (creates .meridian/state.db)",
+    )
+    init_p.set_defaults(func=cmd_init)
+
+    # note
+    note_p = subparsers.add_parser(
+        "note",
+        help="Capture, list, or promote notes",
+    )
+    note_subs = note_p.add_subparsers(dest="note_command", metavar="SUBCOMMAND")
+    note_subs.required = True
+
+    note_add_p = note_subs.add_parser("add", help="Append a new note")
+    note_add_p.add_argument("text", help="Note text")
+
+    note_subs.add_parser("list", help="List all notes")
+
+    note_promote_p = note_subs.add_parser("promote", help="Promote a note to a task")
+    note_promote_p.add_argument("note_id", help="Note ID (e.g. N001)")
+
+    note_p.set_defaults(func=cmd_note)
+
+    # fast
+    fast_p = subparsers.add_parser(
+        "fast",
+        help="Execute a fast/trivial task inline",
+    )
+    fast_p.add_argument("description", help="Task description")
+    fast_p.add_argument(
+        "--force",
+        action="store_true",
+        help="Skip complexity warning and execute even if non-trivial",
+    )
+    fast_p.set_defaults(func=cmd_fast)
+
+    # dashboard
+    dashboard_p = subparsers.add_parser(
+        "dashboard",
+        help="Generate an HTML dashboard and open it in the browser",
+    )
+    dashboard_p.set_defaults(func=cmd_dashboard)
 
     return parser
 
