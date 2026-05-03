@@ -17,7 +17,7 @@ insert, add phase, urgent, decimal phase, mid-milestone, between
 1. **Insert the phase:**
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json, sys
 from scripts.db import open_project
 from scripts.phase_manipulation import insert_phase
@@ -36,7 +36,7 @@ with open_project('.') as conn:
 2. **Show updated phase order:**
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.phase_manipulation import list_phases_ordered

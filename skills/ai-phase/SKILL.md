@@ -23,7 +23,7 @@ prompt engineering, eval, evaluation, guardrails, inference, fine-tuning, pre-pl
 ### Step 1: Find Target Phase
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.ai_phase import get_ai_context
@@ -44,7 +44,7 @@ Store: `phase_id`, `phase_name`, `description`, `acceptance_criteria`, `tech_sta
 ### Step 2: Check for Existing AI-SPEC.md
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from pathlib import Path
 from scripts.ai_phase import check_ai_artifact
 result = check_ai_artifact(Path('<phase_dir>'))
@@ -175,7 +175,7 @@ Collect all results (or 2 if `--skip-eval`).
 ### Step 5: Write AI-SPEC.md
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from pathlib import Path
 from scripts.db import connect, get_db_path
 from scripts.ai_phase import write_ai_spec_md, mark_ai_complete
@@ -227,7 +227,7 @@ Next: /meridian:spec-phase --phase <phase_id>
 `/meridian:plan` and `/meridian:execute` can check for AI-SPEC.md using `ai_gate()`:
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.ai_phase import ai_gate

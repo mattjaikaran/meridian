@@ -14,7 +14,7 @@ sketch, wrap-up, close, winner, pick, archive, design, handoff
 
 ### Step 1: Load Sketch Details
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.sketch import get_sketch
@@ -45,7 +45,7 @@ If the file does not exist, show:
 
 ### Step 3: Wrap Up
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.db import open_project

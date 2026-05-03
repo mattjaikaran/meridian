@@ -13,7 +13,7 @@ retro, retrospective, review, reflect, velocity, streak, what shipped, what went
 
 ### Step 1: Generate Retro Data
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.retro import generate_retro
@@ -25,7 +25,7 @@ with open_project('.') as conn:
 
 ### Step 2: Format and Display
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import open_project
 from scripts.retro import generate_retro, format_retro
 with open_project('.') as conn:

@@ -18,7 +18,7 @@ forensics, postmortem, stuck, crash, abandoned, missing, artifact, investigation
 
 ### Run forensics (default — writes report automatically)
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.forensics import run_forensics, write_report
@@ -31,7 +31,7 @@ print(json.dumps(report, indent=2))
 
 ### Run with custom stuck threshold (e.g. 8 hours)
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.forensics import run_forensics, write_report
@@ -44,7 +44,7 @@ print(json.dumps(report, indent=2))
 
 ### Run with custom abandoned threshold (e.g. 7 days)
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.forensics import run_forensics, write_report
@@ -57,7 +57,7 @@ print(json.dumps(report, indent=2))
 
 ### Run without git context
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.forensics import run_forensics, write_report

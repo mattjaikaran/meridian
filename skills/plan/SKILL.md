@@ -16,7 +16,7 @@ Check for `.meridian/state.db`. If missing, run `/meridian:init` first.
 
 ### Step 2: Check Current State
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.state import get_status, compute_next_action
@@ -33,7 +33,7 @@ conn.close()
 Detect project scale to auto-tune planning depth.
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.state import list_phases
@@ -49,7 +49,7 @@ print(json.dumps(scale, indent=2))
 
 If `--scale <value>` was passed, persist the override first:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import connect, get_db_path
 from scripts.scale import set_scale_override
 conn = connect(get_db_path('.'))
@@ -71,7 +71,7 @@ Display scale decision banner before proceeding:
 
 Log the scale decision:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_decision
 conn = connect(get_db_path('.'))
@@ -83,7 +83,7 @@ conn.close()
 ### Step 3: Create Milestone (if needed)
 If no active milestone exists, create one from the user's goal:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_milestone, transition_milestone
 conn = connect(get_db_path('.'))
@@ -106,7 +106,7 @@ Use AskUserQuestion for each. Do NOT skip any.
 
 After collecting all 5 answers, store them as a decision:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_decision
 conn = connect(get_db_path('.'))
@@ -133,7 +133,7 @@ Think through the work as an architect:
 
 Create phases in sequence order:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_phase
 conn = connect(get_db_path('.'))
@@ -160,7 +160,7 @@ this phase is executed. Merge both agents' outputs before storing.
 
 The subagent returns a context document. Store it:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import update_phase, transition_phase
 conn = connect(get_db_path('.'))
@@ -179,7 +179,7 @@ Based on the gathered context, break the phase into executable plans:
 - Mark TDD required/not
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_plan, transition_phase
 conn = connect(get_db_path('.'))
@@ -193,7 +193,7 @@ conn.close()
 
 ### Step 7: Export State
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.export import export_state
 export_state('.')
 "
@@ -205,7 +205,7 @@ Display all phases and plans in a table, showing wave assignments and dependenci
 ### Step 9: Record Decisions
 Log any architectural or approach decisions made during planning:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_decision
 conn = connect(get_db_path('.'))

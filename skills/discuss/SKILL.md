@@ -21,7 +21,7 @@ context-gathering questions. The persona shapes which gray areas are surfaced an
 how questions are phrased.
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.personas import load_persona
 persona = load_persona('<persona_name>')
@@ -45,7 +45,7 @@ Available personas: `pm`, `architect`, `ux`, `qa`, `security`
 1. **Load phase** — Read phase from DB, parse acceptance criteria.
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json, sys
 from scripts.db import open_project
 from scripts.state import get_status
@@ -58,7 +58,7 @@ with open_project('.') as conn:
 2. **Run discuss** — Identify gray areas, generate questions, optionally auto-apply.
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json, sys
 from pathlib import Path
 from scripts.db import open_project
@@ -89,7 +89,7 @@ with open_project('.') as conn:
 4. **Apply answers** — Persist decisions and generate context doc.
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json, sys
 from pathlib import Path
 from scripts.db import open_project
@@ -108,7 +108,7 @@ with open_project('.') as conn:
 5. **Transition phase** — Move phase to `context_gathered` state.
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import open_project
 from scripts.state import transition_phase
 phase_id = int('$PHASE_ID')

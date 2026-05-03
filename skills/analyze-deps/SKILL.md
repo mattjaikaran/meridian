@@ -16,7 +16,7 @@ dependencies, ordering, depends_on, phase ordering, file overlap, coupling, anal
 
 ### Analyze (default — read-only)
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.analyze_deps import run_analysis, write_report
@@ -29,7 +29,7 @@ print(json.dumps(report, indent=2))
 
 ### Analyze and apply suggestions
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.analyze_deps import run_analysis, write_report
@@ -42,7 +42,7 @@ print(json.dumps(report, indent=2))
 
 ### Target a specific milestone
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.analyze_deps import run_analysis, write_report

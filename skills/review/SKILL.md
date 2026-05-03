@@ -18,7 +18,7 @@ If `--party` is passed, skip the normal Stage 1/2 pipeline and run this instead.
 
 #### 0A-1: Build reviewer prompts for all 3 perspectives
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.party_review import build_reviewer_prompt, list_perspectives
 perspectives = list_perspectives()
@@ -28,7 +28,7 @@ print(json.dumps(perspectives, indent=2))
 
 Get changed files (same as Step 2 below), then build one prompt per perspective:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.party_review import build_reviewer_prompt
 prompt = build_reviewer_prompt(
     '<perspective_key>',
@@ -59,7 +59,7 @@ Each agent must return a JSON object matching:
 
 Use `parse_json_from_output` to extract JSON from each agent response:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.party_review import parse_json_from_output
 result = parse_json_from_output('''<agent_output>''')
 import json; print(json.dumps(result, indent=2))
@@ -68,7 +68,7 @@ import json; print(json.dumps(result, indent=2))
 
 #### 0A-3: Synthesize findings
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.party_review import synthesize_findings
 outputs = <list_of_three_parsed_dicts>
@@ -79,7 +79,7 @@ print(json.dumps(synthesis, indent=2))
 
 #### 0A-4: Write unified REVIEW.md
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.party_review import synthesize_findings, format_review_md
 outputs = <list_of_three_parsed_dicts>
 synthesis = synthesize_findings(outputs)
@@ -106,7 +106,7 @@ If `--persona <name>` is passed, load the persona prompt and prepend it to both
 Stage 1 and Stage 2 reviewer agent prompts.
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.personas import load_persona
 persona = load_persona('<persona_name>')
@@ -126,7 +126,7 @@ templates when populating each reviewer agent.
 
 ### Step 1: Gather Review Context
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.state import get_phase, list_plans
@@ -167,7 +167,7 @@ Launch Agent (subagent_type: general-purpose) with `prompts/code-quality-reviewe
 Only runs if Stage 2 passes. Requires a secondary AI CLI installed.
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.cross_review import detect_models
 models = detect_models()
@@ -177,7 +177,7 @@ print(json.dumps(models, indent=2))
 
 If models are available, build and run the cross-review:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.cross_review import build_review_prompt, run_external_review, parse_findings
 prompt = build_review_prompt(<changed_files>, phase_name='<name>', phase_description='<desc>')
 result = run_external_review('<model_id>', prompt)
@@ -193,7 +193,7 @@ else:
 Compare with Claude's findings and display the comparison report.
 Store the cross-review result:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import open_project
 from scripts.state import create_review
 with open_project('.') as conn:
@@ -207,7 +207,7 @@ If no secondary models are available, skip with a note: "No secondary AI CLI det
 ### Step 5: Transition Phase
 If both stages pass:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import transition_phase
 conn = connect(get_db_path('.'))
@@ -220,7 +220,7 @@ If either stage fails, log findings and keep phase in current state.
 
 ### Step 6: Log Review Decision
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_decision
 conn = connect(get_db_path('.'))
@@ -232,7 +232,7 @@ conn.close()
 
 ### Step 7: Persist Review Result
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import open_project
 from scripts.state import create_review
 with open_project('.') as conn:

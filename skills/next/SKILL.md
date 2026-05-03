@@ -12,7 +12,7 @@ next, advance, continue, what's next, proceed, step, forward, progress
 
 ### Step 1: Determine Next Step
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import connect, get_db_path
 from scripts.next_action import determine_next_step, format_next_action
 conn = connect(get_db_path('.'))

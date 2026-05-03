@@ -184,7 +184,7 @@ Only if `--create-milestone` flag is set:
 
 1. **Create the milestone**:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_milestone, transition_milestone
 conn = connect(get_db_path('.'))
@@ -196,7 +196,7 @@ conn.close()
 
 2. **Create phases** from the recommended groupings in REPORT.md:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_phase
 conn = connect(get_db_path('.'))
@@ -212,7 +212,7 @@ conn.close()
 
 3. **Create plans** within each phase for individual findings:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import connect, get_db_path
 from scripts.state import create_plan
 conn = connect(get_db_path('.'))

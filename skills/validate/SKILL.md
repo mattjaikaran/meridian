@@ -6,7 +6,7 @@ Check that completed plans in the DB have valid commit SHAs in the git repo.
 
 ### Step 1: Run Validation
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.validate import validate_state

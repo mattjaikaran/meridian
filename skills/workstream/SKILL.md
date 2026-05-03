@@ -26,7 +26,7 @@ workstream, track, parallel, portfolio, multi-track, switch, stream
 
 ### Subcommand: create
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.workstreams import create_workstream
@@ -38,7 +38,7 @@ with open_project('.') as conn:
 
 ### Subcommand: list
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.workstreams import list_workstreams
@@ -52,7 +52,7 @@ with open_project('.') as conn:
 
 ### Subcommand: status
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.workstreams import get_workstream_progress
@@ -64,7 +64,7 @@ with open_project('.') as conn:
 
 ### Subcommand: switch
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.workstreams import switch_workstream, get_active_workstream
@@ -76,7 +76,7 @@ with open_project('.') as conn:
 
 ### Subcommand: progress
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.workstreams import get_all_workstreams_progress
@@ -88,7 +88,7 @@ with open_project('.') as conn:
 
 ### Subcommand: complete
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.workstreams import complete_workstream
@@ -100,7 +100,7 @@ with open_project('.') as conn:
 
 ### Subcommand: resume
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.workstreams import resume_workstream
@@ -112,7 +112,7 @@ with open_project('.') as conn:
 
 ### Subcommand: assign
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import open_project
 from scripts.workstreams import assign_milestone
 with open_project('.') as conn:

@@ -6,7 +6,7 @@ Display a high-level roadmap view across all milestones with phase progress and 
 
 ### Step 1: Load State
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.state import list_milestones, list_phases, list_plans

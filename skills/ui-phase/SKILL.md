@@ -23,7 +23,7 @@ ux, component spec, props, variants, css, tailwind, shadcn, radix, pre-plan
 ### Step 1: Find Target Phase
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.ui_phase import get_ui_context
@@ -44,7 +44,7 @@ Store: `phase_id`, `phase_name`, `description`, `acceptance_criteria`, `tech_sta
 ### Step 2: Check for Existing UI_SPEC.md
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from pathlib import Path
 from scripts.ui_phase import check_ui_artifact
 result = check_ui_artifact(Path('<phase_dir>'))
@@ -160,7 +160,7 @@ Collect all results (or 2 if `--skip-ux`).
 ### Step 5: Write UI_SPEC.md
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from pathlib import Path
 from scripts.db import connect, get_db_path
 from scripts.ui_phase import write_ui_spec_md, mark_ui_complete
@@ -206,7 +206,7 @@ Next: /meridian:spec-phase --phase <phase_id>
 `/meridian:plan` and `/meridian:execute` can check for UI_SPEC.md using `ui_gate()`:
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.ui_phase import ui_gate

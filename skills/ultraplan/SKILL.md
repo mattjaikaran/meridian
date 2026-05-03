@@ -24,7 +24,7 @@ ultraplan, cloud plan, deep plan, accelerated, offload, v2.1
 ### Step 1: Check Cloud Availability
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.ultraplan import check_ultraplan_availability
 result = check_ultraplan_availability('.')
@@ -75,7 +75,7 @@ Running local planning pipeline.
 **If CLOUD mode:**
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.ultraplan import run_cloud_plan
 result = run_cloud_plan('.', phase_id=<phase_id_or_None>, goal='<goal_or_empty>')
@@ -99,7 +99,7 @@ This is a direct skill invocation — follow the full `/meridian:plan` procedure
 ### Step 4: Log Mode Decision
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import open_project
 from scripts.state import create_decision
 with open_project('.') as conn:

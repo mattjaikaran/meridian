@@ -19,7 +19,7 @@ spike, explore, investigation, question, research, pre-commitment, experiment, f
 
 ### Subcommand: create
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.db import open_project
@@ -32,7 +32,7 @@ with open_project('.') as conn:
 
 ### Subcommand: list
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.spikes import list_spikes
@@ -46,7 +46,7 @@ with open_project('.') as conn:
 
 ### Subcommand: status
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.spikes import get_spike
@@ -62,7 +62,7 @@ Then read `.planning/spikes/<slug>/MANIFEST.md` and list files in `.planning/spi
 
 ### Subcommand: add-finding
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from pathlib import Path
 from scripts.spikes import add_finding
 path = add_finding('<slug>', '<filename>', '''<content>''', Path('.'))
@@ -72,7 +72,7 @@ print(f'Written: {path}')
 
 ### Subcommand: frontier
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.db import open_project
@@ -117,7 +117,7 @@ After frontier:
 
 Before `/meridian:plan` starts on a phase, run:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.spikes import check_spike_gate

@@ -29,7 +29,7 @@ config, settings, preferences, profile, model, configure, setup
 1. **Show current settings:**
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.state import list_settings
@@ -53,7 +53,7 @@ with open_project('.') as conn:
 2. **Set a value:**
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import sys
 from scripts.db import open_project
 from scripts.state import set_setting
@@ -67,7 +67,7 @@ with open_project('.') as conn:
 3. **Set model profile** (shortcut):
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import sys
 from scripts.db import open_project
 from scripts.model_profiles import set_active_profile, format_profile_display
@@ -81,7 +81,7 @@ with open_project('.') as conn:
 4. **Reset to defaults:**
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import open_project
 with open_project('.') as conn:
     conn.execute('DELETE FROM settings WHERE project_id = ?', ('default',))

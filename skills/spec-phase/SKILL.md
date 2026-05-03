@@ -34,7 +34,7 @@ what, deliverable, acceptance criteria, pre-plan, contract
 ### Step 1: Find Target Phase
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.spec_phase import get_spec_context
@@ -55,7 +55,7 @@ Store: `phase_id`, `phase_name`, `description`, `acceptance_criteria`, `tech_sta
 ### Step 2: Check for Existing SPEC.md
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from pathlib import Path
 from scripts.spec_phase import check_spec_artifact
 result = check_spec_artifact(Path('<phase_dir>'))
@@ -155,7 +155,7 @@ After round <N>:
 4. **Gate check:**
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.spec_phase import gate_passed, compute_ambiguity
 scores = <current_scores_as_dict>
@@ -217,7 +217,7 @@ Before writing, synthesize from everything gathered:
 ### Step 7: Write SPEC.md
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.db import connect, get_db_path
@@ -260,7 +260,7 @@ Next: /meridian:discuss --phase <phase_id>
 `/meridian:plan` and `/meridian:execute` can check for SPEC.md using `spec_gate()`:
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.spec_phase import spec_gate

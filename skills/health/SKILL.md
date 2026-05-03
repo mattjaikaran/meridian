@@ -15,7 +15,7 @@ health, integrity, check, stuck, orphan, repair, artifacts, consistency, validat
 
 ### Run health check (read-only)
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.health import run_health_check
@@ -26,7 +26,7 @@ print(json.dumps(result, indent=2))
 
 ### Run with --repair
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.health import run_health_check
@@ -37,7 +37,7 @@ print(json.dumps(result, indent=2))
 
 ### Run with custom stuck threshold (e.g. 8 hours)
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.health import run_health_check

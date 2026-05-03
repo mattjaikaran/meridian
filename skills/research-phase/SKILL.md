@@ -18,7 +18,7 @@ research, investigate, analyze, domain, technical, competitive, findings, pre-pl
 ### Step 1: Find Target Phase
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.research_phase import get_research_context
@@ -38,7 +38,7 @@ Store: `phase_id`, `phase_name`, `description`, `acceptance_criteria`, `tech_sta
 ### Step 2: Check for Existing RESEARCH.md
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from pathlib import Path
 from scripts.research_phase import check_research_artifact
 result = check_research_artifact(Path('<phase_dir>'))
@@ -106,7 +106,7 @@ Collect all 3 results (or 2 if `--skip-competitive`).
 ### Step 4: Write RESEARCH.md
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from pathlib import Path
 from scripts.db import connect, get_db_path
 from scripts.research_phase import write_research_md, mark_research_complete
@@ -149,7 +149,7 @@ Next: /meridian:plan --phase <phase_id>
 `/meridian:plan` and `/meridian:execute` should check for RESEARCH.md using `research_gate()`:
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.research_phase import research_gate

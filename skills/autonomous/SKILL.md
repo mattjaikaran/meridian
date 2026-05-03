@@ -17,7 +17,7 @@ autonomous, auto, hands-free, unattended, run all, batch execute
 1. **Plan the run** — Determine which phases need processing.
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.autonomous import plan_autonomous_run

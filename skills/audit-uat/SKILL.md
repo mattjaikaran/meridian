@@ -9,7 +9,7 @@ Scan all phases for outstanding verification items and produce a summary report.
 
 ### Step 1: Run UAT Audit
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.audit import audit_uat
 result = audit_uat()

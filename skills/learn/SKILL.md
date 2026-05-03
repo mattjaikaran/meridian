@@ -22,7 +22,7 @@ learn, learning, rule, pattern, remember, lesson, mistake, capture, inject, extr
 
 **If `--list`**: Show all learnings:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.learnings import list_learnings
@@ -36,7 +36,7 @@ Display grouped by scope (global → project → phase), showing ID, rule, sourc
 
 Also show extraction status:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.extract_learnings import check_extraction_pending
@@ -52,7 +52,7 @@ Tip: {N} phase(s) have no LEARNINGS.md — run /meridian:learn --extract to capt
 
 **If `--prune`**: Remove stale learnings:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import open_project
 from scripts.learnings import prune_stale
 with open_project('.') as conn:
@@ -63,7 +63,7 @@ with open_project('.') as conn:
 
 **If `--delete <id>`**: Remove specific learning:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import open_project
 from scripts.learnings import delete_learning
 with open_project('.') as conn:
@@ -78,7 +78,7 @@ with open_project('.') as conn:
 
 **If `--extract --pending`**: Show phases awaiting extraction, no writes:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.extract_learnings import check_extraction_pending
@@ -103,7 +103,7 @@ Pending phases:
 **If `--extract --all`**: Extract from all pending phase dirs:
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.db import open_project
@@ -139,7 +139,7 @@ Resolve the phase dir:
 - Otherwise: look under `.planning/phases/` for a dir matching the slug (prefix or exact)
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.db import open_project
@@ -169,7 +169,7 @@ with open_project('.') as conn:
 **If `--extract` with no argument**: Extract from the most recently completed phase (most recent dir in `.planning/phases/` without LEARNINGS.md):
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from pathlib import Path
 from scripts.extract_learnings import find_phases_without_learnings
 pending = find_phases_without_learnings(Path('.'))
@@ -190,7 +190,7 @@ Otherwise use the returned path as the phase dir and run the single-phase extrac
 
 Check for duplicates first:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.learnings import find_similar
@@ -207,7 +207,7 @@ If a similar learning exists (>70% match), show it and ask user whether to:
 
 If no duplicate, add the learning:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.learnings import add_learning
@@ -228,7 +228,7 @@ Display the stored learning with its ID, scope, and category (if set).
 When `/meridian:next` or `/meridian:execute` transitions a phase to `complete`, check:
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.extract_learnings import check_extraction_pending

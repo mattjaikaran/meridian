@@ -20,7 +20,7 @@ sketch, mockup, wireframe, prototype, variant, design, HTML, UI, visual, layout
 
 #### Step 1: Create DB record
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.db import open_project
@@ -74,7 +74,7 @@ Collect all variant HTML strings.
 
 #### Step 4: Write Variant Files
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from pathlib import Path
 from scripts.db import open_project
 from scripts.sketch import add_variant
@@ -105,7 +105,7 @@ Next: review variants, then run /meridian:sketch-wrap-up <slug> variant-<x>
 
 ### Subcommand: list
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.sketch import list_sketches
@@ -127,7 +127,7 @@ Display as a table:
 
 ### Subcommand: status
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.sketch import get_sketch
@@ -172,7 +172,7 @@ Next: /meridian:sketch-wrap-up <slug> variant-<x>
 Before `/meridian:ui-phase` starts on a phase, check for open sketches:
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.sketch import check_sketch_gate

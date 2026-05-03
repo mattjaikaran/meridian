@@ -11,7 +11,7 @@ Apply or list workflow templates for rapid project scaffolding.
 
 ### If --list:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json, glob
 from pathlib import Path
 templates_dir = Path('$MERIDIAN_HOME/templates').expanduser()
@@ -25,7 +25,7 @@ print(json.dumps(templates, indent=2))
 
 ### If --apply:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.db import open_project

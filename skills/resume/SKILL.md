@@ -10,7 +10,7 @@ Generate and load a resume prompt from SQLite state. Start exactly where you lef
 
 ### Step 0: Pre-flight Health Check (skip if --skip-health)
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.health import run_health_check
@@ -32,7 +32,7 @@ If `status` is `"ok"`, proceed silently.
 
 ### Step 1: Generate Resume Prompt
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.resume import generate_resume_prompt
 print(generate_resume_prompt('.'))
 "

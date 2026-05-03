@@ -13,7 +13,7 @@ remove, delete, phase, renumber, cleanup
 ## Procedure
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json, sys
 from scripts.db import open_project
 from scripts.phase_manipulation import remove_phase

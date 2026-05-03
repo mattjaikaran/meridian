@@ -11,7 +11,7 @@ Display state transition history for Meridian entities.
 
 ### Step 1: Query Events
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import open_project
 from scripts.state import list_events

@@ -6,7 +6,7 @@ Single-view status + metrics: health, progress, velocity, stalls, remote dispatc
 
 ### Step 1: Load Metrics and State
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.state import get_status, compute_next_action
@@ -84,7 +84,7 @@ If any phases or plans have `priority` set, show a priority summary:
 
 If `--html` is specified:
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.db import open_project
 from scripts.html_dashboard import write_dashboard
 with open_project('.') as conn:

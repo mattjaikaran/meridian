@@ -21,7 +21,7 @@ seed, idea, backlog, park, future, trigger, promote, dismiss, parking lot
 
 ### Subcommand: plant
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.backlog import plant_seed
@@ -32,7 +32,7 @@ print(json.dumps(result, indent=2))
 
 ### Subcommand: list
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from pathlib import Path
 from scripts.backlog import list_seeds
 seeds = list_seeds(Path('.'))
@@ -46,7 +46,7 @@ for s in seeds:
 
 ### Subcommand: promote
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.backlog import promote_seed
@@ -57,7 +57,7 @@ print(json.dumps(result, indent=2))
 
 ### Subcommand: dismiss
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.backlog import dismiss_seed
@@ -68,7 +68,7 @@ print(json.dumps(result, indent=2))
 
 ### Subcommand: check
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.backlog import check_triggers

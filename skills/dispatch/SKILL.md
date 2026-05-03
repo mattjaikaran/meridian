@@ -23,7 +23,7 @@ If `--persona <name>` is passed, load the persona prompt and inject it into the
 dispatch payload so the remote agent operates through that role's lens.
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.personas import load_persona
 persona = load_persona('<persona_name>')
@@ -45,7 +45,7 @@ Persona: <Persona Label> (<persona_name>)
 
 ### Dispatch a Plan
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.dispatch import dispatch_plan
 result = dispatch_plan('.', plan_id=<plan_id>)
@@ -55,7 +55,7 @@ print(json.dumps(result, indent=2, default=str))
 
 ### Dispatch a Phase (Wave-Ordered)
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.dispatch import dispatch_phase
 results = dispatch_phase('.', phase_id=<phase_id>)
@@ -65,7 +65,7 @@ print(json.dumps(results, indent=2, default=str))
 
 ### Dispatch Phase Swarm (All Parallel)
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.dispatch import dispatch_phase
 results = dispatch_phase('.', phase_id=<phase_id>, swarm=True)
@@ -75,7 +75,7 @@ print(json.dumps(results, indent=2, default=str))
 
 ### Check Status
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.dispatch import check_dispatch_status
 result = check_dispatch_status('.', dispatch_id=<id>)

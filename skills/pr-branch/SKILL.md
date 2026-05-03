@@ -10,7 +10,7 @@ Create a PR-ready branch with only code-relevant commits, filtering out `.planni
 
 ### Step 1: Identify Code Commits
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.pr_branch import filter_commits
 commits = filter_commits('main')
 print(f'{len(commits)} code commits found')
@@ -23,7 +23,7 @@ If no code commits found, warn user and stop.
 
 ### Step 2: Create PR Branch
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.pr_branch import create_pr_branch
 branch = create_pr_branch('<slug>', 'main')
 print(f'Created branch: {branch}')

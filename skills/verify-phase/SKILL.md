@@ -9,7 +9,7 @@ Check VALIDATION.md frontmatter presence and currency for phases. Does NOT re-ru
 If a phase number argument is provided, check only that phase. Otherwise check all phases.
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.nyquist import parse_validation_md
@@ -56,7 +56,7 @@ Rules:
 If any phases are non-compliant, suggest running the backfill command:
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.nyquist import backfill_validation

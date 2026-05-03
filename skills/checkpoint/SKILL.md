@@ -10,7 +10,7 @@ Create a structured checkpoint with notes for later resume.
 
 ### Step 1: Determine Current Position
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.state import compute_next_action, get_status
@@ -28,7 +28,7 @@ conn.close()
 
 ### Step 2: Gather Recent Decisions
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.state import list_decisions
@@ -41,7 +41,7 @@ conn.close()
 
 ### Step 3: Create Checkpoint
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.state import create_checkpoint
@@ -62,7 +62,7 @@ print('Checkpoint saved.')
 
 ### Step 4: Export State
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from scripts.export import export_state
 export_state('.')
 print('State exported to .meridian/meridian-state.json')

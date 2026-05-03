@@ -24,7 +24,7 @@ pii, encryption, injection, xss, csrf, sql injection, secrets, tokens, pre-plan
 ### Step 1: Find Target Phase
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from scripts.db import connect, get_db_path
 from scripts.secure_phase import get_secure_context
@@ -45,7 +45,7 @@ Store: `phase_id`, `phase_name`, `description`, `acceptance_criteria`, `tech_sta
 ### Step 2: Check for Existing SECURITY.md
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from pathlib import Path
 from scripts.secure_phase import check_security_artifact
 result = check_security_artifact(Path('<phase_dir>'))
@@ -171,7 +171,7 @@ Collect all results (or 2 if `--skip-data`).
 ### Step 5: Write SECURITY.md
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 from pathlib import Path
 from scripts.db import connect, get_db_path
 from scripts.secure_phase import write_security_md, mark_security_complete
@@ -217,7 +217,7 @@ Next: /meridian:spec-phase --phase <phase_id>
 `/meridian:plan` and `/meridian:execute` can check for SECURITY.md using `security_gate()`:
 
 ```bash
-PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME python -c "
+PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
 import json
 from pathlib import Path
 from scripts.secure_phase import security_gate
