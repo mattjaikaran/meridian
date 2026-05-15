@@ -590,6 +590,53 @@ def cmd_config(args: argparse.Namespace) -> None:
             )
             sys.exit(1)
 
+    elif subcmd == "rtk":
+        import shutil
+        from scripts.state import get_setting, list_settings, set_setting
+
+        rtk_sub = args.rtk_action
+        rtk_installed = bool(shutil.which("rtk"))
+
+        if rtk_sub == "status":
+            with _load_conn(project_dir) as conn:
+                enabled = get_setting(conn, "rtk_enabled", default="true")
+            status_dict = {
+                "rtk_installed": rtk_installed,
+                "rtk_enabled": enabled == "true",
+                "rtk_path": shutil.which("rtk"),
+            }
+            if args.json:
+                print(json.dumps(status_dict, indent=2))
+            else:
+                installed_str = f"yes ({shutil.which('rtk')})" if rtk_installed else "no"
+                print(f"RTK installed : {installed_str}")
+                print(f"RTK enabled   : {enabled}")
+                if not rtk_installed:
+                    print("\nInstall: cargo install rtk  OR  brew install reachingforthejack/rtk/rtk")
+                    print("Setup  : rtk init -g --auto-patch")
+
+        elif rtk_sub == "enable":
+            with _load_conn(project_dir) as conn:
+                set_setting(conn, "rtk_enabled", "true")
+            if args.json:
+                print(json.dumps({"rtk_enabled": True}))
+            else:
+                print("RTK enabled for this project.")
+                if not rtk_installed:
+                    print("Warning: rtk binary not found on PATH.")
+
+        elif rtk_sub == "disable":
+            with _load_conn(project_dir) as conn:
+                set_setting(conn, "rtk_enabled", "false")
+            if args.json:
+                print(json.dumps({"rtk_enabled": False}))
+            else:
+                print("RTK disabled for this project.")
+
+        else:
+            print(f"Unknown rtk action: {rtk_sub}", file=sys.stderr)
+            sys.exit(1)
+
     else:
         print(f"Unknown config subcommand: {subcmd}", file=sys.stderr)
         sys.exit(1)
@@ -841,6 +888,13 @@ def build_parser() -> argparse.ArgumentParser:
     config_set_p = config_subs.add_parser("set", help="Set a config key (e.g. model_profile)")
     config_set_p.add_argument("key", choices=["model_profile"], help="Config key to set")
     config_set_p.add_argument("value", help="Config value (e.g. balanced, quality, budget)")
+
+    config_rtk_p = config_subs.add_parser("rtk", help="RTK token-optimization settings")
+    config_rtk_p.add_argument(
+        "rtk_action",
+        choices=["status", "enable", "disable"],
+        help="status: show RTK state | enable/disable: toggle RTK for this project",
+    )
 
     config_p.set_defaults(func=cmd_config)
 

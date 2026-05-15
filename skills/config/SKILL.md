@@ -23,6 +23,7 @@ config, settings, preferences, profile, model, configure, setup
 | `interactive_execute` | true, false | false | Pause after each plan for review |
 | `tdd_required` | true, false | true | Require TDD in execution |
 | `cross_model_review` | true, false | false | Use secondary AI for review |
+| `rtk_enabled` | true, false | true | Use RTK proxy for gate commands when installed |
 
 ## Procedure
 
@@ -78,7 +79,15 @@ with open_project('.') as conn:
 " "$PROFILE"
 ```
 
-4. **Reset to defaults:**
+4. **RTK token optimization:**
+
+```bash
+meridian config rtk status    # Show RTK install state and enabled flag
+meridian config rtk enable    # Enable RTK for gate commands in this project
+meridian config rtk disable   # Disable RTK
+```
+
+5. **Reset to defaults:**
 
 ```bash
 PYTHONPATH=$MERIDIAN_HOME uv run --project $MERIDIAN_HOME -- python -c "
