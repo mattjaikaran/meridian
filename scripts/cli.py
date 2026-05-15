@@ -1,10 +1,10 @@
 """Meridian CLI — top-level entry point for the `meridian` command.
 
 Provides status, next, init, note, fast, dashboard, execute, plan,
-resume, ship, checkpoint, and pause subcommands.
+resume, ship, checkpoint, pause, workstream, and ultraplan subcommands.
 
 Usage:
-    meridian [--project-dir DIR] [--json] status
+    meridian [--project-dir DIR] [--json] status [--all-workstreams]
     meridian [--project-dir DIR] [--json] next
     meridian [--project-dir DIR] [--json] init
     meridian [--project-dir DIR] [--json] note add "text"
@@ -26,6 +26,13 @@ Usage:
     meridian [--project-dir DIR] [--json] workstream list [--status STATUS]
     meridian [--project-dir DIR] [--json] workstream create <name> [--description TEXT]
     meridian [--project-dir DIR] [--json] workstream activate <slug>
+    meridian [--project-dir DIR] [--json] workstream switch <slug>
+    meridian [--project-dir DIR] [--json] workstream status <slug>
+    meridian [--project-dir DIR] [--json] workstream progress
+    meridian [--project-dir DIR] [--json] workstream complete <slug>
+    meridian [--project-dir DIR] [--json] workstream resume <slug>
+    meridian [--project-dir DIR] [--json] workstream assign <milestone-id> <workstream-slug>
+    meridian [--project-dir DIR] [--json] ultraplan [<goal>] [--phase N] [--deep] [--local] [--cloud] [--dry-run]
 """
 
 from __future__ import annotations
@@ -133,6 +140,10 @@ def cmd_status(args: argparse.Namespace) -> None:
     try:
         with _load_conn(project_dir) as conn:
             data = get_status(conn)
+            if getattr(args, "all_workstreams", False):
+                from scripts.workstreams import get_all_workstreams_progress, get_active_workstream
+                data["workstreams"] = get_all_workstreams_progress(conn)
+                data["active_workstream"] = get_active_workstream(conn)
     except Exception as exc:
         print(f"Error reading status: {exc}", file=sys.stderr)
         sys.exit(1)
@@ -140,6 +151,25 @@ def cmd_status(args: argparse.Namespace) -> None:
     if args.json:
         # sqlite3.Row objects are not JSON-serialisable; normalise to plain dicts.
         print(json.dumps(data, default=str, indent=2))
+    elif getattr(args, "all_workstreams", False):
+        print(_fmt_status(data))
+        workstreams = data.get("workstreams", [])
+        active_ws = data.get("active_workstream")
+        active_slug = active_ws["slug"] if active_ws else None
+        print("\n## Workstream Portfolio\n")
+        if not workstreams:
+            print("No workstreams found.")
+        else:
+            print(f"{'Workstream':<20} {'Status':<10} {'Milestones':<12} {'Phases':<10} {'Progress'}")
+            print("-" * 65)
+            for entry in workstreams:
+                ws = entry["workstream"]
+                star = " ★" if ws["slug"] == active_slug else ""
+                ms_count = len(entry.get("milestones", []))
+                total = entry.get("total_phases", 0)
+                done = entry.get("complete_phases", 0)
+                pct = entry.get("overall_pct", 0)
+                print(f"  {ws['slug']:<18} {ws['status']:<10} {ms_count:<12} {done}/{total:<8} {pct}%{star}")
     else:
         print(_fmt_status(data))
 
@@ -687,8 +717,13 @@ def cmd_workstream(args: argparse.Namespace) -> None:
     project_dir = Path(args.project_dir).resolve()
     _check_db(project_dir)
     from scripts.workstreams import (
+        assign_milestone,
+        complete_workstream,
         create_workstream,
+        get_all_workstreams_progress,
+        get_workstream_progress,
         list_workstreams,
+        resume_workstream,
         switch_workstream,
     )
 
@@ -727,7 +762,7 @@ def cmd_workstream(args: argparse.Namespace) -> None:
         else:
             print(f"Created workstream: [{ws['status']}] {ws['name']}  (slug: {ws['slug']}, id: {ws['id']})")
 
-    elif subcmd == "activate":
+    elif subcmd in ("activate", "switch"):
         slug = args.slug
         try:
             with _load_conn(project_dir) as conn:
@@ -743,9 +778,186 @@ def cmd_workstream(args: argparse.Namespace) -> None:
         else:
             print(f"Activated workstream: [{ws['status']}] {ws['name']}  (slug: {ws['slug']})")
 
+    elif subcmd == "status":
+        slug = args.slug
+        try:
+            with _load_conn(project_dir) as conn:
+                progress = get_workstream_progress(conn, slug=slug)
+        except ValueError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            sys.exit(1)
+        except Exception as exc:
+            print(f"Error fetching workstream status: {exc}", file=sys.stderr)
+            sys.exit(1)
+        if args.json:
+            print(json.dumps(progress, default=str, indent=2))
+        else:
+            ws = progress["workstream"]
+            print(f"Workstream: {ws['slug']}")
+            print(f"Name: {ws['name']}")
+            print(f"Status: {ws['status']}")
+            print(f"Progress: {progress['overall_pct']}% ({progress['complete_phases']}/{progress['total_phases']} phases)")
+            milestones = progress.get("milestones", [])
+            if milestones:
+                print("\nMilestones:")
+                for ms in milestones:
+                    print(f"  [{ms['status']}] {ms['name']}  {ms['phase_done']}/{ms['phase_count']} phases ({ms['pct']}%)")
+
+    elif subcmd == "progress":
+        try:
+            with _load_conn(project_dir) as conn:
+                all_progress = get_all_workstreams_progress(conn)
+        except Exception as exc:
+            print(f"Error fetching workstream progress: {exc}", file=sys.stderr)
+            sys.exit(1)
+        if args.json:
+            print(json.dumps(all_progress, default=str, indent=2))
+        else:
+            if not all_progress:
+                print("No workstreams found.")
+            else:
+                print("## Portfolio Progress\n")
+                print(f"{'Workstream':<20} {'Status':<10} {'Milestones':<12} {'Phases':<10} {'Progress'}")
+                print("-" * 65)
+                for entry in all_progress:
+                    ws = entry["workstream"]
+                    ms_count = len(entry.get("milestones", []))
+                    total = entry.get("total_phases", 0)
+                    done = entry.get("complete_phases", 0)
+                    pct = entry.get("overall_pct", 0)
+                    print(f"  {ws['slug']:<18} {ws['status']:<10} {ms_count:<12} {done}/{total:<8} {pct}%")
+
+    elif subcmd == "complete":
+        slug = args.slug
+        try:
+            with _load_conn(project_dir) as conn:
+                ws = complete_workstream(conn, slug=slug)
+        except ValueError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            sys.exit(1)
+        except Exception as exc:
+            print(f"Error completing workstream: {exc}", file=sys.stderr)
+            sys.exit(1)
+        if args.json:
+            print(json.dumps(ws, default=str, indent=2))
+        else:
+            print(f"Completed workstream: [{ws['status']}] {ws['name']}  (slug: {ws['slug']})")
+
+    elif subcmd == "resume":
+        slug = args.slug
+        try:
+            with _load_conn(project_dir) as conn:
+                ws = resume_workstream(conn, slug=slug)
+        except ValueError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            sys.exit(1)
+        except Exception as exc:
+            print(f"Error resuming workstream: {exc}", file=sys.stderr)
+            sys.exit(1)
+        if args.json:
+            print(json.dumps(ws, default=str, indent=2))
+        else:
+            print(f"Resumed workstream: [{ws['status']}] {ws['name']}  (slug: {ws['slug']})")
+
+    elif subcmd == "assign":
+        milestone_id = args.milestone_id
+        workstream_slug = args.workstream_slug
+        try:
+            with _load_conn(project_dir) as conn:
+                assign_milestone(conn, milestone_id=milestone_id, workstream_slug=workstream_slug)
+        except ValueError as exc:
+            print(f"Error: {exc}", file=sys.stderr)
+            sys.exit(1)
+        except Exception as exc:
+            print(f"Error assigning milestone: {exc}", file=sys.stderr)
+            sys.exit(1)
+        if args.json:
+            print(json.dumps({"status": "ok", "milestone_id": milestone_id, "workstream_slug": workstream_slug}))
+        else:
+            print(f"Assigned milestone {milestone_id} to workstream {workstream_slug}")
+
     else:
         print(f"Unknown workstream subcommand: {subcmd}", file=sys.stderr)
         sys.exit(1)
+
+
+def cmd_ultraplan(args: argparse.Namespace) -> None:
+    project_dir = Path(args.project_dir).resolve()
+    _check_db(project_dir)
+    from scripts.ultraplan import check_ultraplan_availability, run_cloud_plan
+
+    force_local = getattr(args, "local", False)
+    force_cloud = getattr(args, "cloud", False)
+    dry_run = getattr(args, "dry_run", False)
+    phase_id = getattr(args, "phase", None)
+    goal = getattr(args, "goal", "") or ""
+
+    # Step 1: Check availability (skip if --local)
+    if force_local:
+        availability = {"available": False, "mode": "local", "version": None, "reason": "--local flag set"}
+    else:
+        try:
+            availability = check_ultraplan_availability(project_dir)
+        except Exception as exc:
+            print(f"Error checking ultraplan availability: {exc}", file=sys.stderr)
+            sys.exit(1)
+
+    if dry_run:
+        if args.json:
+            print(json.dumps(availability, indent=2))
+        else:
+            mode = availability.get("mode", "local").upper()
+            reason = availability.get("reason", "")
+            print(f"## Ultraplan — {mode} Mode (dry-run)\n\n{reason}")
+        return
+
+    # Step 2: Enforce --cloud flag
+    if force_cloud and not availability.get("available"):
+        reason = availability.get("reason", "cloud unavailable")
+        print(f"Error: --cloud required but cloud backend unavailable: {reason}", file=sys.stderr)
+        sys.exit(1)
+
+    mode = "cloud" if availability.get("available") else "local"
+
+    if not args.json:
+        if mode == "cloud":
+            print("## Ultraplan — CLOUD Mode\n\nOffloading plan generation to Claude Code cloud backend.")
+        else:
+            reason = availability.get("reason", "")
+            print(f"## Ultraplan — LOCAL Mode (fallback)\n\nCloud backend unavailable: {reason}\nRunning local planning pipeline.")
+
+    # Step 3: Execute
+    if mode == "cloud":
+        try:
+            result = run_cloud_plan(project_dir, phase_id=phase_id, goal=goal)
+        except Exception as exc:
+            print(f"Error running cloud plan: {exc}", file=sys.stderr)
+            sys.exit(1)
+        if result.get("status") == "failed" and not force_cloud:
+            # Fall back to local
+            mode = "local"
+            if not args.json:
+                print(f"\nCloud plan failed: {result.get('error')} — falling back to local planning.")
+        elif result.get("status") == "failed":
+            print(f"Error: cloud plan failed: {result.get('error')}", file=sys.stderr)
+            sys.exit(1)
+        else:
+            if args.json:
+                print(json.dumps(result, default=str, indent=2))
+            else:
+                plans = result.get("plans", [])
+                paths = result.get("artifact_paths", [])
+                print(f"\n## Ultraplan Complete\n\nMode: CLOUD\nPlans generated: {len(plans)}")
+                if paths:
+                    print("Artifacts: " + ", ".join(str(p) for p in paths))
+                print("\nNext: /meridian:execute")
+            return
+
+    if mode == "local":
+        if not args.json:
+            print("\nInvoke /meridian:plan to run the local planning pipeline.")
+        if args.json:
+            print(json.dumps({"mode": "local", "message": "Run /meridian:plan to continue."}))
 
 
 # ── Argument parser ───────────────────────────────────────────────────────────
@@ -774,6 +986,12 @@ def build_parser() -> argparse.ArgumentParser:
     status_p = subparsers.add_parser(
         "status",
         help="Show full project status (milestone, phase, plans, next action)",
+    )
+    status_p.add_argument(
+        "--all-workstreams",
+        dest="all_workstreams",
+        action="store_true",
+        help="Include workstream portfolio in output",
     )
     status_p.set_defaults(func=cmd_status)
 
@@ -967,7 +1185,66 @@ def build_parser() -> argparse.ArgumentParser:
     ws_activate_p = ws_subs.add_parser("activate", help="Activate (switch to) a workstream")
     ws_activate_p.add_argument("slug", help="Workstream slug to activate")
 
+    ws_switch_p = ws_subs.add_parser("switch", help="Switch to a workstream (alias for activate)")
+    ws_switch_p.add_argument("slug", help="Workstream slug to switch to")
+
+    ws_status_p = ws_subs.add_parser("status", help="Show a workstream's details and milestone progress")
+    ws_status_p.add_argument("slug", help="Workstream slug")
+
+    ws_subs.add_parser("progress", help="Show progress across all workstreams")
+
+    ws_complete_p = ws_subs.add_parser("complete", help="Mark a workstream as complete")
+    ws_complete_p.add_argument("slug", help="Workstream slug")
+
+    ws_resume_p = ws_subs.add_parser("resume", help="Re-activate a paused workstream")
+    ws_resume_p.add_argument("slug", help="Workstream slug")
+
+    ws_assign_p = ws_subs.add_parser("assign", help="Assign a milestone to a workstream")
+    ws_assign_p.add_argument("milestone_id", help="Milestone ID (e.g. M001)")
+    ws_assign_p.add_argument("workstream_slug", help="Workstream slug")
+
     ws_p.set_defaults(func=cmd_workstream)
+
+    # ultraplan
+    ultraplan_p = subparsers.add_parser(
+        "ultraplan",
+        help="Cloud-accelerated planning with local fallback (Phase 39)",
+    )
+    ultraplan_p.add_argument(
+        "goal",
+        nargs="?",
+        default="",
+        help="Planning goal (same as /meridian:plan)",
+    )
+    ultraplan_p.add_argument(
+        "--phase",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Plan a specific phase by ID",
+    )
+    ultraplan_p.add_argument(
+        "--deep",
+        action="store_true",
+        help="Force deep discovery questions before planning",
+    )
+    ultraplan_p.add_argument(
+        "--local",
+        action="store_true",
+        help="Skip cloud check and run local planning directly",
+    )
+    ultraplan_p.add_argument(
+        "--cloud",
+        action="store_true",
+        help="Require cloud backend; fail if unavailable",
+    )
+    ultraplan_p.add_argument(
+        "--dry-run",
+        dest="dry_run",
+        action="store_true",
+        help="Check cloud availability and print mode; do not plan",
+    )
+    ultraplan_p.set_defaults(func=cmd_ultraplan)
 
     return parser
 

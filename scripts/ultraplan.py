@@ -8,7 +8,7 @@ from pathlib import Path
 
 from scripts.db import open_project
 from scripts.logging_config import get_logger
-from scripts.state import get_phase, get_project, get_status
+from scripts.state import get_phase, get_project, get_setting, get_status
 
 logger = get_logger("meridian.ultraplan")
 
@@ -54,17 +54,11 @@ def check_ultraplan_availability(project_dir: str | Path = ".") -> dict:
     project_dir = Path(project_dir)
 
     with open_project(project_dir) as conn:
-        project = get_project(conn)
-
-    config: dict = {}
-    if project and project.get("settings"):
-        try:
-            config = json.loads(project["settings"])
-        except (json.JSONDecodeError, TypeError):
-            config = {}
+        enabled = get_setting(conn, "ultraplan_enabled", default="false")
+        endpoint: str | None = get_setting(conn, "ultraplan_endpoint")
 
     # Check feature flag
-    if not config.get("ultraplan_enabled", False):
+    if enabled not in ("true", "1", "yes"):
         return {
             "available": False,
             "version": None,
@@ -72,7 +66,6 @@ def check_ultraplan_availability(project_dir: str | Path = ".") -> dict:
             "reason": "ultraplan_enabled not set in project config",
         }
 
-    endpoint: str | None = config.get("ultraplan_endpoint")
     if not endpoint:
         return {
             "available": False,
@@ -150,15 +143,7 @@ def run_cloud_plan(
     with open_project(project_dir) as conn:
         project = get_project(conn)
         status = get_status(conn)
-
-        config: dict = {}
-        if project and project.get("settings"):
-            try:
-                config = json.loads(project["settings"])
-            except (json.JSONDecodeError, TypeError):
-                config = {}
-
-        endpoint: str | None = config.get("ultraplan_endpoint")
+        endpoint: str | None = get_setting(conn, "ultraplan_endpoint")
         if not endpoint:
             return {"status": "failed", "error": "ultraplan_endpoint not configured", "plans": [], "artifact_paths": []}
 
@@ -167,9 +152,9 @@ def run_cloud_plan(
         if phase_id is not None:
             target_phase = get_phase(conn, phase_id)
         else:
-            active = status.get("active_phase")
-            if active:
-                target_phase = active
+            current = status.get("current_phase")
+            if current:
+                target_phase = current
 
         if target_phase is None:
             return {"status": "failed", "error": "No phase to plan. Run /meridian:plan first.", "plans": [], "artifact_paths": []}

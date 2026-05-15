@@ -748,6 +748,203 @@ class TestWorkstream:
             main()
         assert exc_info.value.code != 0
 
+    def test_workstream_switch_alias(self, file_db, monkeypatch, capsys):
+        """switch is an alias for activate."""
+        conn, tmp_path = file_db
+        _seed(conn, tmp_path)
+        conn.close()
+        monkeypatch.setattr(
+            "sys.argv",
+            _argv(tmp_path, "workstream", "create", "switch-track", json_flag=True),
+        )
+        main()
+        out = capsys.readouterr().out
+        slug = json.loads(out)["slug"]
+        monkeypatch.setattr("sys.argv", _argv(tmp_path, "workstream", "switch", slug))
+        main()
+        captured = capsys.readouterr()
+        assert "switch-track" in captured.out or captured.out
+
+    def test_workstream_status_happy_path(self, file_db, monkeypatch, capsys):
+        conn, tmp_path = file_db
+        _seed(conn, tmp_path)
+        conn.close()
+        monkeypatch.setattr(
+            "sys.argv",
+            _argv(tmp_path, "workstream", "create", "status-track", json_flag=True),
+        )
+        main()
+        slug = json.loads(capsys.readouterr().out)["slug"]
+        monkeypatch.setattr("sys.argv", _argv(tmp_path, "workstream", "status", slug, json_flag=True))
+        main()
+        data = json.loads(capsys.readouterr().out)
+        assert "workstream" in data
+        assert "overall_pct" in data
+
+    def test_workstream_status_invalid_slug_exits_nonzero(self, file_db, monkeypatch):
+        conn, tmp_path = file_db
+        _seed(conn, tmp_path)
+        conn.close()
+        monkeypatch.setattr("sys.argv", _argv(tmp_path, "workstream", "status", "no-such"))
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code != 0
+
+    def test_workstream_progress_empty(self, file_db, monkeypatch, capsys):
+        conn, tmp_path = file_db
+        _seed(conn, tmp_path)
+        conn.close()
+        monkeypatch.setattr("sys.argv", _argv(tmp_path, "workstream", "progress", json_flag=True))
+        main()
+        data = json.loads(capsys.readouterr().out)
+        assert isinstance(data, list)
+
+    def test_workstream_progress_with_entry(self, file_db, monkeypatch, capsys):
+        conn, tmp_path = file_db
+        _seed(conn, tmp_path)
+        conn.close()
+        monkeypatch.setattr(
+            "sys.argv",
+            _argv(tmp_path, "workstream", "create", "prog-track", json_flag=True),
+        )
+        main()
+        capsys.readouterr()
+        monkeypatch.setattr("sys.argv", _argv(tmp_path, "workstream", "progress", json_flag=True))
+        main()
+        data = json.loads(capsys.readouterr().out)
+        assert len(data) == 1
+        assert data[0]["workstream"]["slug"] == "prog-track"
+
+    def test_workstream_complete_happy_path(self, file_db, monkeypatch, capsys):
+        conn, tmp_path = file_db
+        _seed(conn, tmp_path)
+        conn.close()
+        monkeypatch.setattr(
+            "sys.argv",
+            _argv(tmp_path, "workstream", "create", "done-track", json_flag=True),
+        )
+        main()
+        slug = json.loads(capsys.readouterr().out)["slug"]
+        monkeypatch.setattr("sys.argv", _argv(tmp_path, "workstream", "complete", slug, json_flag=True))
+        main()
+        data = json.loads(capsys.readouterr().out)
+        assert data["status"] == "complete"
+
+    def test_workstream_complete_invalid_slug_exits_nonzero(self, file_db, monkeypatch):
+        conn, tmp_path = file_db
+        _seed(conn, tmp_path)
+        conn.close()
+        monkeypatch.setattr("sys.argv", _argv(tmp_path, "workstream", "complete", "no-such"))
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code != 0
+
+    def test_workstream_resume_after_pause(self, file_db, monkeypatch, capsys):
+        conn, tmp_path = file_db
+        _seed(conn, tmp_path)
+        conn.close()
+        # Create and activate first workstream (sets it as active in session)
+        monkeypatch.setattr(
+            "sys.argv",
+            _argv(tmp_path, "workstream", "create", "resume-track", json_flag=True),
+        )
+        main()
+        slug = json.loads(capsys.readouterr().out)["slug"]
+        monkeypatch.setattr("sys.argv", _argv(tmp_path, "workstream", "activate", slug))
+        main()
+        capsys.readouterr()
+        # Create a second workstream and switch to it (pauses first)
+        monkeypatch.setattr(
+            "sys.argv",
+            _argv(tmp_path, "workstream", "create", "other-track", json_flag=True),
+        )
+        main()
+        other_slug = json.loads(capsys.readouterr().out)["slug"]
+        monkeypatch.setattr("sys.argv", _argv(tmp_path, "workstream", "activate", other_slug))
+        main()
+        capsys.readouterr()
+        # Now resume the first one directly (without switching session)
+        monkeypatch.setattr("sys.argv", _argv(tmp_path, "workstream", "resume", slug, json_flag=True))
+        main()
+        data = json.loads(capsys.readouterr().out)
+        assert data["status"] == "active"
+
+    def test_workstream_resume_invalid_slug_exits_nonzero(self, file_db, monkeypatch):
+        conn, tmp_path = file_db
+        _seed(conn, tmp_path)
+        conn.close()
+        monkeypatch.setattr("sys.argv", _argv(tmp_path, "workstream", "resume", "no-such"))
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code != 0
+
+    def test_workstream_assign_happy_path(self, file_db, monkeypatch, capsys):
+        conn, tmp_path = file_db
+        _seed_with_milestone(conn, tmp_path)
+        conn.close()
+        monkeypatch.setattr(
+            "sys.argv",
+            _argv(tmp_path, "workstream", "create", "assign-track", json_flag=True),
+        )
+        main()
+        capsys.readouterr()
+        monkeypatch.setattr(
+            "sys.argv",
+            _argv(tmp_path, "workstream", "assign", "M001", "assign-track", json_flag=True),
+        )
+        main()
+        data = json.loads(capsys.readouterr().out)
+        assert data["status"] == "ok"
+        assert data["milestone_id"] == "M001"
+
+    def test_workstream_assign_invalid_workstream_exits_nonzero(self, file_db, monkeypatch):
+        conn, tmp_path = file_db
+        _seed_with_milestone(conn, tmp_path)
+        conn.close()
+        monkeypatch.setattr(
+            "sys.argv",
+            _argv(tmp_path, "workstream", "assign", "M001", "no-such"),
+        )
+        with pytest.raises(SystemExit) as exc_info:
+            main()
+        assert exc_info.value.code != 0
+
+
+class TestStatusAllWorkstreams:
+    def test_all_workstreams_flag_no_workstreams(self, file_db, monkeypatch, capsys):
+        conn, tmp_path = file_db
+        _seed(conn, tmp_path)
+        conn.close()
+        monkeypatch.setattr("sys.argv", _argv(tmp_path, "status", "--all-workstreams"))
+        main()
+        captured = capsys.readouterr()
+        assert captured.out
+
+    def test_all_workstreams_flag_json(self, file_db, monkeypatch, capsys):
+        conn, tmp_path = file_db
+        _seed(conn, tmp_path)
+        conn.close()
+        monkeypatch.setattr("sys.argv", _argv(tmp_path, "status", "--all-workstreams", json_flag=True))
+        main()
+        data = json.loads(capsys.readouterr().out)
+        assert "workstreams" in data
+
+    def test_all_workstreams_flag_with_entries(self, file_db, monkeypatch, capsys):
+        conn, tmp_path = file_db
+        _seed(conn, tmp_path)
+        conn.close()
+        monkeypatch.setattr(
+            "sys.argv",
+            _argv(tmp_path, "workstream", "create", "ws-alpha", json_flag=True),
+        )
+        main()
+        capsys.readouterr()
+        monkeypatch.setattr("sys.argv", _argv(tmp_path, "status", "--all-workstreams", json_flag=True))
+        main()
+        data = json.loads(capsys.readouterr().out)
+        assert len(data["workstreams"]) == 1
+        assert data["workstreams"][0]["workstream"]["slug"] == "ws-alpha"
+
 
 # ── project-dir routing ───────────────────────────────────────────────────────
 
