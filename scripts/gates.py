@@ -8,10 +8,38 @@ Uses only the standard library (no external dependencies).
 
 import re
 import shlex
+import shutil
 import subprocess
 from pathlib import Path
 
 from scripts.nyquist import parse_validation_md
+
+
+def _rtk_prefix(cmd: str, project_dir: str | Path = ".") -> str:
+    """Prepend 'rtk test' or 'rtk err' to a test/lint command if RTK is available.
+
+    Reads rtk_enabled from the project settings; falls back to True when no DB.
+    Only prefixes pytest/ruff/mypy commands to keep output compact.
+    """
+    if not shutil.which("rtk"):
+        return cmd
+
+    try:
+        from scripts.db import get_db_path, open_project
+        from scripts.state import get_setting
+        db_path = get_db_path(Path(project_dir))
+        if db_path.exists():
+            with open_project(Path(project_dir)) as conn:
+                enabled = get_setting(conn, "rtk_enabled", default="true")
+            if enabled != "true":
+                return cmd
+    except Exception:
+        pass  # if DB is unavailable, default to enabled
+
+    first_token = shlex.split(cmd)[0] if cmd.strip() else ""
+    if any(tok in first_token for tok in ("pytest", "ruff", "mypy", "flake8")):
+        return f"rtk test {cmd}"
+    return cmd
 
 # ── Stub Detection (Plan 03) ────────────────────────────────────────────────
 
@@ -132,7 +160,7 @@ def run_regression_gate(
     all_passed = True
 
     for entry in commands:
-        cmd = entry["command"]
+        cmd = _rtk_prefix(entry["command"], repo_path)
         phase_num = entry["phase_num"]
 
         try:
