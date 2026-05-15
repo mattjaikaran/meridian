@@ -33,6 +33,7 @@ Usage:
     meridian [--project-dir DIR] [--json] workstream resume <slug>
     meridian [--project-dir DIR] [--json] workstream assign <milestone-id> <workstream-slug>
     meridian [--project-dir DIR] [--json] ultraplan [<goal>] [--phase N] [--deep] [--local] [--cloud] [--dry-run]
+    meridian [--project-dir DIR] [--json] stats
 """
 
 from __future__ import annotations
@@ -881,6 +882,21 @@ def cmd_workstream(args: argparse.Namespace) -> None:
         sys.exit(1)
 
 
+def cmd_stats(args: argparse.Namespace) -> None:
+    project_dir = Path(args.project_dir).resolve()
+    _check_db(project_dir)
+    from scripts.db import open_project
+    from scripts.stats import compute_stats, format_stats
+
+    with open_project(project_dir) as conn:
+        data = compute_stats(conn, project_dir)
+
+    if args.json:
+        print(json.dumps(data, default=str, indent=2))
+    else:
+        print(format_stats(data))
+
+
 def cmd_ultraplan(args: argparse.Namespace) -> None:
     project_dir = Path(args.project_dir).resolve()
     _check_db(project_dir)
@@ -1204,6 +1220,13 @@ def build_parser() -> argparse.ArgumentParser:
     ws_assign_p.add_argument("workstream_slug", help="Workstream slug")
 
     ws_p.set_defaults(func=cmd_workstream)
+
+    # stats
+    stats_p = subparsers.add_parser(
+        "stats",
+        help="Show project statistics (phases, plans, git, tests, velocity)",
+    )
+    stats_p.set_defaults(func=cmd_stats)
 
     # ultraplan
     ultraplan_p = subparsers.add_parser(
