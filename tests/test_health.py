@@ -7,6 +7,7 @@ from scripts.health import (
     check_artifact_consistency,
     check_db_integrity,
     check_orphaned_rows,
+    check_rtk_installation,
     check_schema_version,
     check_stuck_phases,
     repair,
@@ -263,3 +264,19 @@ class TestRunHealthCheck:
         result = run_health_check(tmp_path, do_repair=True, stuck_threshold_hours=4)
         assert result["status"] == "ok"
         assert len(result["repair_log"]) >= 1
+
+
+class TestRtkInstallation:
+    def test_rtk_found(self, monkeypatch):
+        monkeypatch.setattr("shutil.which", lambda cmd: "/usr/local/bin/rtk" if cmd == "rtk" else None)
+        results = check_rtk_installation()
+        assert len(results) == 1
+        assert results[0]["level"] == "info"
+        assert results[0]["check"] == "rtk_installation"
+
+    def test_rtk_missing(self, monkeypatch):
+        monkeypatch.setattr("shutil.which", lambda cmd: None)
+        results = check_rtk_installation()
+        assert len(results) == 1
+        assert results[0]["level"] == "warning"
+        assert "RTK not found" in results[0]["message"]

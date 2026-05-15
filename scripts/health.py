@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Meridian health check — DB integrity, artifact consistency, stuck phase detection."""
 
+import shutil
 import sqlite3
 from datetime import timedelta
 from pathlib import Path
@@ -219,6 +220,28 @@ def check_stuck_phases(
     return findings
 
 
+# ── RTK tooling ───────────────────────────────────────────────────────────────
+
+
+def check_rtk_installation() -> list[dict]:
+    """Check whether the RTK token-optimization proxy is installed."""
+    if shutil.which("rtk"):
+        return [{
+            "level": "info",
+            "check": "rtk_installation",
+            "message": "RTK is installed. Token optimization active.",
+        }]
+    return [{
+        "level": "warning",
+        "check": "rtk_installation",
+        "message": (
+            "RTK not found. Install with: cargo install rtk  "
+            "or brew install reachingforthejack/rtk/rtk  "
+            "then run: rtk init -g --auto-patch"
+        ),
+    }]
+
+
 # ── Context utilization ───────────────────────────────────────────────────────
 
 
@@ -322,6 +345,7 @@ def run_health_check(
         findings.extend(check_artifact_consistency(conn, project_dir))
         findings.extend(check_stuck_phases(conn, stuck_threshold_hours))
         findings.extend(check_context_window(used_tokens))
+        findings.extend(check_rtk_installation())
         return findings
 
     with open_project(project_dir) as conn:
