@@ -164,7 +164,7 @@ class TestCompleteMilestone:
         assert result["status"] == "complete"
         assert result["summary"]["phases_count"] == 1
         assert result["summary"]["plans_count"] == 2
-        assert "milestone/v1" in result["git_tag"]
+        assert result["git_tag"].startswith("v")
 
     def test_reject_incomplete(self, db):
         ms = _ms(db)

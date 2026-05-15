@@ -2,6 +2,7 @@
 """Milestone lifecycle management — audit, complete, archive, and summarize."""
 
 import logging
+import re
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
@@ -192,6 +193,23 @@ def persist_milestone_summary(
     return out_path
 
 
+def _derive_git_tag(milestone_name: str, milestone_id: str) -> str:
+    """Derive a semver git tag from the milestone name.
+
+    Looks for vX.Y or vX.Y.Z at the start of the name. If found, normalises to
+    vX.Y.Z (appending .0 if patch is absent). Falls back to v{id} using just
+    the numeric part of the id (e.g. 'm9' → 'v9.0.0'), so we never produce
+    the opaque 'milestone/{id}' form.
+    """
+    m = re.search(r"v(\d+)\.(\d+)(?:\.(\d+))?", milestone_name)
+    if m:
+        major, minor, patch = m.group(1), m.group(2), m.group(3) or "0"
+        return f"v{major}.{minor}.{patch}"
+    # Strip leading letters from id ('m9' → '9')
+    numeric = re.sub(r"[^0-9]", "", milestone_id) or "0"
+    return f"v{numeric}.0.0"
+
+
 @retry_on_busy()
 def complete_milestone(
     conn: sqlite3.Connection,
@@ -230,7 +248,7 @@ def complete_milestone(
     finished = _parse_iso(completed["completed_at"])
     duration_days = (finished - created).days if created and finished else 0
 
-    git_tag = f"milestone/{milestone_id}"
+    git_tag = _derive_git_tag(milestone.get("name", ""), milestone_id)
 
     summary = {
         "phases_count": audit["stats"]["total_phases"],
