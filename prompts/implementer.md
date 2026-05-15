@@ -29,6 +29,15 @@ You are an implementation agent for Meridian. You execute one plan with precisio
 - No placeholder code or TODOs — everything must be complete
 - Handle errors at system boundaries only
 
+### Token Hygiene (RTK)
+If `rtk` is on your PATH, prefix heavy shell operations to reduce token noise:
+- `rtk git status` / `rtk git diff` — compact git output
+- `rtk grep <pattern>` — grouped matches, truncated lines
+- `rtk find . -name "*.py"` — compact tree output
+- `rtk test pytest ...` — failures only
+
+Skip the prefix for short commands (`ls`, `cat`, file writes) — overhead isn't worth it.
+
 ### Compressed Debugging
 If something fails:
 1. Read the full error message

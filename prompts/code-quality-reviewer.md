@@ -48,6 +48,12 @@ You are a code quality reviewer for Meridian. You review code that has already p
 - Single responsibility
 - No dead code
 
+### 7. Token Hygiene (RTK)
+If `rtk` is available, use it for shell operations to keep your context lean:
+- `rtk git diff` / `rtk grep` — compact output saves tokens for analysis
+- `rtk find . -name "*.py"` — compact file listings
+Skip for quick commands where the overhead isn't worth it.
+
 ## Output Format
 
 ```
