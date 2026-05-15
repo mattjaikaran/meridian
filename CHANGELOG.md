@@ -2,6 +2,19 @@
 
 All notable changes to Meridian.
 
+## v0.6.0 — 2026-05-15
+
+### Fixed
+- **`audit-uat` reads `human_verification:` from VERIFICATION.md frontmatter** — frontmatter block-sequence lists are now collected alongside body-parsed items, eliminating false-positive open gaps at milestone completion (GSD #2788)
+- **`_parse_frontmatter` handles YAML block sequences** — keys with no inline value followed by `- item` lines now produce a `list` instead of an empty string; used by `audit-uat` and nyquist validation passes
+
+### Added
+- **Context utilization guard (60%/70%)** — `check_context_utilization()` in `context_window.py` returns `ok`/`warn`/`critical` based on fraction of context window consumed; `run_health_check(used_tokens=N)` surfaces warn at ≥60% and critical at ≥70% with `/meridian:thread` guidance (GSD #2792)
+- **Milestone-archive layout scan in health check** — `check_artifact_consistency` now scans both `.planning/phases/` and `.planning/milestones/v*-phases/` directories, preventing spurious W006 warnings for phases archived to milestone layout (GSD #3164)
+- **`claude-opus-4-7` added to `MODEL_CONTEXT_SIZES`** — `context_awareness.py` now maps the latest Opus model to its 1M-token context window (GSD #2733)
+
+---
+
 ## v0.5.0 — 2026-03-27
 
 ### Breaking Changes

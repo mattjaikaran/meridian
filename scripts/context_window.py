@@ -13,6 +13,11 @@ AUTO_CHECKPOINT_TOKENS = 150_000
 # Subagent fresh context budget
 SUBAGENT_CONTEXT_BUDGET = 200_000
 
+# Context utilization thresholds (fraction of total window)
+# 60% → warn; 70% → critical (reasoning quality may degrade)
+CONTEXT_WARN_PCT: float = 0.60
+CONTEXT_CRITICAL_PCT: float = 0.70
+
 
 def estimate_tokens(text: str) -> int:
     """Rough token estimate from character count."""
@@ -63,6 +68,27 @@ def estimate_plan_context(
 def fits_in_subagent(estimated_tokens: int) -> bool:
     """Check if a plan's context fits in a subagent's budget."""
     return estimated_tokens < SUBAGENT_CONTEXT_BUDGET
+
+
+def check_context_utilization(
+    used_tokens: int,
+    window_size: int = SUBAGENT_CONTEXT_BUDGET,
+) -> dict:
+    """Check context utilization against warn/critical thresholds.
+
+    Returns a dict with: pct, level ("ok" | "warn" | "critical"), message.
+    """
+    pct = used_tokens / window_size if window_size > 0 else 0.0
+    if pct >= CONTEXT_CRITICAL_PCT:
+        level = "critical"
+        message = f"Context {pct:.0%} used — reasoning quality may degrade. Consider /meridian:thread."
+    elif pct >= CONTEXT_WARN_PCT:
+        level = "warn"
+        message = f"Context {pct:.0%} used — consider /meridian:thread."
+    else:
+        level = "ok"
+        message = f"Context {pct:.0%} used."
+    return {"pct": round(pct, 4), "level": level, "message": message, "used": used_tokens, "total": window_size}
 
 
 if __name__ == "__main__":

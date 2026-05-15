@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 
 # Known model context sizes (tokens)
 MODEL_CONTEXT_SIZES: dict[str, int] = {
+    "claude-opus-4-7": 1_000_000,
     "claude-opus-4-6": 1_000_000,
     "claude-opus-4": 200_000,
     "claude-sonnet-4": 200_000,

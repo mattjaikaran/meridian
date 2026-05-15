@@ -26,14 +26,36 @@ def _parse_frontmatter(text: str) -> tuple[dict | None, str]:
     fm_text = match.group(1)
     body = match.group(2)
     fm: dict = {}
+    current_list_key: str | None = None
 
-    for line in fm_text.split("\n"):
-        line = line.strip()
-        if not line or ":" not in line:
+    for raw_line in fm_text.split("\n"):
+        stripped = raw_line.strip()
+        if not stripped:
+            current_list_key = None
             continue
-        key, _, value = line.partition(":")
+
+        # YAML block sequence item under current_list_key
+        if stripped.startswith("- ") and current_list_key is not None:
+            item = stripped[2:].strip().strip('"').strip("'")
+            if isinstance(fm.get(current_list_key), list):
+                fm[current_list_key].append(item)
+            continue
+
+        if ":" not in stripped:
+            current_list_key = None
+            continue
+
+        key, _, value = stripped.partition(":")
         key = key.strip()
         value = value.strip().strip('"').strip("'")
+
+        if value == "":
+            # Possible block-sequence value on following lines
+            current_list_key = key
+            fm[key] = []
+            continue
+
+        current_list_key = None
 
         # Type coercion for known patterns
         if value.lower() == "true":

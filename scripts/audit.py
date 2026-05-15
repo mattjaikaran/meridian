@@ -132,13 +132,18 @@ def collect_verification_debt(
             if fm:
                 phase_result["status"] = fm.get("status", "unknown")
 
-        # Check VERIFICATION.md for human verification items
+        # Check VERIFICATION.md for human verification items (body + frontmatter)
         ver_md = _find_verification_md(phase_dir)
         if ver_md is not None:
             ver_text = ver_md.read_text()
-            phase_result["pending_human"] = _extract_human_verification_items(
-                ver_text
-            )
+            fm_ver, ver_body = _parse_frontmatter(ver_text)
+            pending: list[dict[str, str]] = _extract_human_verification_items(ver_body)
+            # Also read human_verification: list from frontmatter
+            if fm_ver and isinstance(fm_ver.get("human_verification"), list):
+                for item in fm_ver["human_verification"]:
+                    if isinstance(item, str) and item:
+                        pending.append({"title": item, "status": "pending"})
+            phase_result["pending_human"] = pending
 
         phase_result["has_debt"] = bool(
             phase_result["unchecked_signoff"] or phase_result["pending_human"]

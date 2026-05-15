@@ -5,6 +5,7 @@ import sqlite3
 from datetime import timedelta
 from pathlib import Path
 
+from scripts.context_window import SUBAGENT_CONTEXT_BUDGET, check_context_utilization
 from scripts.db import SCHEMA_VERSION, get_db_path, open_project
 from scripts.utils import now_dt as _now, parse_dt as _parse_dt, phase_slug as _phase_slug
 
@@ -104,13 +105,32 @@ def check_orphaned_rows(conn: sqlite3.Connection) -> list[dict]:
 # ── Artifact consistency ──────────────────────────────────────────────────────
 
 
+def _collect_phase_dirs(project_dir: Path) -> list[Path]:
+    """Collect all phase artifact directories from flat and milestone-archive layouts.
+
+    Scans:
+    - .planning/phases/ (flat layout)
+    - .planning/milestones/v*-phases/ (milestone-archive layout, post-archive)
+    """
+    dirs: list[Path] = []
+    flat = project_dir / ".planning" / "phases"
+    if flat.is_dir():
+        dirs.append(flat)
+    milestones_root = project_dir / ".planning" / "milestones"
+    if milestones_root.is_dir():
+        for entry in sorted(milestones_root.iterdir()):
+            if entry.is_dir() and entry.name.endswith("-phases"):
+                dirs.append(entry)
+    return dirs
+
+
 def check_artifact_consistency(
     conn: sqlite3.Connection,
     project_dir: Path,
 ) -> list[dict]:
-    """Compare .planning/phases/ artifact dirs against DB phase records."""
+    """Compare .planning/phases/ and milestone-archive dirs against DB phase records."""
     findings = []
-    planning_dir = project_dir / ".planning" / "phases"
+    phase_roots = _collect_phase_dirs(project_dir)
 
     milestones = conn.execute("SELECT id FROM milestone").fetchall()
     db_phases: dict[str, dict] = {}
@@ -123,13 +143,17 @@ def check_artifact_consistency(
             slug = _phase_slug(dict(ph))
             db_phases[slug] = dict(ph)
 
-    if not planning_dir.exists():
+    if not phase_roots:
         return []
 
-    for entry in sorted(planning_dir.iterdir()):
-        if not entry.is_dir():
-            continue
-        slug = entry.name
+    # Collect known on-disk slugs across all roots
+    on_disk: dict[str, Path] = {}
+    for root in phase_roots:
+        for entry in sorted(root.iterdir()):
+            if entry.is_dir():
+                on_disk[entry.name] = entry
+
+    for slug in on_disk:
         if slug not in db_phases:
             findings.append({
                 "level": "info",
@@ -139,18 +163,16 @@ def check_artifact_consistency(
 
     active_statuses = {"planned_out", "executing", "verifying", "reviewing", "complete"}
     for slug, phase in db_phases.items():
-        if phase["status"] in active_statuses:
-            phase_dir = planning_dir / slug
-            if not phase_dir.exists():
-                findings.append({
-                    "level": "warning",
-                    "check": "artifact_consistency",
-                    "message": (
-                        f"Phase '{phase['name']}' (id={phase['id']},"
-                        f" status={phase['status']}) has no artifact dir"
-                        f" at .planning/phases/{slug}/"
-                    ),
-                })
+        if phase["status"] in active_statuses and slug not in on_disk:
+            findings.append({
+                "level": "warning",
+                "check": "artifact_consistency",
+                "message": (
+                    f"Phase '{phase['name']}' (id={phase['id']},"
+                    f" status={phase['status']}) has no artifact dir"
+                    f" at .planning/phases/{slug}/"
+                ),
+            })
 
     return findings
 
@@ -195,6 +217,29 @@ def check_stuck_phases(
             })
 
     return findings
+
+
+# ── Context utilization ───────────────────────────────────────────────────────
+
+
+def check_context_window(
+    used_tokens: int | None = None,
+    window_size: int = SUBAGENT_CONTEXT_BUDGET,
+) -> list[dict]:
+    """Check context-window utilization at 60% (warn) and 70% (critical) thresholds.
+
+    Returns an empty list when used_tokens is not provided (unknown utilization).
+    """
+    if used_tokens is None:
+        return []
+    result = check_context_utilization(used_tokens, window_size)
+    if result["level"] == "ok":
+        return []
+    return [{
+        "level": "warning" if result["level"] == "warn" else "error",
+        "check": "context_window",
+        "message": result["message"],
+    }]
 
 
 # ── Repair ────────────────────────────────────────────────────────────────────
@@ -246,6 +291,7 @@ def run_health_check(
     project_dir: Path | None = None,
     do_repair: bool = False,
     stuck_threshold_hours: int = 4,
+    used_tokens: int | None = None,
 ) -> dict:
     """Run all health checks and optionally apply repairs.
 
@@ -275,6 +321,7 @@ def run_health_check(
         findings.extend(check_orphaned_rows(conn))
         findings.extend(check_artifact_consistency(conn, project_dir))
         findings.extend(check_stuck_phases(conn, stuck_threshold_hours))
+        findings.extend(check_context_window(used_tokens))
         return findings
 
     with open_project(project_dir) as conn:
