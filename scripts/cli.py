@@ -162,6 +162,40 @@ def cmd_next(args: argparse.Namespace) -> None:
         print(_fmt_next(data))
 
 
+def _suggest_rtk_exclusions() -> str | None:
+    """Return a setup hint when RTK is installed but scripts/*.py is not excluded.
+
+    Returns a message string, or None if RTK is not installed.
+    """
+    import shutil
+    import tomllib
+
+    if not shutil.which("rtk"):
+        return None
+
+    config_paths = [
+        Path.home() / "Library" / "Application Support" / "rtk" / "config.toml",
+        Path.home() / ".config" / "rtk" / "config.toml",
+    ]
+    config_path = next((p for p in config_paths if p.exists()), None)
+
+    if config_path is not None:
+        try:
+            with open(config_path, "rb") as f:
+                cfg = tomllib.load(f)
+            ignore_files = cfg.get("filters", {}).get("ignore_files", [])
+            if "scripts/*.py" in ignore_files:
+                return None  # already configured
+        except Exception:
+            pass
+
+    return (
+        "RTK detected. Add 'scripts/*.py' to [filters] ignore_files in your RTK config "
+        "to prevent internal Meridian scripts from flooding grep/find output. "
+        "Run: rtk config"
+    )
+
+
 def cmd_init(args: argparse.Namespace) -> None:
     project_dir = Path(args.project_dir).resolve()
     from scripts.db import init as db_init
@@ -172,10 +206,17 @@ def cmd_init(args: argparse.Namespace) -> None:
         print(f"Error initializing Meridian: {exc}", file=sys.stderr)
         sys.exit(1)
 
+    rtk_msg = _suggest_rtk_exclusions()
+
     if args.json:
-        print(json.dumps({"status": "ok", "db_path": str(db_path)}, indent=2))
+        payload: dict = {"status": "ok", "db_path": str(db_path)}
+        if rtk_msg:
+            payload["rtk"] = rtk_msg
+        print(json.dumps(payload, indent=2))
     else:
         print(f"Meridian initialized at {db_path}")
+        if rtk_msg:
+            print(f"  {rtk_msg}")
 
 
 def cmd_note(args: argparse.Namespace) -> None:
