@@ -1,3 +1,8 @@
+---
+name: meridian:remove-phase
+description: "Use when you need Meridian to phase — Remove Phase."
+---
+
 # /meridian:remove-phase — Remove Phase
 
 Remove a planned phase and renumber subsequent phases.

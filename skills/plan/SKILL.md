@@ -1,3 +1,8 @@
+---
+name: meridian:plan
+description: "Use when you need Meridian to planning Pipeline."
+---
+
 # /meridian:plan — Planning Pipeline
 
 Brainstorm → Context Gather → Generate Plans with Wave Assignments.

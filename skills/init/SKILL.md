@@ -1,3 +1,8 @@
+---
+name: meridian:init
+description: "Use when you need Meridian to initialize Meridian in Current Project."
+---
+
 # /meridian:init — Initialize Meridian in Current Project
 
 Initialize Meridian state tracking in the current project directory.

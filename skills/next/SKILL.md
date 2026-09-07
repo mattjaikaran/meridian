@@ -1,3 +1,8 @@
+---
+name: meridian:next
+description: "Use when you need Meridian to advance to Next Workflow Step."
+---
+
 # /meridian:next — Advance to Next Workflow Step
 
 Auto-detect the current workflow state and advance to the next logical step.

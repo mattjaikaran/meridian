@@ -1,3 +1,8 @@
+---
+name: meridian:pause
+description: "Use when you need Meridian to session Handoff."
+---
+
 # /meridian:pause — Session Handoff
 
 Create a structured HANDOFF.json before ending a session. The next `/meridian:resume` will incorporate this context for richer restoration.

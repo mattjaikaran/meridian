@@ -1,3 +1,8 @@
+---
+name: meridian:research-phase
+description: "Use when you need Meridian to phase — Research Phase Type."
+---
+
 # /meridian:research-phase — Research Phase Type
 
 Spawns 3 parallel researcher subagents (domain, technical, competitive) for an upcoming

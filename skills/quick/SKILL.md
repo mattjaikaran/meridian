@@ -1,3 +1,8 @@
+---
+name: meridian:quick
+description: "Use when you need Meridian to lightweight Quick Task."
+---
+
 # /meridian:quick — Lightweight Quick Task
 
 Execute a small task without phase/plan overhead. Still tracked in SQLite.

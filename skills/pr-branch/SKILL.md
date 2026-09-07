@@ -1,3 +1,8 @@
+---
+name: meridian:pr-branch
+description: "Use when you need Meridian to branch — Create Clean PR Branch."
+---
+
 # /meridian:pr-branch — Create Clean PR Branch
 
 Create a PR-ready branch with only code-relevant commits, filtering out `.planning/` and `.meridian/` changes.

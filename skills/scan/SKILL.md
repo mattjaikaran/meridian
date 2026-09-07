@@ -1,3 +1,8 @@
+---
+name: meridian:scan
+description: "Use when you need Meridian to codebase Audit & Work Discovery."
+---
+
 # /meridian:scan — Codebase Audit & Work Discovery
 
 Analyze a codebase with parallel agents to discover issues, tech debt, and work items. Produces a prioritized audit report and optionally creates a milestone with phases/plans from findings.

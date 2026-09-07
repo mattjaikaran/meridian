@@ -1,3 +1,8 @@
+---
+name: meridian:validate
+description: "Use when you need Meridian to git State Validation."
+---
+
 # /meridian:validate — Git State Validation
 
 Check that completed plans in the DB have valid commit SHAs in the git repo.

@@ -1,3 +1,8 @@
+---
+name: meridian:seed
+description: "Use when you need Meridian to backlog Seed Management."
+---
+
 # /meridian:seed — Backlog Seed Management
 
 Capture forward-looking ideas with optional trigger conditions. Seeds are parked in .meridian/backlog.md and surface when their triggers are met.

@@ -1,3 +1,8 @@
+---
+name: meridian:spike-wrap-up
+description: "Use when you need Meridian to wrap-up — Close a Spike and Extract Learnings."
+---
+
 # /meridian:spike-wrap-up — Close a Spike and Extract Learnings
 
 Concludes a spike: records the outcome, extracts learnings into the DB, and closes

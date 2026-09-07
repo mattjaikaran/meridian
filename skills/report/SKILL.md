@@ -1,3 +1,8 @@
+---
+name: meridian:report
+description: "Use when you need Meridian to session Report."
+---
+
 # /meridian:report — Session Report
 
 Generate an end-of-session summary with work done, token estimate, and next action.

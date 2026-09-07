@@ -1,3 +1,8 @@
+---
+name: meridian:config
+description: "Use when you need Meridian to workflow Configuration."
+---
+
 # /meridian:config — Workflow Configuration
 
 View and modify Meridian workflow preferences. Settings are stored in the SQLite settings table and respected by plan, execute, and review commands.

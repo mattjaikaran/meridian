@@ -1,3 +1,8 @@
+---
+name: meridian:complete-milestone
+description: "Use when you need Meridian to milestone — Complete Milestone."
+---
+
 # /meridian:complete-milestone — Complete Milestone
 
 Audit readiness, mark the milestone complete, create a git tag, persist a summary,

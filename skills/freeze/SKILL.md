@@ -1,3 +1,8 @@
+---
+name: meridian:freeze
+description: "Use when you need Meridian to edit Scope Lock."
+---
+
 # /meridian:freeze — Edit Scope Lock
 
 Lock edits to a specific directory during focused work. Advisory safety net to prevent accidental edits outside scope.

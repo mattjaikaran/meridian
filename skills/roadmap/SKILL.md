@@ -1,3 +1,8 @@
+---
+name: meridian:roadmap
+description: "Use when you need Meridian to cross-Milestone Roadmap."
+---
+
 # /meridian:roadmap — Cross-Milestone Roadmap
 
 Display a high-level roadmap view across all milestones with phase progress and ETA.

@@ -1,3 +1,8 @@
+---
+name: meridian:status
+description: "Use when you need Meridian to show Project Status."
+---
+
 # /meridian:status — Show Project Status
 
 Display current Meridian state: progress, phase status, blockers, and computed next action.

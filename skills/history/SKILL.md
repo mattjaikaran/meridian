@@ -1,3 +1,8 @@
+---
+name: meridian:history
+description: "Use when you need Meridian to event Timeline."
+---
+
 # /meridian:history — Event Timeline
 
 Display state transition history for Meridian entities.

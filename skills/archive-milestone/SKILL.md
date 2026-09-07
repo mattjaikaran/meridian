@@ -1,3 +1,8 @@
+---
+name: meridian:archive-milestone
+description: "Use when you need Meridian to milestone — Archive Milestone."
+---
+
 # /meridian:archive-milestone — Archive Milestone
 
 Transition a completed milestone to `archived` status, marking it as historical record.

@@ -1,3 +1,8 @@
+---
+name: meridian:do
+description: "Use when you need Meridian to freeform Command Router."
+---
+
 # /meridian:do — Freeform Command Router
 
 Route natural language to the correct /meridian:* command. Just describe what you want to do.
@@ -23,7 +28,7 @@ print(json.dumps(result, indent=2))
 ### Step 2: Handle Result
 - **exact/confident match**: Show the matched command and confirm before executing
 - **ambiguous**: Show top 3 candidates and ask user to pick
-- **none**: Suggest /meridian:help
+- **none**: Show `/meridian:do` usage and the available skills from the root index
 
 ### Step 3: Execute
 Run the matched /meridian:* command with appropriate arguments.

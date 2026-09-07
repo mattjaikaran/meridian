@@ -1,3 +1,8 @@
+---
+name: meridian:verify-phase
+description: "Use when you need Meridian to phase -- Nyquist Compliance Check."
+---
+
 # /meridian:verify-phase -- Nyquist Compliance Check
 
 Check VALIDATION.md frontmatter presence and currency for phases. Does NOT re-run tests -- only reads existing frontmatter.

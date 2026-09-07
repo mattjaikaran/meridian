@@ -1,3 +1,8 @@
+---
+name: meridian:ui-phase
+description: "Use when you need Meridian to phase — UI Phase Type."
+---
+
 # /meridian:ui-phase — UI Phase Type
 
 Spawns 3 parallel subagents (design, components, UX/accessibility) for a phase that

@@ -85,6 +85,18 @@ class TestExtractMetadata:
         result = extract_metadata(skill_dir / "SKILL.md")
         assert result["description"] == "Initialize Meridian in Current Project"
 
+    def test_prefers_frontmatter_description(self, tmp_path: Path) -> None:
+        from scripts.generate_commands import extract_metadata
+
+        skill_dir = tmp_path / "test_skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text(
+            '---\nname: meridian:test\ndescription: "Use this exact description."\n---\n\n'
+            "# /meridian:test — Different title\n"
+        )
+        result = extract_metadata(skill_dir / "SKILL.md")
+        assert result["description"] == "Use this exact description."
+
     def test_extracts_arguments(self, tmp_path: Path) -> None:
         from scripts.generate_commands import extract_metadata
 
@@ -371,6 +383,9 @@ class TestUpdateRootSkill:
             {"name": "plan", "description": "Plan"},
             {"name": "status", "description": "Status"},
         ]
+        (tmp_path / "SKILL.md").write_text(
+            "# Meridian\n\n## Available Skills\n\nstale\n\n## Architecture\n\nkept\n\n## Scripts\n"
+        )
         update_root_skill(tmp_path, skills)
         content = (tmp_path / "SKILL.md").read_text()
         assert "## Commands" not in content
@@ -384,6 +399,9 @@ class TestUpdateRootSkill:
         skills_dir = tmp_path / "skills"
         _create_skill(skills_dir, "init", "Init")
         skills = [{"name": "init", "description": "Init"}]
+        (tmp_path / "SKILL.md").write_text(
+            "# Meridian\n\n## Available Skills\n\nstale\n\n## Architecture\n\nkept\n"
+        )
         update_root_skill(tmp_path, skills)
         content = (tmp_path / "SKILL.md").read_text()
         # Should have informational list but NOT /meridian: invocation syntax

@@ -1,3 +1,8 @@
+---
+name: meridian:fast
+description: "Use when you need Meridian to inline Fast Task."
+---
+
 # /meridian:fast — Inline Fast Task
 
 Execute a trivial task inline without phases or plans. For one-liner changes, typo fixes, and small tweaks.

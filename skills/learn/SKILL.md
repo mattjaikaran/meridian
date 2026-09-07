@@ -1,3 +1,8 @@
+---
+name: meridian:learn
+description: "Use when you need Meridian to execution Learning System."
+---
+
 # /meridian:learn — Execution Learning System
 
 Capture patterns and mistakes as persistent rules injected into future subagent prompts.

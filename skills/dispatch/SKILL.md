@@ -1,8 +1,13 @@
+---
+name: meridian:dispatch
+description: "Use when you need Meridian to remote Agent Dispatch."
+---
+
 # /meridian:dispatch — Remote Agent Dispatch
 
 Send plans to a self-hosted AI agent for autonomous execution. The agent picks up the task, implements it, and creates a PR.
 
-Compatible with any agent that implements the dispatch protocol (Nero, OpenClaw, Hermes, or custom).
+Compatible with Hermes or any custom agent that implements the dispatch protocol.
 
 ## Arguments
 - `--plan <id>` — Dispatch specific plan
@@ -13,7 +18,7 @@ Compatible with any agent that implements the dispatch protocol (Nero, OpenClaw,
 - `--persona <name>` — Apply role-typed agent persona (pm, architect, ux, qa, security)
 
 ## Prerequisites
-- Project must have `nero_endpoint` configured (set during `/meridian:init`)
+- Project must have its remote agent endpoint configured during `/meridian:init`
 - Remote agent must be running and reachable
 - Plans must be in `pending` status
 

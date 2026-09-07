@@ -1,3 +1,8 @@
+---
+name: meridian:debug
+description: "Use for systematic Debugging."
+---
+
 # /meridian:debug — Systematic Debugging
 
 4-phase systematic debugging with decision logging. Uses the protocol from `references/discipline-protocols.md`.

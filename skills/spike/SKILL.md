@@ -1,3 +1,8 @@
+---
+name: meridian:spike
+description: "Use when you need Meridian to pre-Commitment Exploration."
+---
+
 # /meridian:spike — Pre-Commitment Exploration
 
 Time-boxed investigations that answer a specific question before planning begins.

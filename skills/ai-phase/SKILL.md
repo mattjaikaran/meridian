@@ -1,3 +1,8 @@
+---
+name: meridian:ai-phase
+description: "Use when you need Meridian to phase — AI Integration Phase Type."
+---
+
 # /meridian:ai-phase — AI Integration Phase Type
 
 Spawns 3 parallel subagents (domain researcher, framework selector, eval planner) for
@@ -130,7 +135,7 @@ Produce a decision matrix covering:
    Justify the choice in 3-5 sentences. Explain what you ruled out and why.
 5. Implementation notes — key SDK usage patterns, prompt caching opportunities,
    streaming vs batch considerations, retry and error handling guidance.
-   Quote the latest Anthropic model IDs: claude-opus-4-7, claude-sonnet-4-6, claude-haiku-4-5-20251001.
+   Verify current model IDs in the provider documentation before you recommend one.
 
 Read the codebase to check for existing patterns. Quote file paths and line numbers.
 ```

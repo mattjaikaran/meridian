@@ -1,3 +1,8 @@
+---
+name: meridian:autonomous
+description: "Use when you need Meridian to hands-Free Execution."
+---
+
 # /meridian:autonomous — Hands-Free Execution
 
 Run discuss→plan→execute for each remaining phase without manual intervention.

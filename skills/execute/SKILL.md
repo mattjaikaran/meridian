@@ -1,3 +1,8 @@
+---
+name: meridian:execute
+description: "Use when you need Meridian to execution Engine."
+---
+
 # /meridian:execute — Execution Engine
 
 Run plans via fresh-context subagents with TDD enforcement and 2-stage review.

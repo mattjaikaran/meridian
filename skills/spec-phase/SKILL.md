@@ -1,3 +1,8 @@
+---
+name: meridian:spec-phase
+description: "Use when you need Meridian to phase — Spec Phase Type."
+---
+
 # /meridian:spec-phase — Spec Phase Type
 
 Clarifies WHAT a phase delivers through a Socratic interview loop with quantitative

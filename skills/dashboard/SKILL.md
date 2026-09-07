@@ -1,3 +1,8 @@
+---
+name: meridian:dashboard
+description: "Use when you need Meridian to project Dashboard."
+---
+
 # /meridian:dashboard — Project Dashboard
 
 Single-view status + metrics: health, progress, velocity, stalls, remote dispatches, and next action.
@@ -57,8 +62,8 @@ Velocity: {velocity} plans/day (7d avg)
 - Phase "{name}" stuck in {status} for {hours}h
 (or "None" if no stalls)
 
-### Nero Dispatches
-- Plan "{name}" → Nero ({status}{, PR #N if available})
+### Remote dispatches
+- Plan "{name}" → remote agent ({status}{, PR #N if available})
 (or "None" if no dispatches)
 
 ### Next Action
@@ -78,7 +83,7 @@ If any phases or plans have `priority` set, show a priority summary:
 ## Options
 - `--json` — Output raw JSON instead of formatted dashboard
 - `--html [path]` — Generate standalone HTML dashboard (default: .meridian/dashboard.html)
-- `--no-sync` — Skip pulling Nero dispatch status before rendering
+- `--no-sync` — Skip pulling remote dispatch status before rendering
 
 ### HTML Dashboard
 

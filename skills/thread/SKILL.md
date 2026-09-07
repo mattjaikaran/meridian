@@ -1,3 +1,8 @@
+---
+name: meridian:thread
+description: "Use when you need Meridian to persistent Discussion Threads."
+---
+
 # /meridian:thread — Persistent Discussion Threads
 
 Lightweight, phase-independent threads for capturing ongoing context, decisions, or

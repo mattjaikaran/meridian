@@ -112,7 +112,7 @@ def route_freeform(
             "match": "none",
             "command": None,
             "candidates": [],
-            "message": "No commands registered. Run /meridian:help.",
+            "message": "No commands registered. Inspect the Meridian root skill index.",
         }
 
     text_lower = text.lower().strip()
@@ -137,7 +137,7 @@ def route_freeform(
             "match": "none",
             "command": None,
             "candidates": [],
-            "message": f"No matching command for: '{text}'. Try /meridian:help.",
+            "message": f"No matching command for: '{text}'. Inspect the Meridian root skill index.",
         }
 
     top = scored[0]

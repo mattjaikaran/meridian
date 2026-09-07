@@ -1,3 +1,8 @@
+---
+name: meridian:secure-phase
+description: "Use when you need Meridian to phase — Security Phase Type."
+---
+
 # /meridian:secure-phase — Security Phase Type
 
 Spawns 3 parallel subagents (OWASP threat modeler, auth analyst, data exposure analyst)

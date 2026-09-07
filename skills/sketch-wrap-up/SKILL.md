@@ -1,3 +1,8 @@
+---
+name: meridian:sketch-wrap-up
+description: "Use when you need Meridian to wrap-up — Pick Winner and Close Sketch."
+---
+
 # /meridian:sketch-wrap-up — Pick Winner and Close Sketch
 
 Concludes a sketch session: records the winning variant, archives losers, and closes the gate

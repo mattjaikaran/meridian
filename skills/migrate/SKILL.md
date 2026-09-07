@@ -1,3 +1,8 @@
+---
+name: meridian:migrate
+description: "Use when you need Meridian to cross-Project Migration."
+---
+
 # /meridian:migrate — Cross-Project Migration
 
 Export a milestone's structure as a reusable template for use in other projects.

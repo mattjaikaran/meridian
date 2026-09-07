@@ -1,3 +1,8 @@
+---
+name: meridian:retro
+description: "Use when you need Meridian to structured Retrospective."
+---
+
 # /meridian:retro — Structured Retrospective
 
 Generate a metrics-driven retrospective for a time period or milestone.

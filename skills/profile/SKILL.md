@@ -1,3 +1,8 @@
+---
+name: meridian:profile
+description: "Use when you need Meridian to developer Preference Profiling."
+---
+
 # /meridian:profile — Developer Preference Profiling
 
 Analyzes project history and structure to build a developer preference profile. Profile is saved to .meridian/USER-PROFILE.md for future session context.

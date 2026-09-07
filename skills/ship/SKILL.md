@@ -1,3 +1,8 @@
+---
+name: meridian:ship
+description: "Use when you need Meridian to commit + Push + PR."
+---
+
 # /meridian:ship — Commit + Push + PR
 
 Ship completed work: commit staged changes, push to remote, create PR.

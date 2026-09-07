@@ -1,3 +1,8 @@
+---
+name: meridian:revert
+description: "Use when you need Meridian to revert Completed Plan."
+---
+
 # /meridian:revert — Revert Completed Plan
 
 Revert a completed plan back to pending status.

@@ -1,10 +1,15 @@
+---
+name: meridian:ultraplan
+description: "Use when you need Meridian to cloud-Accelerated Planning."
+---
+
 # /meridian:ultraplan — Cloud-Accelerated Planning
 
 Deep planning with optional Claude Code cloud backend offload. Falls back to local
 `/meridian:plan` automatically if cloud is unavailable or not configured.
 
-**BETA** — Cloud backend requires Claude Code ≥ v2.1.91 and `ultraplan_enabled: true`
-in project config.
+**BETA** — Cloud backend requires `ultraplan_enabled: true` in project config
+and a compatible installed Claude Code version.
 
 ## Arguments
 
@@ -17,7 +22,7 @@ in project config.
 
 ## Keywords
 
-ultraplan, cloud plan, deep plan, accelerated, offload, v2.1
+ultraplan, cloud plan, deep plan, accelerated, offload
 
 ## Procedure
 
@@ -143,7 +148,7 @@ availability check returns `available: false`.
 | `--cloud` flag + cloud unavailable | ERROR (stop) |
 | `ultraplan_enabled: false` in config | LOCAL |
 | `ultraplan_endpoint` not configured | LOCAL |
-| Claude Code < v2.1.91 | LOCAL |
+| Installed client does not support cloud execution | LOCAL |
 | All conditions met | CLOUD |
 
 ## Fallback Guarantee

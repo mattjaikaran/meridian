@@ -1,6 +1,6 @@
 ---
 name: meridian:stats
-description: "Display project statistics — phases, plans, git metrics, test counts, velocity, and timeline"
+description: "Use for project statistics, git metrics, test counts, velocity, and timelines."
 allowed-tools:
   - Read
   - Bash

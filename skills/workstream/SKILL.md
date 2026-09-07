@@ -1,3 +1,8 @@
+---
+name: meridian:workstream
+description: "Use when you need Meridian to multi-Track Parallel Work Management."
+---
+
 # /meridian:workstream — Multi-Track Parallel Work Management
 
 Workstreams are named parallel tracks of development, each owning a set of milestones.

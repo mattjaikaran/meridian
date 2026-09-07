@@ -1,3 +1,8 @@
+---
+name: meridian:analyze-deps
+description: "Use when you need Meridian to deps — Dependency Analysis."
+---
+
 # /meridian:analyze-deps — Dependency Analysis
 
 Detect phase ordering constraints within a milestone. Analyzes file overlap, semantic

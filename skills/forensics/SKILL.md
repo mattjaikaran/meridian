@@ -1,3 +1,8 @@
+---
+name: meridian:forensics
+description: "Use when you need Meridian to workflow Forensics."
+---
+
 # /meridian:forensics — Workflow Forensics
 
 Post-mortem analysis of failed or stuck workflow states. Reads git history, DB state,

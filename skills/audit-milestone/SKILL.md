@@ -1,3 +1,8 @@
+---
+name: meridian:audit-milestone
+description: "Use when you need Meridian to milestone — Audit Milestone Readiness."
+---
+
 # /meridian:audit-milestone — Audit Milestone Readiness
 
 Check whether the active milestone is ready to complete.

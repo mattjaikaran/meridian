@@ -1,3 +1,8 @@
+---
+name: meridian:health
+description: "Use when you need Meridian to dB and Artifact Health Check."
+---
+
 # /meridian:health — DB and Artifact Health Check
 
 Validate SQLite database integrity, artifact consistency, and detect stuck phases.

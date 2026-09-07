@@ -1,3 +1,8 @@
+---
+name: meridian:template
+description: "Use when you need Meridian to workflow Templates."
+---
+
 # /meridian:template — Workflow Templates
 
 Apply or list workflow templates for rapid project scaffolding.

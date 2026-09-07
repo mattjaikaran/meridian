@@ -1,3 +1,8 @@
+---
+name: meridian:resume
+description: "Use when you need Meridian to deterministic Resume."
+---
+
 # /meridian:resume — Deterministic Resume
 
 Generate and load a resume prompt from SQLite state. Start exactly where you left off.

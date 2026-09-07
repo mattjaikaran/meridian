@@ -1,3 +1,8 @@
+---
+name: meridian:checkpoint
+description: "Use when you need Meridian to manual Save Point."
+---
+
 # /meridian:checkpoint — Manual Save Point
 
 Create a structured checkpoint with notes for later resume.

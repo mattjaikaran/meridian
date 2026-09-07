@@ -1,3 +1,8 @@
+---
+name: meridian:insert-phase
+description: "Use when you need Meridian to phase — Insert Phase Mid-Milestone."
+---
+
 # /meridian:insert-phase — Insert Phase Mid-Milestone
 
 Insert an urgent phase between existing phases using decimal sequencing.

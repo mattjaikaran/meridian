@@ -1,3 +1,8 @@
+---
+name: meridian:discuss
+description: "Use when you need Meridian to phase Discussion."
+---
+
 # /meridian:discuss — Phase Discussion
 
 Structured context gathering and decision-making before planning. Identifies gray areas in phase scope and presents focused questions to capture implementation decisions.

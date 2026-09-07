@@ -1,3 +1,8 @@
+---
+name: meridian:sketch
+description: "Use when you need Meridian to multi-Variant HTML Mockup Generation."
+---
+
 # /meridian:sketch — Multi-Variant HTML Mockup Generation
 
 Generate 2–3 variant HTML mockups for a UI concept before committing to a design.

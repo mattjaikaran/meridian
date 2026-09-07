@@ -1,3 +1,8 @@
+---
+name: meridian:review
+description: "Use when you need Meridian to two-Stage Code Review."
+---
+
 # /meridian:review — Two-Stage Code Review
 
 Run spec compliance + code quality review on completed work.

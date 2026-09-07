@@ -41,10 +41,18 @@ def extract_metadata(skill_md: Path) -> dict:
     content = skill_md.read_text()
     lines = content.splitlines()
 
-    # Title line: # /meridian:<name> — <description>
+    # Prefer portable YAML frontmatter. Fall back to the legacy title format.
     description = ""
-    if lines and lines[0].startswith("# "):
-        match = re.search(r"[—–-]\s*(.+)$", lines[0])
+    if lines and lines[0] == "---":
+        for line in lines[1:]:
+            if line == "---":
+                break
+            if line.startswith("description:"):
+                description = line.partition(":")[2].strip().strip('"')
+                break
+    if not description:
+        title = next((line for line in lines if line.startswith("# ")), "")
+        match = re.search(r"(?:\s+[—–]\s+|\s+--\s+)(.+)$", title)
         if match:
             description = match.group(1).strip()
 
@@ -166,67 +174,19 @@ def uninstall(commands_dir: Path) -> list[str]:
 
 
 def update_root_skill(repo_root: Path, skills: list[dict]) -> None:
-    """Regenerate root SKILL.md without Commands section."""
+    """Regenerate only the derived skill index in the root SKILL.md."""
+    root_skill = repo_root / "SKILL.md"
+    content = root_skill.read_text()
     skill_list = "\n".join(f"- {s['name']} -- {s['description']}" for s in skills)
-
-    content = f"""# Meridian -- Unified Workflow Engine
-
-Meridian is a SQLite-backed state machine for managing
-complex development workflows with deterministic resume,
-fresh-context subagents, and engineering discipline protocols.
-
-## Available Skills
-
-{skill_list}
-
-## Architecture
-
-State is stored in `.meridian/state.db` (SQLite) in each
-project directory. The state machine enforces valid transitions
-and computes the next action deterministically.
-
-### Hierarchy
-```
-Project -> Milestone -> Phase -> Plan
-```
-
-### Phase Lifecycle
-```
-planned -> context_gathered -> planned_out -> executing -> verifying -> reviewing -> complete
-                                                                         |
-                                                                       blocked
-```
-
-### Plan Lifecycle
-```
-pending -> executing -> complete
-                     -> failed -> pending (retry)
-                     -> paused -> executing
-```
-
-## Scripts (Python, stdlib only)
-- `scripts/db.py` -- Schema init + migrations (v2: priority column)
-- `scripts/state.py` -- CRUD + transitions + next-action + auto-advancement + priority
-- `scripts/resume.py` -- Deterministic resume prompt generator
-- `scripts/export.py` -- SQLite -> JSON export for remote agents
-- `scripts/dispatch.py` -- Remote agent HTTP dispatch client
-- `scripts/sync.py` -- Bidirectional remote agent sync (pull status + push state)
-- `scripts/metrics.py` -- PM metrics: velocity, cycle times, stalls, forecasts, progress
-- `scripts/board/`          -- Pluggable board sync (kanban integration)
-  - `provider.py`           -- BoardProvider protocol and registry
-  - `cli.py`                -- CLI-based board provider (env-var configurable)
-  - `sync.py`               -- Sync bridge (called from phase transitions)
-- `scripts/context_window.py` -- Token estimation + checkpoint triggers
-- `scripts/generate_commands.py` -- Generate Claude Code command wrappers from skills
-
-## References
-- `references/state-machine.md` -- State transitions + rules + auto-advancement + priority
-- `references/discipline-protocols.md` -- TDD, debugging, verification, review
-- `references/remote-agent.md` -- Remote agent dispatch protocol
-- `references/board-integration.md` -- Pluggable board sync protocol
-"""
-
-    (repo_root / "SKILL.md").write_text(content)
+    updated, count = re.subn(
+        r"(?s)(## Available Skills\n\n).*?(\n\n## Architecture)",
+        rf"\g<1>{skill_list}\g<2>",
+        content,
+        count=1,
+    )
+    if count != 1:
+        raise ValueError("Root SKILL.md must contain one Available Skills section")
+    root_skill.write_text(updated)
 
 
 def check_meridian_home() -> None:

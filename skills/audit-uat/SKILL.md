@@ -1,3 +1,8 @@
+---
+name: meridian:audit-uat
+description: "Use when you need Meridian to uat — Cross-Phase Verification Debt Audit."
+---
+
 # /meridian:audit-uat — Cross-Phase Verification Debt Audit
 
 Scan all phases for outstanding verification items and produce a summary report.
@@ -41,4 +46,4 @@ For each outstanding item:
 
 ## When NOT to Use
 - For automated regression testing (use `/meridian:execute` regression gate instead)
-- For individual phase verification (use `/meridian:verify-work` instead)
+- For individual phase verification (use `/meridian:verify-phase` instead)

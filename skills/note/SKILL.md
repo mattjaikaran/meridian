@@ -1,3 +1,8 @@
+---
+name: meridian:note
+description: "Use when you need Meridian to quick Note Capture."
+---
+
 # /meridian:note — Quick Note Capture
 
 Zero-friction idea capture during work sessions. Notes persist in .meridian/notes.md.
