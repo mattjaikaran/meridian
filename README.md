@@ -5,7 +5,7 @@
 >
 > A 2026-10 audit found these problems:
 >
-> - Harness features now cover about 85% of the skills: pause/resume/checkpoint, quick/fast/note, freeze, dispatch, ship, and workstream.
+> - Built-in harness features now cover the pause/resume/checkpoint, quick/fast/note, freeze, dispatch, ship, and workstream skills.
 > - The full phase/milestone lifecycle is better served by [GSD-2](https://github.com/gsd-build/gsd-2), which is actively maintained.
 > - State lives in a gitignored binary `state.db`. You cannot diff it, review it, or merge it across worktrees or clones, and it drifts from the markdown roadmap.
 > - This project's own development stopped using Meridian for tracking. Commits reach Phase 49, but the database records 13 phases.
