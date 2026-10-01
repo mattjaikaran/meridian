@@ -1,3 +1,18 @@
+> [!WARNING]
+> **This repository is archived and no longer maintained.**
+>
+> Meridian started when coding agents lost state between sessions. It filled that gap with a SQLite state machine and 57 slash-command skills, based on ideas from [GSD](https://github.com/gsd-build/get-shit-done), superpowers, and the BMAD method. By 2026, agent harnesses such as Claude Code, Codex, and oh-my-pi have built-in compaction, session resume, todo lists, plan mode, subagents, hooks, and worktrees. Those features cover most of what Meridian did.
+>
+> A 2026-10 audit found these problems:
+>
+> - Harness features now cover about 85% of the skills: pause/resume/checkpoint, quick/fast/note, freeze, dispatch, ship, and workstream.
+> - The full phase/milestone lifecycle is better served by [GSD-2](https://github.com/gsd-build/gsd-2), which is actively maintained.
+> - State lives in a gitignored binary `state.db`. You cannot diff it, review it, or merge it across worktrees or clones, and it drifts from the markdown roadmap.
+> - This project's own development stopped using Meridian for tracking. Commits reach Phase 49, but the database records 13 phases.
+> - Several advertised features are broken or not connected: the `/meridian:do` router finds no commands, the phase-type gates are never enforced, and 12 modules are dead code.
+>
+> For new work, use your harness's built-in features, or GSD-2 for a full structured workflow. The code stays available for reference under the Apache 2.0 license.
+
 # Meridian
 
 Development workflow engine that gives AI coding agents persistent memory, structured execution, and quality enforcement. Built on SQLite with zero external dependencies.
